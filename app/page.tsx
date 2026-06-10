@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Wallet = {
@@ -11,6 +11,7 @@ type Wallet = {
 };
 type Inputs = Record<string, unknown>;
 type Video = { id: string; title: string; channel: string; ytId: string };
+type Act = { id: number; label: string; hash?: string; account?: string; status: "ok" | "blocked" | "info" };
 
 const FEED: Video[] = [
   { id: "a", title: "Pumped Up Kicks", channel: "Foster The People", ytId: "SDTZ7iX4vTQ" },
@@ -34,11 +35,15 @@ export default function Page() {
   const [revoked, setRevoked] = useState(false);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  const [activity, setActivity] = useState<Act[]>([]);
+  const actId = useRef(0);
 
   const api = async (action: string, extra: Record<string, unknown> = {}) =>
     (await fetch("/api/reapp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, ...extra }) })).json();
   const short = (s: string) => (s ? `${s.slice(0, 5)}…${s.slice(-4)}` : "");
-  const tx = (h: string) => `${wallet?.explorer ?? "https://testnet.stellarchain.io"}/tx/${h}`;
+  const base = () => wallet?.explorer ?? "https://testnet.stellarchain.io";
+  const log = (a: Omit<Act, "id">) => setActivity((xs) => [{ id: actId.current++, ...a }, ...xs]);
+  const reason = (e: string) => (e.includes("#5") ? "mandate revoked" : e.includes("#6") ? "budget exceeded" : e.includes("#4") ? "mandate expired" : "rejected on-chain");
 
   async function createWallet() {
     setBusy("Creating + funding testnet accounts…"); setErr("");
@@ -46,6 +51,7 @@ export default function Page() {
       const w: Wallet = await api("init");
       if ((w as { error?: string }).error) throw new Error((w as { error?: string }).error);
       setWallet(w);
+      log({ label: "Created + funded 3 testnet accounts (Friendbot)", account: w.userPublic, status: "info" });
       setBal(await api("balances", { userPublic: w.userPublic, merchantPublic: w.merchantPublic }));
     } catch (e) { setErr(String(e)); } finally { setBusy(""); }
   }
@@ -56,6 +62,8 @@ export default function Page() {
       const r = await api("setup", { userSecret: wallet.userSecret, agentPublic: wallet.agentPublic, merchantPublic: wallet.merchantPublic });
       if (r.error) throw new Error(r.error);
       setInputs(r.inputs); setMandateId(r.mandateId);
+      if (r.registerTx) log({ label: "register_mandate — user signs the budget cap", hash: r.registerTx, status: "ok" });
+      if (r.approveTx) log({ label: "approve — SEP-41 allowance to the contract", hash: r.approveTx, status: "ok" });
     } catch (e) { setErr(String(e)); } finally { setBusy(""); }
   }
   async function playVideo(v: Video) {
@@ -63,10 +71,13 @@ export default function Page() {
     setBusy(`Agent paying ${PRICE} XLM to unlock “${v.title}”…`); setErr("");
     try {
       const r = await api("pay", { inputs, agentSecret: wallet.agentSecret });
-      if (r.error) setBlocked((b) => ({ ...b, [v.id]: r.error }));
-      else {
+      if (r.error) {
+        setBlocked((b) => ({ ...b, [v.id]: r.error }));
+        log({ label: `execute_payment BLOCKED · ${v.title} · ${reason(r.error)}`, status: "blocked" });
+      } else {
         setUnlocked((u) => ({ ...u, [v.id]: r.hash }));
         setSpent((s) => s + PRICE);
+        log({ label: `execute_payment — agent paid ${PRICE} XLM · ${v.title}`, hash: r.hash, status: "ok" });
         setBal(await api("balances", { userPublic: wallet.userPublic, merchantPublic: wallet.merchantPublic }));
       }
     } catch (e) { setErr(String(e)); } finally { setBusy(""); }
@@ -78,11 +89,11 @@ export default function Page() {
       const r = await api("revoke", { inputs, userSecret: wallet.userSecret });
       if (r.error) throw new Error(r.error);
       setRevoked(true);
+      log({ label: "revoke_mandate — consent withdrawn", hash: r.hash, status: "ok" });
     } catch (e) { setErr(String(e)); } finally { setBusy(""); }
   }
 
   const pct = Math.min(100, (spent / BUDGET) * 100);
-  const reason = (e: string) => (e.includes("#5") ? "mandate revoked" : e.includes("#6") ? "budget exceeded" : "rejected on-chain");
 
   return (
     <main className="relative mx-auto w-full max-w-5xl px-4 py-10 sm:px-5">
@@ -123,21 +134,16 @@ export default function Page() {
         )}
         {wallet && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75">
-              Agent <code className="text-emerald-300">{short(wallet.agentPublic)}</code>
-            </span>
-            <a
-              href={`${wallet.explorer}/contracts/${wallet.contractId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/20"
-            >
+            <a href={`${base()}/accounts/${wallet.agentPublic}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
+              Agent <code className="text-emerald-300">{short(wallet.agentPublic)}</code> ↗
+            </a>
+            <a href={`${base()}/contracts/${wallet.contractId}`} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/20">
               Contract <code>{short(wallet.contractId)}</code> ↗
             </a>
             {bal && (
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75">
-                Creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b>
-              </span>
+              <a href={`${base()}/accounts/${wallet.merchantPublic}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
+                Creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b> ↗
+              </a>
             )}
           </div>
         )}
@@ -172,21 +178,11 @@ export default function Page() {
             >
               <div className="relative aspect-video w-full overflow-hidden bg-black">
                 {hash ? (
-                  <iframe
-                    className="h-full w-full"
-                    src={`https://www.youtube.com/embed/${v.ytId}?autoplay=1&rel=0&modestbranding=1`}
-                    title={v.title}
-                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                    allowFullScreen
-                  />
+                  <iframe className="h-full w-full" src={`https://www.youtube.com/embed/${v.ytId}?autoplay=1&rel=0&modestbranding=1`} title={v.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
                 ) : (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://img.youtube.com/vi/${v.ytId}/hqdefault.jpg`}
-                      alt=""
-                      className="h-full w-full object-cover opacity-55 transition duration-500 group-hover:scale-105 group-hover:opacity-70"
-                    />
+                    <img src={`https://img.youtube.com/vi/${v.ytId}/hqdefault.jpg`} alt="" className="h-full w-full object-cover opacity-55 transition duration-500 group-hover:scale-105 group-hover:opacity-70" />
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/70 via-black/20 to-transparent">
                       {block ? (
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
@@ -194,11 +190,8 @@ export default function Page() {
                           <div className="mt-1 text-xs font-semibold text-red-300">blocked · {reason(block)}</div>
                         </motion.div>
                       ) : (
-                        <motion.button
-                          whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }}
-                          onClick={() => playVideo(v)} disabled={!mandateId || !!busy}
-                          className="flex items-center gap-2 rounded-full bg-emerald-400/95 px-4 py-2 text-sm font-bold text-[#06241a] shadow-lg shadow-emerald-500/30 disabled:opacity-40"
-                        >
+                        <motion.button whileTap={{ scale: 0.94 }} whileHover={{ scale: 1.04 }} onClick={() => playVideo(v)} disabled={!mandateId || !!busy}
+                          className="flex items-center gap-2 rounded-full bg-emerald-400/95 px-4 py-2 text-sm font-bold text-[#06241a] shadow-lg shadow-emerald-500/30 disabled:opacity-40">
                           ▶ Unlock · {PRICE} XLM
                         </motion.button>
                       )}
@@ -210,7 +203,7 @@ export default function Page() {
                 <div className="truncate font-semibold">{v.title}</div>
                 <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-emerald-100/55">
                   <span>{v.channel}</span>
-                  {hash && <a href={tx(hash)} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">paid ✓</a>}
+                  {hash && <a href={`${base()}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">paid ✓</a>}
                 </div>
               </div>
             </motion.div>
@@ -218,7 +211,43 @@ export default function Page() {
         })}
       </motion.div>
 
-      <footer className="mt-12 text-center text-xs leading-relaxed text-emerald-100/40">
+      {/* Behind the scenes — live on-chain activity */}
+      <section className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <span className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-emerald-400" : "bg-emerald-400/50"}`} />
+            On-chain activity
+          </div>
+          <span className="text-xs text-emerald-100/40">live · click any row to open the explorer</span>
+        </div>
+        <div className="max-h-72 overflow-y-auto p-2 font-mono text-xs">
+          {activity.length === 0 ? (
+            <div className="px-2 py-6 text-center text-emerald-100/35">Nothing yet — create a wallet and authorize the agent to see real transactions stream in.</div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {activity.map((a) => {
+                const href = a.hash ? `${base()}/tx/${a.hash}` : a.account ? `${base()}/accounts/${a.account}` : undefined;
+                const dot = a.status === "ok" ? "bg-emerald-400" : a.status === "blocked" ? "bg-red-400" : "bg-sky-400";
+                const Row = (
+                  <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                    <span className="min-w-0 flex-1 truncate text-emerald-100/80">{a.label}</span>
+                    {a.hash && <span className="shrink-0 text-emerald-400/80">{short(a.hash)} ↗</span>}
+                    {!a.hash && a.account && <span className="shrink-0 text-sky-300/80">acct ↗</span>}
+                  </div>
+                );
+                return (
+                  <motion.div key={a.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                    {href ? <a href={href} target="_blank" rel="noreferrer" className="block">{Row}</a> : Row}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
+        </div>
+      </section>
+
+      <footer className="mt-10 text-center text-xs leading-relaxed text-emerald-100/40">
         Real Stellar testnet · payments route through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
       </footer>
     </main>
@@ -227,15 +256,10 @@ export default function Page() {
 
 function Btn({ children, onClick, disabled, ghost }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; ghost?: boolean }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03 }}
-      onClick={onClick} disabled={disabled}
-      className={
-        ghost
-          ? "rounded-xl border border-red-400/40 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-          : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-4 py-2.5 text-sm font-semibold text-[#06241a] shadow-lg shadow-emerald-500/25 disabled:opacity-40"
-      }
-    >
+    <motion.button whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03 }} onClick={onClick} disabled={disabled}
+      className={ghost
+        ? "rounded-xl border border-red-400/40 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
+        : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-4 py-2.5 text-sm font-semibold text-[#06241a] shadow-lg shadow-emerald-500/25 disabled:opacity-40"}>
       {children}
     </motion.button>
   );
