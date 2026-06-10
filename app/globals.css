@@ -14,3 +14,20 @@ body {
   background: radial-gradient(1200px 600px at 50% -10%, #14241c 0%, #0a0e0d 55%);
   color: #e8f0ec;
 }
+
+.glow {
+  position: fixed;
+  inset: -10% 0 auto 0;
+  height: 55vh;
+  background: radial-gradient(45% 50% at 50% 0%, rgba(52, 211, 153, 0.16), transparent 70%);
+  filter: blur(36px);
+  pointer-events: none;
+  z-index: -1;
+  animation: float 16s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50% { transform: translateY(22px); opacity: 1; }
+}
+
