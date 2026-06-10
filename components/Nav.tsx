@@ -22,7 +22,6 @@ export default function Nav() {
         <Link href="/" className="flex items-center gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-black text-[#06241a]">R</span>
           <span className="font-bold tracking-tight">REAPP</span>
-          <span className="hidden text-xs text-emerald-100/40 sm:inline">agent payments</span>
         </Link>
         <div className="flex items-center gap-1">
           {links.map((l) => {

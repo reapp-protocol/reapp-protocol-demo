@@ -122,10 +122,23 @@ export default function Page() {
           <Btn onClick={revoke} disabled={revoked || !!busy} ghost>{revoked ? "Mandate revoked ✓" : "Revoke mandate"}</Btn>
         )}
         {wallet && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-100/70">
-            <span>agent <code className="text-emerald-300/80">{short(wallet.agentPublic)}</code></span>
-            <a className="text-emerald-400 underline-offset-2 hover:underline" href={`${wallet.explorer}/contracts/${wallet.contractId}`} target="_blank" rel="noreferrer">view contract ↗</a>
-            {bal && <span>creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b></span>}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75">
+              Agent <code className="text-emerald-300">{short(wallet.agentPublic)}</code>
+            </span>
+            <a
+              href={`${wallet.explorer}/contracts/${wallet.contractId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/20"
+            >
+              Contract <code>{short(wallet.contractId)}</code> ↗
+            </a>
+            {bal && (
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75">
+                Creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b>
+              </span>
+            )}
           </div>
         )}
       </div>
