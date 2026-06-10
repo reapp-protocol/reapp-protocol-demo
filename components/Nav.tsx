@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const links = [
-  { href: "/", label: "Demo" },
+  { href: "/", label: "Video" },
+  { href: "/research", label: "Research" },
   { href: "/docs", label: "Docs" },
 ];
 
