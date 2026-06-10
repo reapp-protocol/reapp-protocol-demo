@@ -1,4 +1,4 @@
-# reapp-protocol-examples
+# reapp-protocol-live
 
 A slick **Next.js** demo of [`@reapp-sdk/core`](https://www.npmjs.com/package/@reapp-sdk/core):
 an AI agent makes **pay-per-use content payments** that are enforced **on-chain**
