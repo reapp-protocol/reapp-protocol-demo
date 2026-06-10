@@ -13,15 +13,19 @@ type Wallet = {
   explorer: string;
 };
 type Inputs = Record<string, unknown>;
-type Video = { id: string; title: string; channel: string; src: string; poster: string };
+type Video = { id: string; title: string; channel: string; seed: string };
 
-const CDN = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample";
+// Reliable, hot-link-friendly sample video (W3C). The demo is about the payment,
+// not unique content, so every unlock plays this clip.
+const SAMPLE = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+const poster = (seed: string) => `https://picsum.photos/seed/${seed}/640/360`;
+
 const FEED: Video[] = [
-  { id: "a", title: "Big Buck Bunny", channel: "Blender Foundation", src: `${CDN}/BigBuckBunny.mp4`, poster: `${CDN}/images/BigBuckBunny.jpg` },
-  { id: "b", title: "Elephants Dream", channel: "Orange Open Movie", src: `${CDN}/ElephantsDream.mp4`, poster: `${CDN}/images/ElephantsDream.jpg` },
-  { id: "c", title: "For Bigger Blazes", channel: "Google", src: `${CDN}/ForBiggerBlazes.mp4`, poster: `${CDN}/images/ForBiggerBlazes.jpg` },
-  { id: "d", title: "Sintel", channel: "Durian Open Movie", src: `${CDN}/Sintel.mp4`, poster: `${CDN}/images/Sintel.jpg` },
-  { id: "e", title: "Tears of Steel", channel: "Mango Open Movie", src: `${CDN}/TearsOfSteel.mp4`, poster: `${CDN}/images/TearsOfSteel.jpg` },
+  { id: "a", title: "Aurora Over Iceland — 4K", channel: "NorthLight", seed: "reapp-aurora" },
+  { id: "b", title: "Deep Reef Dive", channel: "BluePlanet", seed: "reapp-reef" },
+  { id: "c", title: "City at Night", channel: "UrbanFrames", seed: "reapp-city" },
+  { id: "d", title: "Desert Drone Flight", channel: "SkyVantage", seed: "reapp-desert" },
+  { id: "e", title: "Forest in the Rain", channel: "WildAudio", seed: "reapp-forest" },
 ];
 
 const PRICE = 1; // XLM per video
@@ -30,7 +34,7 @@ const BUDGET = 3; // mandate cap (XLM)
 export default function Page() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [inputs, setInputs] = useState<Inputs | null>(null);
-  const [mandateId, setMandateId] = useState<string>("");
+  const [mandateId, setMandateId] = useState("");
   const [unlocked, setUnlocked] = useState<Record<string, string>>({});
   const [blocked, setBlocked] = useState<Record<string, string>>({});
   const [spent, setSpent] = useState(0);
@@ -56,7 +60,7 @@ export default function Page() {
 
   async function authorize() {
     if (!wallet) return;
-    setBusy("Registering mandate + granting allowance (you sign)…"); setErr("");
+    setBusy("Registering mandate + granting allowance…"); setErr("");
     try {
       const r = await api("setup", { userSecret: wallet.userSecret, agentPublic: wallet.agentPublic, merchantPublic: wallet.merchantPublic });
       if (r.error) throw new Error(r.error);
@@ -64,7 +68,7 @@ export default function Page() {
     } catch (e) { setErr(String(e)); } finally { setBusy(""); }
   }
 
-  async function play(v: Video) {
+  async function playVideo(v: Video) {
     if (!wallet || !inputs) return;
     setBusy(`Agent paying ${PRICE} XLM to unlock “${v.title}”…`); setErr("");
     try {
@@ -80,7 +84,7 @@ export default function Page() {
 
   async function revoke() {
     if (!wallet || !inputs) return;
-    setBusy("Revoking the mandate (you sign)…"); setErr("");
+    setBusy("Revoking the mandate…"); setErr("");
     try {
       const r = await api("revoke", { inputs, userSecret: wallet.userSecret });
       if (r.error) throw new Error(r.error);
@@ -92,21 +96,21 @@ export default function Page() {
   const reason = (e: string) => (e.includes("#5") ? "mandate revoked" : e.includes("#6") ? "budget exceeded" : "rejected on-chain");
 
   return (
-    <main className="mx-auto max-w-5xl px-5 py-10">
-      <header className="mb-8">
-        <div className="text-xs font-semibold tracking-widest text-emerald-400/80">REAPP · STELLAR TESTNET · NO MOCKS</div>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Premium video, paid by your agent — leashed on-chain.</h1>
+    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-5 sm:py-10">
+      <header className="mb-7">
+        <div className="text-[11px] font-semibold tracking-widest text-emerald-400/80">REAPP · STELLAR TESTNET · NO MOCKS</div>
+        <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-4xl">Premium video, paid by your agent — leashed on-chain.</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-emerald-100/70">
           Give an AI agent a <b>{BUDGET} XLM</b> budget and let it pay-per-play. Each unlock is a real Stellar payment;
-          the <b>MandateRegistry</b> contract enforces the cap. After {BUDGET} videos the contract <b>blocks</b> the next
-          payment — and you can <b>revoke</b> anytime. Built on <code className="rounded bg-black/30 px-1">@reapp-sdk/core</code>.
+          the <b>MandateRegistry</b> contract enforces the cap. After {BUDGET} videos it <b>blocks</b> the next payment —
+          and you can <b>revoke</b> anytime. Built on <code className="rounded bg-black/30 px-1">@reapp-sdk/core</code>.
         </p>
       </header>
 
       {busy && <div className="mb-4 animate-pulse rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200">{busy}</div>}
-      {err && <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">{err}</div>}
+      {err && <div className="mb-4 break-words rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">{err}</div>}
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-wrap items-center gap-3">
         {!wallet ? (
           <button onClick={createWallet} disabled={!!busy} className="btn">1 · Create + fund wallet</button>
         ) : !mandateId ? (
@@ -115,10 +119,10 @@ export default function Page() {
           <button onClick={revoke} disabled={revoked || !!busy} className="btn-ghost">{revoked ? "Mandate revoked ✓" : "Revoke mandate"}</button>
         )}
         {wallet && (
-          <div className="flex items-center gap-4 text-xs text-emerald-100/70">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-100/70">
             <span>agent <code>{short(wallet.agentPublic)}</code></span>
-            <a className="text-emerald-400 underline" href={`${wallet.explorer}/contracts/${wallet.contractId}`} target="_blank" rel="noreferrer">contract</a>
-            {bal && <span>creator earned <b className="text-emerald-300">{(bal.merchant - 10000).toFixed(0)} XLM</b></span>}
+            <a className="text-emerald-400 underline" href={`${wallet.explorer}/contracts/${wallet.contractId}`} target="_blank" rel="noreferrer">view contract</a>
+            {bal && <span>creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b></span>}
           </div>
         )}
       </div>
@@ -136,40 +140,41 @@ export default function Page() {
         {FEED.map((v) => {
           const hash = unlocked[v.id];
           const block = blocked[v.id];
-          const locked = !hash;
           return (
             <div key={v.id} className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
-              <div className="relative aspect-video bg-black">
+              <div className="relative aspect-video w-full bg-black">
                 {hash ? (
-                  <video className="h-full w-full" src={v.src} poster={v.poster} controls autoPlay muted />
+                  <video className="h-full w-full" src={SAMPLE} poster={poster(v.seed)} controls autoPlay muted playsInline />
                 ) : (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={v.poster} alt={v.title} className="h-full w-full object-cover opacity-50" />
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <img src={poster(v.seed)} alt="" className="h-full w-full object-cover opacity-60" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       {block ? (
                         <div className="text-center">
-                          <div className="text-2xl">⛔</div>
+                          <div className="text-3xl">⛔</div>
                           <div className="mt-1 text-xs font-semibold text-red-300">blocked: {reason(block)}</div>
                         </div>
                       ) : (
-                        <button onClick={() => play(v)} disabled={!mandateId || !!busy} className="btn-sm">▶ Unlock · {PRICE} XLM</button>
+                        <button onClick={() => playVideo(v)} disabled={!mandateId || !!busy} className="btn-sm">▶ Unlock · {PRICE} XLM</button>
                       )}
                     </div>
                   </>
                 )}
               </div>
               <div className="p-3">
-                <div className="font-semibold">{v.title}</div>
-                <div className="text-xs text-emerald-100/60">{v.channel}</div>
-                {hash && <a href={tx(hash)} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-emerald-400 underline">paid ✓ {short(hash)}</a>}
+                <div className="truncate font-semibold">{v.title}</div>
+                <div className="flex items-center justify-between gap-2 text-xs text-emerald-100/55">
+                  <span>{v.channel}</span>
+                  {hash && <a href={tx(hash)} target="_blank" rel="noreferrer" className="text-emerald-400 underline">paid ✓</a>}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      <footer className="mt-10 text-center text-xs text-emerald-100/40">
+      <footer className="mt-10 text-center text-xs leading-relaxed text-emerald-100/40">
         Real Stellar testnet · payments route through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
       </footer>
 
