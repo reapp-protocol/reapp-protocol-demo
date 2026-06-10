@@ -12,14 +12,12 @@ type Wallet = {
 type Inputs = Record<string, unknown>;
 type Video = { id: string; title: string; channel: string; ytId: string };
 
-// TODO: swap these ytIds for the real links you send. Thumbnails load for any
-// valid id; embeds play for embeddable videos. Default = Big Buck Bunny (Blender).
 const FEED: Video[] = [
-  { id: "a", title: "Aurora Over Iceland — 4K", channel: "NorthLight", ytId: "aqz-KE-bpKQ" },
-  { id: "b", title: "Deep Reef Dive", channel: "BluePlanet", ytId: "aqz-KE-bpKQ" },
-  { id: "c", title: "City at Night", channel: "UrbanFrames", ytId: "aqz-KE-bpKQ" },
-  { id: "d", title: "Desert Drone Flight", channel: "SkyVantage", ytId: "aqz-KE-bpKQ" },
-  { id: "e", title: "Forest in the Rain", channel: "WildAudio", ytId: "aqz-KE-bpKQ" },
+  { id: "a", title: "Pumped Up Kicks", channel: "Foster The People", ytId: "SDTZ7iX4vTQ" },
+  { id: "b", title: "A New Error", channel: "Moderat", ytId: "JWnX41TBFF4" },
+  { id: "c", title: "Smells Like Teen Spirit", channel: "Nirvana", ytId: "hTWKbfoikeg" },
+  { id: "d", title: "California Love", channel: "2Pac ft. Dr. Dre", ytId: "omfz62qu_Bc" },
+  { id: "e", title: "Big Poppa", channel: "The Notorious B.I.G.", ytId: "phaJXp_zMYM" },
 ];
 
 const PRICE = 1;
