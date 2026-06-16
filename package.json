@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
-    "@reapp-sdk/core": "^0.1.0",
+    "@reapp-sdk/core": "^0.2.0",
     "@reapp-sdk/stellar": "^0.1.0",
     "@stellar/stellar-sdk": "^14.5.0",
     "framer-motion": "^11.15.0",
