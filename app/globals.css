@@ -2,6 +2,12 @@
 
 :root {
   color-scheme: dark;
+  --bg: #04070a;
+  --accent: #34d399;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -11,16 +17,35 @@ body {
 }
 
 body {
-  background: radial-gradient(1200px 600px at 50% -10%, #14241c 0%, #0a0e0d 55%);
+  background-color: var(--bg);
   color: #e8f0ec;
+  background-image:
+    radial-gradient(1100px 560px at 50% -8%, rgba(20, 44, 34, 0.95) 0%, transparent 60%),
+    radial-gradient(820px 520px at 100% 4%, rgba(16, 54, 44, 0.45) 0%, transparent 55%),
+    radial-gradient(900px 620px at 0% 28%, rgba(10, 32, 44, 0.4) 0%, transparent 55%);
+  background-attachment: fixed;
 }
 
+/* Faint star/dot field, masked toward the top so it fades into the page. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% -5%, black 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 70% at 50% -5%, black 25%, transparent 78%);
+}
+
+/* Soft emerald aurora that drifts behind the hero. */
 .glow {
   position: fixed;
-  inset: -10% 0 auto 0;
-  height: 55vh;
-  background: radial-gradient(45% 50% at 50% 0%, rgba(52, 211, 153, 0.16), transparent 70%);
-  filter: blur(36px);
+  inset: -12% 0 auto 0;
+  height: 62vh;
+  background: radial-gradient(46% 50% at 50% 0%, rgba(52, 211, 153, 0.2), transparent 70%);
+  filter: blur(44px);
   pointer-events: none;
   z-index: -1;
   animation: float 16s ease-in-out infinite;
@@ -28,6 +53,56 @@ body {
 
 @keyframes float {
   0%, 100% { transform: translateY(0); opacity: 0.85; }
-  50% { transform: translateY(22px); opacity: 1; }
+  50% { transform: translateY(24px); opacity: 1; }
 }
 
+/* Reusable frosted-glass surface. */
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* Animated gradient border sheen on hover (add .sheen to a relative element). */
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.55), transparent 40%, transparent 60%, rgba(94, 234, 212, 0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.sheen:hover::after {
+  opacity: 1;
+}
+
+/* Premium scrollbar. */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.25);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.45);
+  background-clip: padding-box;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.32);
+  color: #eafff7;
+}

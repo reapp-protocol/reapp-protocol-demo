@@ -1,9 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import IntroGate from "@/components/IntroGate";
 
-const SITE =
-  process.env.VERCEL_PROJECT_PRODUCTION_URL
+const display = Space_Grotesk({ subsets: ["latin"], display: "swap" });
+
+const SITE = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  : process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -34,10 +39,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={display.className}>
       <body className="min-h-screen antialiased">
         <Nav />
         {children}
+        <IntroGate />
       </body>
     </html>
   );
