@@ -12,6 +12,7 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { reapp, type CreateIntentMandateInput } from "@reapp-sdk/core";
+import { log } from "./log";
 
 /** Price per source, in XLM. The mandate budget (see reapp-server.BUDGET = "3.00")
  *  covers three of these — the contract blocks the fourth. */
@@ -115,9 +116,11 @@ export async function* runResearch({ question, inputs, agentSecret }: RunArgs): 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: `Research question: ${question}` }];
   let spent = 0;
 
+  log.info("research agent online", { model: "claude-opus-4-8", question: question.slice(0, 56) });
   yield { type: "status", text: "Agent planning its research…" };
 
   for (let turn = 0; turn < 8; turn++) {
+    log.step("agent reasoning", { turn: turn + 1 });
     const resp = await client.messages.create({
       model: "claude-opus-4-8",
       max_tokens: 2000,
@@ -129,7 +132,10 @@ export async function* runResearch({ question, inputs, agentSecret }: RunArgs): 
     messages.push({ role: "assistant", content: resp.content });
 
     for (const b of resp.content) {
-      if (b.type === "text" && b.text.trim()) yield { type: "narration", text: b.text.trim() };
+      if (b.type === "text" && b.text.trim()) {
+        log.info("agent", { says: b.text.trim().slice(0, 64) });
+        yield { type: "narration", text: b.text.trim() };
+      }
     }
 
     if (resp.stop_reason !== "tool_use") {
@@ -151,12 +157,14 @@ export async function* runResearch({ question, inputs, agentSecret }: RunArgs): 
         toolResults.push({ type: "tool_result", tool_use_id: b.id, is_error: true, content: `Unknown source "${input.source}".` });
         continue;
       }
+      log.step("agent wants a source", { source: src.name, reason: input.reason.slice(0, 48) });
       yield { type: "purchase_attempt", source: src.id, label: src.name, icon: src.icon, reason: input.reason };
       try {
-        const mandate = reapp.createIntentMandate(inputs); // same nonce → same on-chain id
+        const mandate = reapp.createIntentMandate(inputs); // same nonce, same on-chain id
         const hash = await reapp.agent({ mandate, signer: agentSecret }).pay(SOURCE_PRICE);
         spent += 1;
         yield { type: "purchase_ok", source: src.id, label: src.name, hash };
+        log.step("fetching findings from source", { source: src.name });
         const data = await sourceFindings(client, src, question);
         yield { type: "source_data", source: src.id, label: src.name, text: data };
         toolResults.push({
