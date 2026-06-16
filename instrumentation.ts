@@ -1,19 +1,23 @@
 /**
- * Next.js instrumentation: runs once when the server boots. Prints the REAPP
- * banner + a single compact status line as ONE atomic stdout write, so it stays
- * contiguous in the log stream instead of interleaving with Next's boot output.
- * Node runtime only.
+ * Next.js instrumentation: runs once on server boot. Prints a clean one-line
+ * brand header + a verbose, single-line boot diagnostics feed. Single lines are
+ * line-reorder-proof in Railway's log viewer. Node runtime only.
  */
 import { banner } from "./lib/banner";
-import { c } from "./lib/log";
+import { log } from "./lib/log";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   let contract = "…";
+  let rpc = "…";
   let explorer = "…";
+  let price = "1.00";
+  let budget = "3.00";
   try {
-    contract = (await import("@reapp-sdk/stellar")).TESTNET.mandateRegistryId;
+    const s = await import("@reapp-sdk/stellar");
+    contract = s.TESTNET.mandateRegistryId;
+    rpc = s.TESTNET.rpcUrl;
   } catch {
     /* SDK unavailable at boot */
   }
@@ -22,23 +26,26 @@ export async function register() {
   } catch {
     /* ignore */
   }
+  try {
+    const r = await import("./lib/reapp-server");
+    price = r.UNLOCK_PRICE;
+    budget = r.BUDGET;
+  } catch {
+    /* ignore */
+  }
 
-  const shortC = contract.length > 14 ? `${contract.slice(0, 6)}…${contract.slice(-4)}` : contract;
-  const dot = c.dim("  ·  ");
-  const status =
-    "  " +
-    c.bold(c.green("● online")) +
-    dot +
-    c.gray("contract ") +
-    c.emerald(shortC) +
-    dot +
-    c.teal(explorer.replace(/^https?:\/\//, "")) +
-    dot +
-    c.gray("ai ") +
-    (process.env.ANTHROPIC_API_KEY ? c.green("✓") : c.amber("✗"));
+  const short = (v: string) => (v.length > 14 ? `${v.slice(0, 6)}…${v.slice(-4)}` : v);
+  const domain = process.env.RAILWAY_PUBLIC_DOMAIN ?? `localhost:${process.env.PORT ?? 3000}`;
+  const ai = process.env.ANTHROPIC_API_KEY ? "claude-opus-4-8" : "disabled (no ANTHROPIC_API_KEY)";
 
-  // Defer the banner so it prints in a quiet window AFTER Next's boot logs,
-  // instead of interleaving with them in the same log-second (Railway reorders
-  // lines sharing a timestamp). One write keeps every line contiguous.
-  setTimeout(() => process.stdout.write("\n" + banner() + "\n" + status + "\n\n"), 900);
+  // Deferred so the boot feed lands in a quiet window after Next's own logs.
+  setTimeout(() => {
+    process.stdout.write("\n" + banner() + "\n\n");
+    log.info("boot", { env: process.env.NODE_ENV ?? "production", node: process.version, domain });
+    log.info("network", { chain: "stellar-testnet", rpc: rpc.replace(/^https?:\/\//, "") });
+    log.chain("registry", { contract: short(contract), explorer: explorer.replace(/^https?:\/\//, "") });
+    log.info("pricing", { unlock: `${price} XLM`, budget: `${budget} XLM` });
+    log.info("research", { agent: ai });
+    log.ok("online, serving requests");
+  }, 900);
 }
