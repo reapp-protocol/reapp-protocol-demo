@@ -5,8 +5,9 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import { reapp, type CreateIntentMandateInput } from "@reapp-sdk/core";
 import { TESTNET, token } from "@reapp-sdk/stellar";
+import { EXPLORER_BASE } from "./explorer";
 
-export const EXPLORER = "https://testnet.stellarchain.io";
+export const EXPLORER = EXPLORER_BASE;
 export const UNLOCK_PRICE = "1.00"; // XLM per content unlock
 export const BUDGET = "3.00"; // mandate cap — 3 unlocks, then the contract blocks the 4th
 

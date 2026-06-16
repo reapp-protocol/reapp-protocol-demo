@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { txUrl, accountUrl, contractUrl } from "@/lib/explorer";
 
 type Wallet = {
   userSecret: string; userPublic: string;
@@ -41,7 +42,6 @@ export default function Page() {
   const api = async (action: string, extra: Record<string, unknown> = {}) =>
     (await fetch("/api/reapp", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, ...extra }) })).json();
   const short = (s: string) => (s ? `${s.slice(0, 5)}…${s.slice(-4)}` : "");
-  const base = () => wallet?.explorer ?? "https://testnet.stellarchain.io";
   const log = (a: Omit<Act, "id">) => setActivity((xs) => [{ id: actId.current++, ...a }, ...xs]);
   const reason = (e: string) => (e.includes("#5") ? "mandate revoked" : e.includes("#6") ? "budget exceeded" : e.includes("#4") ? "mandate expired" : "rejected on-chain");
 
@@ -161,14 +161,14 @@ export default function Page() {
         )}
         {wallet && (
           <div className="flex flex-wrap items-center gap-2">
-            <a href={`${base()}/accounts/${wallet.agentPublic}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
+            <a href={accountUrl(wallet.agentPublic)} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
               Agent <code className="text-emerald-300">{short(wallet.agentPublic)}</code> ↗
             </a>
-            <a href={`${base()}/contracts/${wallet.contractId}`} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/20">
+            <a href={contractUrl(wallet.contractId)} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/20">
               Contract <code>{short(wallet.contractId)}</code> ↗
             </a>
             {bal && (
-              <a href={`${base()}/accounts/${wallet.merchantPublic}`} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
+              <a href={accountUrl(wallet.merchantPublic)} target="_blank" rel="noreferrer" className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-emerald-100/75 hover:border-emerald-400/30">
                 Creator earned <b className="text-emerald-300">{Math.max(0, bal.merchant - 10000).toFixed(0)} XLM</b> ↗
               </a>
             )}
@@ -230,7 +230,7 @@ export default function Page() {
                 <div className="truncate font-semibold">{v.title}</div>
                 <div className="mt-0.5 flex items-center justify-between gap-2 text-xs text-emerald-100/55">
                   <span>{v.channel}</span>
-                  {hash && <a href={`${base()}/tx/${hash}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">paid ✓</a>}
+                  {hash && <a href={txUrl(hash)} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">paid ✓</a>}
                 </div>
               </div>
             </motion.div>
@@ -260,7 +260,7 @@ export default function Page() {
           ) : (
             <AnimatePresence initial={false}>
               {activity.map((a) => {
-                const href = a.hash ? `${base()}/tx/${a.hash}` : a.account ? `${base()}/accounts/${a.account}` : undefined;
+                const href = a.hash ? txUrl(a.hash) : a.account ? accountUrl(a.account) : undefined;
                 const dot = a.status === "ok" ? "bg-emerald-400" : a.status === "blocked" ? "bg-red-400" : "bg-sky-400";
                 const Row = (
                   <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
