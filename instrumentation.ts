@@ -37,6 +37,8 @@ export async function register() {
     c.gray("ai ") +
     (process.env.ANTHROPIC_API_KEY ? c.green("✓") : c.amber("✗"));
 
-  // Single write keeps the whole banner together in the log stream.
-  process.stdout.write(banner() + status + "\n\n");
+  // Defer the banner so it prints in a quiet window AFTER Next's boot logs,
+  // instead of interleaving with them in the same log-second (Railway reorders
+  // lines sharing a timestamp). One write keeps every line contiguous.
+  setTimeout(() => process.stdout.write("\n" + banner() + "\n" + status + "\n\n"), 900);
 }
