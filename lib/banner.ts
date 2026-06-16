@@ -1,22 +1,16 @@
 /**
- * REAPP boot banner: figlet "ANSI Shadow" (clean block hacker font), trimmed and
- * painted as an emerald to teal gradient. Isolated here so it is easy to swap.
+ * REAPP boot banner: figlet "ANSI Shadow", each letter painted its own neon
+ * brand shade (cyan, mint, emerald, teal, green). Generated; edit the plan in
+ * the build step or tweak colors via lib/log.ts.
  */
 import { c } from "./log";
 
-const ART: string[] = [
-  "██████╗ ███████╗ █████╗ ██████╗ ██████╗",
-  "██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗",
-  "██████╔╝█████╗  ███████║██████╔╝██████╔╝",
-  "██╔══██╗██╔══╝  ██╔══██║██╔═══╝ ██╔═══╝",
-  "██║  ██║███████╗██║  ██║██║     ██║",
-  "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝",
-];
-
-const GRAD = [c.mint, c.mint, c.emerald, c.emerald, c.teal, c.deep];
+type Seg = [string, keyof typeof c];
+const ART: Seg[][] = [[["██████╗ ","cyan"],["███████╗","mint"],[" █████╗ ","emerald"],["██████╗ ","teal"],["██████╗ ","green"]],[["██╔══██╗","cyan"],["██╔════╝","mint"],["██╔══██╗","emerald"],["██╔══██╗","teal"],["██╔══██╗","green"]],[["██████╔╝","cyan"],["█████╗  ","mint"],["███████║","emerald"],["██████╔╝","teal"],["██████╔╝","green"]],[["██╔══██╗","cyan"],["██╔══╝  ","mint"],["██╔══██║","emerald"],["██╔═══╝ ","teal"],["██╔═══╝ ","green"]],[["██║  ██║","cyan"],["███████╗","mint"],["██║  ██║","emerald"],["██║     ","teal"],["██║     ","green"]],[["╚═╝  ╚═╝","cyan"],["╚══════╝","mint"],["╚═╝  ╚═╝","emerald"],["╚═╝     ","teal"],["╚═╝     ","green"]]];
 
 export function banner(): string {
-  const art = ART.map((line, i) => "  " + (GRAD[i] ?? c.teal)(line)).join("\n");
+  const paint = (col: keyof typeof c, t: string) => (c[col] as (s: string) => string)(t);
+  const art = ART.map((row) => "  " + row.map(([t, col]) => paint(col, t)).join("")).join("\n");
   const tag =
     "  " +
     c.dim("agent payments") + c.emerald(" · ") +
