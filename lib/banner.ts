@@ -1,19 +1,26 @@
 /**
- * REAPP boot banner. Deliberately ONE clean line: a line-based log viewer
- * (Railway) cannot split or reorder a single line, so it always renders sharp.
- * Change the wordmark/tagline here. (The big dollar-sign figlet banner lives in
- * git history at commit fd3fd63 if you ever want it on a viewer that keeps
- * multi-line output intact.)
+ * REAPP boot banner: figlet "ANSI Shadow" (clean block hacker font), trimmed and
+ * painted as an emerald to teal gradient. Isolated here so it is easy to swap.
  */
 import { c } from "./log";
 
+const ART: string[] = [
+  "██████╗ ███████╗ █████╗ ██████╗ ██████╗",
+  "██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗",
+  "██████╔╝█████╗  ███████║██████╔╝██████╔╝",
+  "██╔══██╗██╔══╝  ██╔══██║██╔═══╝ ██╔═══╝",
+  "██║  ██║███████╗██║  ██║██║     ██║",
+  "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝",
+];
+
+const GRAD = [c.mint, c.mint, c.emerald, c.emerald, c.teal, c.deep];
+
 export function banner(): string {
-  return (
+  const art = ART.map((line, i) => "  " + (GRAD[i] ?? c.teal)(line)).join("\n");
+  const tag =
     "  " +
-    c.bold(c.emerald("⬢ REAPP")) +
-    c.dim("  ·  ") +
-    c.gray("agent payments, enforced on-chain") +
-    c.dim("  ·  ") +
-    c.teal("Stellar testnet")
-  );
+    c.dim("agent payments") + c.emerald(" · ") +
+    c.dim("enforced on-chain") + c.emerald(" · ") +
+    c.dim("stellar testnet");
+  return art + "\n" + tag;
 }
