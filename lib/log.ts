@@ -25,29 +25,6 @@ export const c = {
   // on-black emerald block (for the banner fill)
 };
 
-// "ANSI Shadow" REAPP, painted as a top-to-bottom emerald->teal gradient.
-const ART = [
-  "██████╗ ███████╗ █████╗ ██████╗ ██████╗ ",
-  "██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗",
-  "██████╔╝█████╗  ███████║██████╔╝██████╔╝",
-  "██╔══██╗██╔══╝  ██╔══██║██╔═══╝ ██╔═══╝ ",
-  "██║  ██║███████╗██║  ██║██║     ██║     ",
-  "╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝     ",
-];
-const GRAD = [c.mint, c.emerald, c.green, c.teal, c.teal, c.deep];
-
-export function banner(): string {
-  const art = ART.map((line, i) => "  " + GRAD[i](line)).join("\n");
-  const sub =
-    "  " +
-    c.dim("agent payments ") +
-    c.emerald("·") +
-    c.dim(" enforced on-chain ") +
-    c.emerald("·") +
-    c.dim(" stellar testnet");
-  return "\n" + art + "\n" + sub + "\n";
-}
-
 const W = 60; // inner box width
 
 function row(label: string, value: string): string {

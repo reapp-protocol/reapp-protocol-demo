@@ -3,7 +3,8 @@
  * print the REAPP boot banner + a diagnostics panel to stdout (Railway renders
  * the ANSI colors). Node runtime only.
  */
-import { banner, panel, c, log } from "./lib/log";
+import { banner } from "./lib/banner";
+import { panel, c, log } from "./lib/log";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
