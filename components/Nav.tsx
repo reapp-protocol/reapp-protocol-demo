@@ -21,7 +21,7 @@ export default function Nav() {
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-5">
         <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-sm font-black text-[#06241a]">R</span>
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-emerald-300 to-emerald-600 text-sm font-black text-[#06241a] shadow-[0_0_18px_-2px_rgba(52,211,153,0.7)] ring-1 ring-emerald-300/40">R</span>
           <span className="font-bold tracking-tight">REAPP</span>
         </Link>
         <div className="flex items-center gap-1">

@@ -99,19 +99,46 @@ export default function Page() {
     <main className="relative mx-auto w-full max-w-5xl px-4 py-10 sm:px-5">
       <div className="glow" aria-hidden />
 
-      <motion.header initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="mb-8">
-        <div className="text-[11px] font-semibold tracking-widest text-emerald-400/80">REAPP · STELLAR TESTNET · NO MOCKS</div>
-        <h1 className="mt-3 text-3xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+      <motion.header
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}
+        className="mb-10 pt-6"
+      >
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+          className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90"
+        >
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+          STELLAR TESTNET · NO MOCKS · @reapp-sdk/core 0.2.0
+        </motion.div>
+        <motion.h1
+          variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-5 text-4xl font-black leading-[1.04] tracking-tight sm:text-6xl"
+        >
           Premium video, paid by your{" "}
-          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent">AI agent</span>
-          {" "}— leashed on-chain.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-emerald-100/70 sm:text-base">
-          Give an agent a <b>{BUDGET} XLM</b> budget and let it pay-per-play. Every unlock is a real Stellar payment;
-          the <b>MandateRegistry</b> contract enforces the cap. After {BUDGET} videos it <b>blocks</b> the next payment —
-          and you can <b>revoke</b> anytime. Built on{" "}
-          <code className="rounded bg-emerald-400/10 px-1.5 py-0.5 text-emerald-300">@reapp-sdk/core</code>.
-        </p>
+          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_34px_rgba(52,211,153,0.28)]">
+            AI agent
+          </span>
+          , leashed on-chain.
+        </motion.h1>
+        <motion.p
+          variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
+          className="mt-5 max-w-2xl text-base leading-relaxed text-emerald-100/70 sm:text-lg"
+        >
+          Give an agent a <b className="text-emerald-200">{BUDGET} XLM</b> budget and let it pay-per-play. Every unlock is a
+          real Stellar payment, and the <b className="text-emerald-200">MandateRegistry</b> contract enforces the cap. After{" "}
+          {BUDGET} videos it <b className="text-emerald-200">blocks</b> the next payment, and you can{" "}
+          <b className="text-emerald-200">revoke</b> anytime.
+        </motion.p>
+        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} className="mt-6 flex flex-wrap gap-2.5 text-xs">
+          {["Enforced on-chain", "SDK is untrusted", "Real testnet payments", "Revocable anytime"].map((t) => (
+            <span key={t} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1 text-emerald-200/80">
+              {t}
+            </span>
+          ))}
+        </motion.div>
       </motion.header>
 
       <AnimatePresence>
@@ -174,7 +201,7 @@ export default function Page() {
               variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -5 }}
               transition={{ type: "spring", stiffness: 300, damping: 24 }}
-              className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] shadow-lg shadow-black/30 transition-colors hover:border-emerald-400/30"
+              className="group relative overflow-hidden rounded-2xl glass sheen shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)] transition-shadow hover:shadow-[0_22px_60px_-16px_rgba(52,211,153,0.28)]"
             >
               <div className="relative aspect-video w-full overflow-hidden bg-black">
                 {hash ? (
@@ -212,11 +239,18 @@ export default function Page() {
       </motion.div>
 
       {/* Behind the scenes — live on-chain activity */}
-      <section className="mt-10 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+      <section className="mt-10 overflow-hidden rounded-2xl glass shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-4 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <span className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-emerald-400" : "bg-emerald-400/50"}`} />
-            On-chain activity
+            <span className="flex gap-1.5" aria-hidden>
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+            </span>
+            <span className="ml-1.5 flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${busy ? "animate-pulse bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-emerald-400/50"}`} />
+              On-chain activity
+            </span>
           </div>
           <span className="text-xs text-emerald-100/40">live · click any row to open the explorer</span>
         </div>
@@ -256,10 +290,10 @@ export default function Page() {
 
 function Btn({ children, onClick, disabled, ghost }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; ghost?: boolean }) {
   return (
-    <motion.button whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03 }} onClick={onClick} disabled={disabled}
+    <motion.button whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03, y: -1 }} onClick={onClick} disabled={disabled}
       className={ghost
-        ? "rounded-xl border border-red-400/40 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-        : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-4 py-2.5 text-sm font-semibold text-[#06241a] shadow-lg shadow-emerald-500/25 disabled:opacity-40"}>
+        ? "rounded-xl border border-red-400/40 bg-red-400/[0.04] px-5 py-2.5 text-sm font-semibold text-red-300 transition hover:border-red-400/70 hover:bg-red-400/10 disabled:opacity-50"
+        : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-5 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_8px_30px_-6px_rgba(52,211,153,0.6)] transition hover:shadow-[0_10px_42px_-4px_rgba(52,211,153,0.85)] disabled:opacity-40 disabled:shadow-none"}>
       {children}
     </motion.button>
   );

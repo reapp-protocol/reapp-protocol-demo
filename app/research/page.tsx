@@ -168,20 +168,47 @@ export default function ResearchPage() {
     <main className="relative mx-auto w-full max-w-5xl px-4 py-10 sm:px-5">
       <div className="glow" aria-hidden />
 
-      <motion.header initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="mb-8">
-        <div className="text-[11px] font-semibold tracking-widest text-emerald-400/80">REAPP · STELLAR TESTNET · CLAUDE-POWERED · NO MOCKS</div>
-        <h1 className="mt-3 text-3xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+      <motion.header
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } } }}
+        className="mb-10 pt-6"
+      >
+        <motion.div
+          variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+          className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90"
+        >
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+          CLAUDE-POWERED · STELLAR TESTNET · NO MOCKS
+        </motion.div>
+        <motion.h1
+          variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-5 text-4xl font-black leading-[1.04] tracking-tight sm:text-6xl"
+        >
           A research agent that{" "}
-          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent">pays for what it reads</span>
-          {" "}— leashed on-chain.
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-emerald-100/70 sm:text-base">
-          Give an AI agent a <b>{BUDGET} XLM</b> budget and a question. It autonomously buys premium data sources
-          (<b>1 XLM</b> each) to answer it — every purchase a real Stellar payment. The <b>MandateRegistry</b> contract
-          enforces the cap: once the budget is spent it <b>blocks</b> the next purchase, so the agent can&apos;t overspend
-          even when it wants more. Built on{" "}
-          <code className="rounded bg-emerald-400/10 px-1.5 py-0.5 text-emerald-300">@reapp-sdk/core</code>.
-        </p>
+          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_34px_rgba(52,211,153,0.28)]">
+            pays for what it reads
+          </span>
+          , leashed on-chain.
+        </motion.h1>
+        <motion.p
+          variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
+          className="mt-5 max-w-2xl text-base leading-relaxed text-emerald-100/70 sm:text-lg"
+        >
+          Give an AI agent a <b className="text-emerald-200">{BUDGET} XLM</b> budget and a question. It autonomously buys
+          premium data sources (<b className="text-emerald-200">1 XLM</b> each) to answer it, every purchase a real Stellar
+          payment. The <b className="text-emerald-200">MandateRegistry</b> contract enforces the cap: once the budget is
+          spent it <b className="text-emerald-200">blocks</b> the next purchase, so the agent cannot overspend even when it
+          wants more.
+        </motion.p>
+        <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} className="mt-6 flex flex-wrap gap-2.5 text-xs">
+          {["Autonomous agent", "Budget enforced on-chain", "claude-opus-4-8", "Real testnet payments"].map((t) => (
+            <span key={t} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1 text-emerald-200/80">
+              {t}
+            </span>
+          ))}
+        </motion.div>
       </motion.header>
 
       <AnimatePresence>
@@ -231,7 +258,7 @@ export default function ResearchPage() {
       </AnimatePresence>
 
       {/* Question + run */}
-      <section className="mb-8 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+      <section className="mb-8 rounded-2xl glass p-4 sm:p-5">
         <label className="mb-2 block text-xs font-semibold tracking-wide text-emerald-100/60">RESEARCH QUESTION</label>
         <textarea
           value={question}
@@ -317,11 +344,18 @@ export default function ResearchPage() {
       </AnimatePresence>
 
       {/* On-chain activity */}
-      <section className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+      <section className="mt-2 overflow-hidden rounded-2xl glass shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center justify-between border-b border-white/10 bg-black/20 px-4 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-400" : "bg-emerald-400/50"}`} />
-            On-chain activity
+            <span className="flex gap-1.5" aria-hidden>
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+            </span>
+            <span className="ml-1.5 flex items-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" : "bg-emerald-400/50"}`} />
+              On-chain activity
+            </span>
           </div>
           <span className="text-xs text-emerald-100/40">live · click any row to open the explorer</span>
         </div>
@@ -361,10 +395,10 @@ export default function ResearchPage() {
 
 function Btn({ children, onClick, disabled, ghost }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; ghost?: boolean }) {
   return (
-    <motion.button whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03 }} onClick={onClick} disabled={disabled}
+    <motion.button whileTap={{ scale: 0.96 }} whileHover={disabled ? {} : { scale: 1.03, y: -1 }} onClick={onClick} disabled={disabled}
       className={ghost
-        ? "rounded-xl border border-red-400/40 px-4 py-2.5 text-sm font-semibold text-red-300 disabled:opacity-50"
-        : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-4 py-2.5 text-sm font-semibold text-[#06241a] shadow-lg shadow-emerald-500/25 disabled:opacity-40"}>
+        ? "rounded-xl border border-red-400/40 bg-red-400/[0.04] px-5 py-2.5 text-sm font-semibold text-red-300 transition hover:border-red-400/70 hover:bg-red-400/10 disabled:opacity-50"
+        : "rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-5 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_8px_30px_-6px_rgba(52,211,153,0.6)] transition hover:shadow-[0_10px_42px_-4px_rgba(52,211,153,0.85)] disabled:opacity-40 disabled:shadow-none"}>
       {children}
     </motion.button>
   );
