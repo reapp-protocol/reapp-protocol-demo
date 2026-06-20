@@ -3,6 +3,23 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { txUrl, accountUrl, contractUrl } from "@/lib/explorer";
+import ReactMarkdown, { type Components } from "react-markdown";
+
+const mdComponents: Components = {
+  h1: ({ node, ...p }) => <h2 className="mb-2 mt-4 text-base font-semibold text-emerald-200 first:mt-0" {...p} />,
+  h2: ({ node, ...p }) => <h2 className="mb-2 mt-4 text-base font-semibold text-emerald-200 first:mt-0" {...p} />,
+  h3: ({ node, ...p }) => <h3 className="mb-1.5 mt-3 text-sm font-semibold text-emerald-200/90 first:mt-0" {...p} />,
+  p: ({ node, ...p }) => <p className="mb-2.5 leading-relaxed text-emerald-50/90 last:mb-0" {...p} />,
+  ul: ({ node, ...p }) => <ul className="mb-2.5 list-disc space-y-1 pl-5 marker:text-emerald-400/70 last:mb-0" {...p} />,
+  ol: ({ node, ...p }) => <ol className="mb-2.5 list-decimal space-y-1 pl-5 marker:text-emerald-400/70 last:mb-0" {...p} />,
+  li: ({ node, ...p }) => <li className="leading-relaxed text-emerald-50/90" {...p} />,
+  strong: ({ node, ...p }) => <strong className="font-semibold text-white" {...p} />,
+  em: ({ node, ...p }) => <em className="italic text-emerald-100" {...p} />,
+  a: ({ node, ...p }) => <a className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300" target="_blank" rel="noreferrer" {...p} />,
+  hr: () => <hr className="my-3 border-emerald-400/15" />,
+  code: ({ node, ...p }) => <code className="rounded bg-black/30 px-1 py-0.5 font-mono text-[12px] text-emerald-100" {...p} />,
+  blockquote: ({ node, ...p }) => <blockquote className="my-2 border-l-2 border-emerald-400/30 pl-3 italic text-emerald-100/80" {...p} />,
+};
 
 type Wallet = {
   userSecret: string; userPublic: string;
@@ -303,7 +320,9 @@ export default function ResearchPage() {
                     <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-emerald-300">
                       <span>✦</span> AGENT&apos;S SYNTHESIZED ANSWER
                     </div>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-emerald-50">{s.text}</div>
+                    <div className="text-sm leading-relaxed text-emerald-50">
+                      <ReactMarkdown components={mdComponents}>{s.text}</ReactMarkdown>
+                    </div>
                   </motion.div>
                 );
               // purchase
