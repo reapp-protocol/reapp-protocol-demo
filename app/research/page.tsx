@@ -406,7 +406,7 @@ export default function ResearchPage() {
       </section>
 
       <footer className="mt-10 text-center text-xs leading-relaxed text-emerald-100/40">
-        Stellar testnet · the agent is an <code>LLM</code> · every source purchase routes through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
+        Stellar testnet · the agent is an <code>LLM</code> · every source purchase routes through <code>MandateRegistry.execute_payment</code> · the contract rejects any purchase past the budget.
       </footer>
     </main>
   );

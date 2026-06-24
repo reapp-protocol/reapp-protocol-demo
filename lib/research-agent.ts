@@ -6,7 +6,8 @@
  * Stellar payment through the published @reapp-sdk/core (MandateRegistry.execute_
  * payment). The mandate budget is enforced ON-CHAIN: once the agent has spent its
  * budget, the contract rejects further purchases and the agent must synthesise an
- * answer from what it could afford. The SDK is untrusted; the contract is the leash.
+ * answer from what it could afford. The contract enforces the budget on-chain;
+ * the SDK cannot exceed it.
  *
  * Runs only in the Node API route. Streams structured events via an async generator.
  */

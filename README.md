@@ -24,7 +24,7 @@ the agent can't overspend even when it wants more. It then synthesizes an answer
 what it could afford. The run streams live (each on-chain purchase, each block).
 
 The SDK runs **server-side** in Next.js API routes (Node) — the exact published
-package. The contract is the source of truth; the SDK is untrusted.
+package. The contract enforces the budget on-chain, so the SDK can't exceed the mandate.
 
 ## Run
 

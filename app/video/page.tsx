@@ -133,7 +133,7 @@ export default function Page() {
           <b className="text-emerald-200">revoke</b> anytime.
         </motion.p>
         <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} className="mt-6 flex flex-wrap gap-2.5 text-xs">
-          {["Enforced on-chain", "SDK is untrusted", "Testnet payments", "Revocable anytime"].map((t) => (
+          {["Enforced on-chain", "SDK can't overspend", "Testnet payments", "Revocable anytime"].map((t) => (
             <span key={t} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1 text-emerald-200/80">
               {t}
             </span>
@@ -282,7 +282,7 @@ export default function Page() {
       </section>
 
       <footer className="mt-10 text-center text-xs leading-relaxed text-emerald-100/40">
-        Stellar testnet · payments route through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
+        Stellar testnet · payments route through <code>MandateRegistry.execute_payment</code> · the contract rejects any payment past the mandate.
       </footer>
     </main>
   );

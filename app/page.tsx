@@ -61,7 +61,7 @@ export default function Docs() {
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-emerald-100/70 sm:text-base">
           A user signs a budget-capped mandate; an AI agent pays under it; a Soroban contract enforces every limit
-          on-chain. The SDK is <b>untrusted</b> — a buggy or malicious SDK can't exceed the mandate.
+          on-chain, so even a buggy or malicious SDK can't exceed the mandate.
         </p>
       </motion.div>
 

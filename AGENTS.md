@@ -7,7 +7,7 @@ Project guidance for agents working in `reapp-protocol-live`.
 A Next.js 15 (App Router) demo of [`@reapp-sdk/core`](https://www.npmjs.com/package/@reapp-sdk/core).
 An AI agent makes pay-per-use payments that are enforced on-chain by the REAPP
 MandateRegistry Soroban contract on Stellar testnet. The SDK runs server-side in
-Next.js API routes — the contract is the source of truth; the SDK is untrusted.
+Next.js API routes — the contract enforces the budget on-chain, so the SDK can't exceed the mandate.
 
 ## Run
 
@@ -45,5 +45,5 @@ Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research �
   in `lib/research-agent.ts`, and the `ANTHROPIC_API_KEY` env var name.
 - **No marketing hype / AI-slop copy.** Avoid empty intensifiers ("NO MOCKS",
   "*-POWERED", "slick", "Premium", emphatic "Real …"). Keep concrete, accurate
-  technical statements (the on-chain budget cap, "SDK is untrusted", revocable mandate).
+  technical statements (the on-chain budget cap, contract-enforced limits, revocable mandate).
 - Use relative paths in symlinks and imports — never absolute.
