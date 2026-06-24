@@ -196,7 +196,7 @@ export default function ResearchPage() {
           className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90"
         >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          CLAUDE-POWERED · STELLAR TESTNET · NO MOCKS
+          STELLAR TESTNET · @reapp-sdk/core 0.2.0
         </motion.div>
         <motion.h1
           variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}
@@ -207,20 +207,20 @@ export default function ResearchPage() {
           <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_34px_rgba(52,211,153,0.28)]">
             pays for what it reads
           </span>
-          , leashed on-chain.
+          , capped on-chain.
         </motion.h1>
         <motion.p
           variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}
           className="mt-5 max-w-2xl text-base leading-relaxed text-emerald-100/70 sm:text-lg"
         >
           Give an AI agent a <b className="text-emerald-200">{BUDGET} XLM</b> budget and a question. It autonomously buys
-          premium data sources (<b className="text-emerald-200">1 XLM</b> each) to answer it, every purchase a real Stellar
+          paid data sources (<b className="text-emerald-200">1 XLM</b> each) to answer it, every purchase a real Stellar
           payment. The <b className="text-emerald-200">MandateRegistry</b> contract enforces the cap: once the budget is
           spent it <b className="text-emerald-200">blocks</b> the next purchase, so the agent cannot overspend even when it
           wants more.
         </motion.p>
         <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} className="mt-6 flex flex-wrap gap-2.5 text-xs">
-          {["Autonomous agent", "Budget enforced on-chain", "claude-opus-4-8", "Real testnet payments"].map((t) => (
+          {["Autonomous agent", "Budget enforced on-chain", "LLM agent", "Testnet payments"].map((t) => (
             <span key={t} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1 text-emerald-200/80">
               {t}
             </span>
@@ -406,7 +406,7 @@ export default function ResearchPage() {
       </section>
 
       <footer className="mt-10 text-center text-xs leading-relaxed text-emerald-100/40">
-        Real Stellar testnet · the agent is <code>claude-opus-4-8</code> · every source purchase routes through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
+        Stellar testnet · the agent is an <code>LLM</code> · every source purchase routes through <code>MandateRegistry.execute_payment</code> · the SDK is untrusted, the contract is the source of truth.
       </footer>
     </main>
   );

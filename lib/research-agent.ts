@@ -1,6 +1,6 @@
 /**
- * Server-side Research Agent: a real Claude agent (claude-opus-4-8) that pays,
- * on-chain, for the premium data sources it needs to answer a question.
+ * Server-side Research Agent: a real LLM agent that pays, on-chain, for the
+ * data sources it needs to answer a question.
  *
  * The agent is given a single `purchase_source` tool. Every call settles a REAL
  * Stellar payment through the published @reapp-sdk/core (MandateRegistry.execute_
@@ -116,7 +116,7 @@ export async function* runResearch({ question, inputs, agentSecret }: RunArgs): 
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: `Research question: ${question}` }];
   let spent = 0;
 
-  log.info("research agent online", { model: "claude-opus-4-8", question: question.slice(0, 56) });
+  log.info("research agent online", { question: question.slice(0, 56) });
   yield { type: "status", text: "Agent planning its research…" };
 
   for (let turn = 0; turn < 8; turn++) {
