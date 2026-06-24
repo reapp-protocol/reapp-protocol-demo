@@ -36,7 +36,7 @@ export async function register() {
 
   const short = (v: string) => (v.length > 14 ? `${v.slice(0, 6)}…${v.slice(-4)}` : v);
   const domain = process.env.RAILWAY_PUBLIC_DOMAIN ?? `localhost:${process.env.PORT ?? 3000}`;
-  const ai = process.env.ANTHROPIC_API_KEY ? "claude-opus-4-8" : "disabled (no ANTHROPIC_API_KEY)";
+  const ai = process.env.ANTHROPIC_API_KEY ? "enabled" : "disabled (no LLM API key)";
 
   // Deferred so the boot feed lands in a quiet window after Next's own logs.
   setTimeout(() => {

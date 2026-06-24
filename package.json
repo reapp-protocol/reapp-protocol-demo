@@ -2,7 +2,7 @@
   "name": "reapp-protocol-live",
   "version": "0.1.0",
   "private": true,
-  "description": "Slick NextJS demo of @reapp-sdk/core: an AI agent makes pay-per-use content payments enforced on-chain by the REAPP MandateRegistry.",
+  "description": "Next.js demo of @reapp-sdk/core: an AI agent makes pay-per-use content payments enforced on-chain by the REAPP MandateRegistry.",
   "type": "module",
   "scripts": {
     "dev": "next dev",
