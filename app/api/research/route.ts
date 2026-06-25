@@ -12,10 +12,10 @@ export async function POST(req: Request) {
   const enc = new TextEncoder();
   const line = (ev: ResearchEvent) => enc.encode(JSON.stringify(ev) + "\n");
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    log.err("research aborted: ANTHROPIC_API_KEY not set");
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+    log.err("research aborted: no LLM provider key set");
     return new Response(
-      line({ type: "error", message: "ANTHROPIC_API_KEY is not set on the server. Add it in Railway (service → Variables) to run the agent." }),
+      line({ type: "error", message: "No LLM provider key set on the server. Add ANTHROPIC_API_KEY and/or OPENAI_API_KEY in Railway (service → Variables) to run the agent." }),
       { headers: { "content-type": "application/x-ndjson; charset=utf-8" } },
     );
   }
@@ -35,7 +35,8 @@ export async function POST(req: Request) {
       try {
         for await (const ev of runResearch(body as RunArgs)) {
           // Verbose: surface the agent's on-chain milestones in the server logs.
-          if (ev.type === "purchase_attempt") log.step(`agent buying ${ev.label}`, { reason: ev.reason.slice(0, 48) });
+          if (ev.type === "provider_switch") log.warn(`LLM failover · ${ev.text}`);
+          else if (ev.type === "purchase_attempt") log.step(`agent buying ${ev.label}`, { reason: ev.reason.slice(0, 48) });
           else if (ev.type === "purchase_ok") log.chain(`paid 1 XLM · ${ev.label}`, { tx: ev.hash.slice(0, 10) });
           else if (ev.type === "purchase_blocked") log.warn(`blocked on-chain · ${ev.label}`, { reason: ev.reason });
           else if (ev.type === "final") log.ok("agent synthesized its final answer");

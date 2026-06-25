@@ -36,15 +36,17 @@ npm run dev
 Open http://localhost:3000. Everything is on Stellar **testnet** with ephemeral
 keys — never use mainnet keys here.
 
-The **research agent** demo additionally needs an LLM API key. Put it in
-`.env.local` (gitignored) — and in your Vercel project's environment variables for
-the deployed site:
+The **research agent** demo additionally needs an LLM API key. It supports two
+providers and fails over between them, so a run keeps working if one runs out of
+credit or gets rate-limited. Set one or both in `.env.local` (gitignored), and in
+your host's environment variables for the deployed site:
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
 ```
 
-Without it, the video demo still works; the research page shows a clear notice.
+Without any key, the video demo still works; the research page shows a clear notice.
 
 ## How it works
 

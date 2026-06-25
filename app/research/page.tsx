@@ -32,6 +32,7 @@ type Act = { id: number; label: string; hash?: string; account?: string; status:
 
 type Step =
   | { kind: "narration"; id: number; text: string }
+  | { kind: "orchestrator"; id: number; engine: string; turn: number }
   | { kind: "purchase"; id: number; source: string; label: string; icon: string; reason: string; status: "pending" | "ok" | "blocked"; hash?: string; blockReason?: string; findings?: string }
   | { kind: "final"; id: number; text: string };
 
@@ -55,6 +56,7 @@ export default function ResearchPage() {
   const [spent, setSpent] = useState(0);
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+  const [activeLLM, setActiveLLM] = useState("");
 
   const [bal, setBal] = useState<{ user: number; merchant: number } | null>(null);
   const [busy, setBusy] = useState("");
@@ -118,7 +120,7 @@ export default function ResearchPage() {
 
   async function runResearch() {
     if (!wallet || !inputs || !question.trim() || running) return;
-    setRunning(true); setDone(false); setErr(""); setSteps([]); setSpent(0);
+    setRunning(true); setDone(false); setErr(""); setSteps([]); setSpent(0); setActiveLLM("");
     setBusy("Research agent is working — paying for sources on-chain…");
     log({ label: `Research agent started · “${question.slice(0, 60)}”`, status: "info" });
     try {
@@ -150,6 +152,14 @@ export default function ResearchPage() {
     switch (ev.type) {
       case "narration":
         setSteps((xs) => [...xs, { kind: "narration", id: stepId.current++, text: ev.text }]);
+        break;
+      case "provider_switch":
+        setSteps((xs) => [...xs, { kind: "narration", id: stepId.current++, text: `⚡ ${ev.text}` }]);
+        log({ label: `LLM failover · ${ev.text}`, status: "info" });
+        break;
+      case "llm_active":
+        setActiveLLM(ev.engine);
+        setSteps((xs) => [...xs, { kind: "orchestrator", id: stepId.current++, engine: ev.engine, turn: ev.turn }]);
         break;
       case "purchase_attempt":
         setSteps((xs) => [...xs, { kind: "purchase", id: stepId.current++, source: ev.source, label: ev.label, icon: ev.icon, reason: ev.reason, status: "pending" }]);
@@ -220,7 +230,7 @@ export default function ResearchPage() {
           wants more.
         </motion.p>
         <motion.div variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }} className="mt-6 flex flex-wrap gap-2.5 text-xs">
-          {["Autonomous agent", "Budget enforced on-chain", "LLM agent", "Testnet payments"].map((t) => (
+          {["Autonomous agent", "Budget enforced on-chain", "LLM Agnostic Agent", "Testnet payments"].map((t) => (
             <span key={t} className="rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1 text-emerald-200/80">
               {t}
             </span>
@@ -269,7 +279,15 @@ export default function ResearchPage() {
             <div className="h-2.5 w-full max-w-md overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
               <motion.div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-300" animate={{ width: `${pct}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
             </div>
-            <div className="mt-1.5 text-xs text-emerald-100/60">{spent} / {BUDGET} XLM spent · mandate <code>{short(mandateId)}</code></div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-emerald-100/60">
+              <span>{spent} / {BUDGET} XLM spent · mandate <code>{short(mandateId)}</code></span>
+              {activeLLM && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-emerald-300">
+                  <span className={`h-1.5 w-1.5 rounded-full bg-emerald-400 ${running ? "animate-pulse" : ""}`} />
+                  {activeLLM}
+                </span>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -301,11 +319,32 @@ export default function ResearchPage() {
         </div>
       </section>
 
+      {/* Live LLM engine indicator — shows which provider is serving, and any failover */}
+      {(running || activeLLM) && (
+        <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.06] px-4 py-2.5 text-sm">
+          <span className={`h-2 w-2 rounded-full bg-emerald-400 ${running ? "animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" : ""}`} />
+          <span className="font-semibold tracking-wide text-emerald-200">LLM engine</span>
+          <span className="text-emerald-100/75">{activeLLM || "starting…"}</span>
+          <span className="ml-auto text-xs text-emerald-100/45">dual-provider failover</span>
+        </div>
+      )}
+
       {/* Agent trace */}
       <AnimatePresence>
         {steps.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10 space-y-3">
             {steps.map((s) => {
+              if (s.kind === "orchestrator")
+                return (
+                  <motion.div key={s.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/[0.07] px-3 py-1.5 text-xs">
+                    <span className="text-emerald-400">⚙</span>
+                    <span className="font-semibold tracking-[0.14em] text-emerald-300">ORCHESTRATOR</span>
+                    <span className="text-emerald-100/55">selected</span>
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-semibold text-emerald-200">{s.engine}</span>
+                    <span className="text-emerald-100/45">· turn {s.turn}</span>
+                  </motion.div>
+                );
               if (s.kind === "narration")
                 return (
                   <motion.div key={s.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="flex gap-2.5 text-sm text-emerald-100/70">
