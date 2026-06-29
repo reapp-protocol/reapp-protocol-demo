@@ -5,10 +5,12 @@
  * each a real execute_payment — until the contract caps the budget. There is no
  * LLM here: the on-chain enforcement is the point. Streamed as an async generator.
  *
- * Reliability: the PUBLISHED @reapp-sdk/core does not yet carry the tranche-2
- * settlement fix, so this flow funds via friendbot with an RPC-poll + retry and
- * polls the mandate seq between purchases to avoid the stale-read BadSequence
- * race. The contract is the source of truth throughout.
+ * RELIABILITY: the PUBLISHED @reapp-sdk/core (0.2.0) has no settlement fix, so its
+ * write calls can return before the tx settles on a slow testnet (NOT_FOUND,
+ * BadSequence, or odd downstream simulation states). So every write here is
+ * wrapped to RECONCILE against on-chain state: a write "succeeds" if the chain
+ * reflects it, even when the client call threw. The contract is the source of
+ * truth; budget/expiry/replay are always enforced on-chain.
  */
 import { reapp } from "@reapp-sdk/core";
 import { TESTNET, registryClient, keypairSigner } from "@reapp-sdk/stellar";
@@ -38,6 +40,9 @@ export type DemoEvent =
   | { type: "error"; message: string };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const errCode = (msg: string) => (msg.match(/Error\(Contract,\s*#(\d+)\)/) ?? [])[1];
+
+type Client = ReturnType<typeof registryClient>;
 
 /** Fund an account and confirm it on the soroban RPC (the source the contract
  *  calls use). Friendbot can rate-limit, so retry the hit and throw if it never
@@ -59,23 +64,24 @@ async function fund(pub: string): Promise<void> {
   throw new Error(`friendbot could not fund ${pub} after several attempts`);
 }
 
-/** Poll the contract until the mandate seq reaches `target` (write propagated),
- *  so the next purchase doesn't read a stale seq and trip the replay guard. */
-async function waitForSeq(
-  client: ReturnType<typeof registryClient>,
-  idBuffer: Buffer,
-  target: number,
-  tries = 20,
-): Promise<void> {
+/** On-chain mandate state, or null if not found / unreadable yet. */
+async function mandateState(client: Client, idBuffer: Buffer): Promise<{ seq: number; spent: bigint } | null> {
+  try {
+    const md = (await client.get_mandate({ mandate_id: idBuffer })).result.unwrap();
+    return { seq: Number(md.seq), spent: BigInt(md.spent) };
+  } catch {
+    return null;
+  }
+}
+
+/** Poll until `fn` returns a truthy value (write propagated), else null. */
+async function pollFor<T>(fn: () => Promise<T | null>, tries = 25): Promise<T | null> {
   for (let i = 0; i < tries; i += 1) {
-    try {
-      const md = (await client.get_mandate({ mandate_id: idBuffer })).result.unwrap();
-      if (Number(md.seq) >= target) return;
-    } catch {
-      // transient read error — keep polling
-    }
+    const v = await fn();
+    if (v) return v;
     await sleep(1000);
   }
+  return null;
 }
 
 export async function* runCliDemo(): AsyncGenerator<DemoEvent> {
@@ -106,45 +112,83 @@ export async function* runCliDemo(): AsyncGenerator<DemoEvent> {
     nonce: `${Date.now()}:${Math.random().toString(36).slice(2)}`,
   };
   const mandate = reapp.createIntentMandate(inputs);
+  const client = registryClient(TESTNET, keypairSigner(agent, TESTNET.networkPassphrase));
+
   yield { type: "status", text: "Registering the mandate and granting the SEP-41 allowance to the contract" };
-  await reapp.registerMandate(mandate, { signer: user.secret() });
-  await reapp.approveBudget(mandate, { signer: user.secret() });
+
+  // Register — reconcile: the tx may land even if the client call throws NOT_FOUND.
+  let registered = false;
+  for (let attempt = 0; attempt < 4 && !registered; attempt += 1) {
+    try {
+      await reapp.registerMandate(mandate, { signer: user.secret() });
+    } catch (e) {
+      log.warn("demo: register call errored, checking chain", { reason: (e instanceof Error ? e.message : String(e)).split("\n")[0].slice(0, 60) });
+    }
+    if (await pollFor(() => mandateState(client, mandate.idBuffer), 20)) registered = true;
+  }
+  if (!registered) {
+    yield { type: "error", message: "could not register the mandate on testnet (network was unreachable)" };
+    return;
+  }
+
+  // Approve the SEP-41 allowance to the contract — idempotent, so just retry.
+  let approved = false;
+  for (let attempt = 0; attempt < 4 && !approved; attempt += 1) {
+    try {
+      await reapp.approveBudget(mandate, { signer: user.secret() });
+      approved = true;
+    } catch {
+      await sleep(1500);
+    }
+  }
   yield { type: "mandate", id: mandate.id, budget: BUDGET };
   log.chain("demo: mandate registered", { id: mandate.id.slice(0, 10) });
 
-  const client = registryClient(TESTNET, keypairSigner(agent, TESTNET.networkPassphrase));
   let purchased = 0;
-  let seq = 0;
+  let seq = 0; // expected current mandate seq; advances on each landed payment
 
-  for (const s of SOURCES) {
+  outer: for (const s of SOURCES) {
     yield { type: "buy_attempt", source: s.name, icon: s.icon, price: SOURCE_PRICE };
-    let settled = false;
-    for (let attempt = 0; attempt < 4 && !settled; attempt += 1) {
+    let resolved = false;
+    for (let attempt = 0; attempt < 5 && !resolved; attempt += 1) {
+      let hash: string | null = null;
+      let code: string | undefined;
       try {
-        const hash = await reapp.agent({ mandate, signer: agent.secret() }).pay(SOURCE_PRICE);
-        purchased += 1;
-        seq += 1;
-        settled = true;
-        yield { type: "buy_ok", source: s.name, hash, url: txUrl(hash) };
-        log.chain(`demo: bought ${s.name}`, { tx: hash.slice(0, 10) });
-        await waitForSeq(client, mandate.idBuffer, seq);
+        hash = await reapp.agent({ mandate, signer: agent.secret() }).pay(SOURCE_PRICE);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        const code = (msg.match(/Error\(Contract,\s*#(\d+)\)/) ?? [])[1];
-        if (code === "6") {
-          yield { type: "buy_blocked", source: s.name, reason: `budget cap of ${BUDGET} XLM reached` };
-          log.warn(`demo: contract blocked ${s.name} — budget exhausted`);
-          yield { type: "result", purchased, budget: BUDGET };
-          return;
-        }
-        if (code === "8") {
-          await waitForSeq(client, mandate.idBuffer, seq);
-          continue;
-        }
-        yield { type: "error", message: (msg.split("\n")[0] ?? msg).slice(0, 120) };
+        code = errCode(e instanceof Error ? e.message : String(e));
+      }
+
+      if (code === "6") {
+        // BudgetExceeded — the contract cap. This is the aha, not an error.
+        yield { type: "buy_blocked", source: s.name, reason: `budget cap of ${BUDGET} XLM reached` };
+        log.warn(`demo: contract blocked ${s.name} — budget exhausted`);
+        yield { type: "result", purchased, budget: BUDGET };
         return;
       }
+
+      // Reconcile: did the payment actually land? (seq advanced, or client returned a hash)
+      const st = await mandateState(client, mandate.idBuffer);
+      if (hash || (st && st.seq > seq)) {
+        purchased += 1;
+        seq = st ? st.seq : seq + 1;
+        yield { type: "buy_ok", source: s.name, hash: hash ?? "", url: hash ? txUrl(hash) : "" };
+        log.chain(`demo: bought ${s.name}`, { tx: (hash ?? "confirmed").slice(0, 10) });
+        await pollFor(async () => {
+          const cur = await mandateState(client, mandate.idBuffer);
+          return cur && cur.seq >= seq ? cur : null;
+        }, 15);
+        resolved = true;
+        break;
+      }
+      // transient (NOT_FOUND / BadSequence / simulation hiccup) — wait and retry
+      await sleep(1500);
+    }
+    if (!resolved) {
+      yield { type: "error", message: `purchase of ${s.name} did not settle after several retries` };
+      return;
     }
   }
+
   yield { type: "result", purchased, budget: BUDGET };
 }
