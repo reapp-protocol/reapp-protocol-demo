@@ -1,0 +1,28 @@
+import Link from "next/link";
+
+export const metadata = { title: "Tranche 2 · REAPP" };
+
+export default function T2Page() {
+  return (
+    <main className="mx-auto max-w-3xl px-5 py-10">
+      <h1 className="text-2xl font-semibold text-white">Tranche 2 · developer toolkit</h1>
+      <p className="mt-2 leading-relaxed text-emerald-50/80">
+        Work in progress, kept separate from the Tranche 1 deliverables under review. Everything new for Tranche 2 is
+        collected here, on the same live testnet contract.
+      </p>
+
+      <div className="mt-6 grid gap-4">
+        <Link
+          href="/t2/demo"
+          className="rounded-xl border border-emerald-400/15 bg-black/30 p-5 transition hover:border-emerald-400/40"
+        >
+          <div className="text-lg font-semibold text-emerald-100">CLI demo · research agent</div>
+          <p className="mt-1 text-sm text-emerald-50/70">
+            Run the reapp CLI&apos;s research-agent flow live on testnet: the agent buys sources on-chain until the
+            contract caps the budget. No LLM key required.
+          </p>
+        </Link>
+      </div>
+    </main>
+  );
+}

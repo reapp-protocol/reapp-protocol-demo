@@ -28,10 +28,14 @@ video demo still works and the research page shows a notice.
 ## Routes
 
 - `/` — **Docs** (landing page). Source: `app/page.tsx`.
-- `/research` — research agent demo. Source: `app/research/page.tsx`.
+- `/research` — research agent demo (LLM). Source: `app/research/page.tsx`.
 - `/video` — video paywall demo. Source: `app/video/page.tsx`.
+- `/t2` — **Tranche 2** hub. New T2 work is isolated here so it doesn't confuse the
+  Tranche 1 review. Source: `app/t2/page.tsx`.
+- `/t2/demo` — CLI research-agent demo (no LLM; mirrors `reapp demo research-agent`). Source: `app/t2/demo/page.tsx`.
 
-Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video.
+Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video · T2.
+T1 pages stay grouped first; all Tranche 2 surfaces live under the single `/t2` section.
 
 ## Key files
 
@@ -39,6 +43,8 @@ Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research �
 - `app/api/reapp/route.ts` — Node API handler for wallet / mandate / payment / revoke.
 - `lib/research-agent.ts` — the LLM agentic loop; a `purchase_source` tool whose every call is a real on-chain `execute_payment`.
 - `app/api/research/route.ts` — streams the research run as newline-delimited JSON.
+- `lib/cli-demo.ts` — no-LLM demo flow (ephemeral accounts → mandate → budget-capped buys), mirrors the reapp CLI; streamed as an async generator.
+- `app/api/demo/route.ts` — streams the CLI demo run as newline-delimited JSON (no key required).
 
 ## Conventions
 

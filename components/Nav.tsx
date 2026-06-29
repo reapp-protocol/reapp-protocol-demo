@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Docs" },
   { href: "/research", label: "Research demo" },
   { href: "/video", label: "Video demo" },
+  { href: "/t2", label: "T2" },
 ];
 
 export default function Nav() {
