@@ -1,198 +1,168 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { accountUrl, contractUrl } from "@/lib/explorer";
+import "@xterm/xterm/css/xterm.css";
 
 const CONTRACT = "CB4KOTLGMM5JEPFPU6QBJLADIBP3RSGUX44FOYTFRICNXKKFPYIW7ZOA";
-const short = (s: string) => (s ? `${s.slice(0, 6)}…${s.slice(-4)}` : "");
 
-type Line =
-  | { kind: "status"; id: number; text: string }
-  | { kind: "funded"; id: number; user: string; agent: string; merchant: string }
-  | { kind: "mandate"; id: number; mandateId: string; budget: string }
-  | {
-      kind: "buy";
-      id: number;
-      source: string;
-      icon: string;
-      price: string;
-      status: "pending" | "ok" | "blocked";
-      hash?: string;
-      url?: string;
-      reason?: string;
-    };
+const QUICK = [
+  { label: "demo research-agent", cmd: "demo research-agent" },
+  { label: "init", cmd: "init" },
+  { label: "setup", cmd: "setup" },
+  { label: "mandate create", cmd: "mandate create" },
+  { label: "pay", cmd: "pay" },
+];
 
 export default function T2DemoPage() {
-  const [lines, setLines] = useState<Line[]>([]);
+  const hostRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const termRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fitRef = useRef<any>(null);
+  const sessionRef = useRef<string>("");
+  const [cmd, setCmd] = useState("demo research-agent");
   const [running, setRunning] = useState(false);
-  const [done, setDone] = useState<{ purchased: number; budget: string } | null>(null);
-  const [err, setErr] = useState("");
-  const id = useRef(0);
+  const [ready, setReady] = useState(false);
 
-  function patchLastBuy(source: string, patch: Partial<Line>) {
-    setLines((xs) => {
-      for (let i = xs.length - 1; i >= 0; i -= 1) {
-        const l = xs[i];
-        if (l.kind === "buy" && l.source === source) {
-          const next = [...xs];
-          next[i] = { ...l, ...patch } as Line;
-          return next;
-        }
-      }
-      return xs;
-    });
-  }
+  useEffect(() => {
+    let disposed = false;
+    sessionRef.current = (globalThis.crypto?.randomUUID?.() ?? `s${Date.now()}`).replace(/[^A-Za-z0-9-]/g, "");
+    (async () => {
+      const [{ Terminal }, { FitAddon }] = await Promise.all([import("@xterm/xterm"), import("@xterm/addon-fit")]);
+      if (disposed || !hostRef.current) return;
+      const term = new Terminal({
+        convertEol: true,
+        cursorBlink: true,
+        fontSize: 13,
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        theme: { background: "#000000", foreground: "#d1fae5", cursor: "#34d399", selectionBackground: "#065f46" },
+      });
+      const fit = new FitAddon();
+      term.loadAddon(fit);
+      term.open(hostRef.current);
+      fit.fit();
+      termRef.current = term;
+      fitRef.current = fit;
+      term.writeln("\x1b[2mreapp CLI · pick a command below or type one, then Run.\x1b[0m");
+      term.writeln("\x1b[2mState (config, keys, mandate) persists across commands in this session.\x1b[0m\r\n");
+      setReady(true);
+      const onResize = () => fit.fit();
+      window.addEventListener("resize", onResize);
+      // store cleanup
+      (term as unknown as { _onResize?: () => void })._onResize = onResize;
+    })();
+    return () => {
+      disposed = true;
+      const t = termRef.current;
+      if (t?._onResize) window.removeEventListener("resize", t._onResize);
+      t?.dispose?.();
+    };
+  }, []);
 
-  async function run() {
-    setLines([]);
-    setDone(null);
-    setErr("");
+  async function run(command: string) {
+    const term = termRef.current;
+    if (!term || running) return;
+    const args = command.trim().split(/\s+/).filter(Boolean);
+    if (args.length === 0) return;
     setRunning(true);
+    term.write(`\r\n\x1b[32m$\x1b[0m \x1b[1mreapp ${args.join(" ")}\x1b[0m\r\n`);
     try {
-      const res = await fetch("/api/demo", { method: "POST" });
+      const res = await fetch("/api/cli", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ args, sessionId: sessionRef.current }),
+      });
+      if (res.status === 400) {
+        term.write("\x1b[31munknown command — try: demo research-agent · init · setup · mandate create · pay\x1b[0m\r\n");
+        return;
+      }
       if (!res.body) throw new Error("no stream");
       const reader = res.body.getReader();
       const dec = new TextDecoder();
-      let buf = "";
       while (true) {
-        const { done: sd, value } = await reader.read();
-        if (sd) break;
-        buf += dec.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buf.indexOf("\n")) >= 0) {
-          const s = buf.slice(0, nl).trim();
-          buf = buf.slice(nl + 1);
-          if (s) handle(JSON.parse(s));
-        }
+        const { done, value } = await reader.read();
+        if (done) break;
+        term.write(dec.decode(value));
       }
     } catch (e) {
-      setErr(String(e));
+      term.write(`\r\n\x1b[31m[error ${String(e)}]\x1b[0m\r\n`);
     } finally {
       setRunning(false);
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function handle(ev: any) {
-    switch (ev.type) {
-      case "status":
-        setLines((xs) => [...xs, { kind: "status", id: id.current++, text: ev.text }]);
-        break;
-      case "funded":
-        setLines((xs) => [...xs, { kind: "funded", id: id.current++, user: ev.user, agent: ev.agent, merchant: ev.merchant }]);
-        break;
-      case "mandate":
-        setLines((xs) => [...xs, { kind: "mandate", id: id.current++, mandateId: ev.id, budget: ev.budget }]);
-        break;
-      case "buy_attempt":
-        setLines((xs) => [...xs, { kind: "buy", id: id.current++, source: ev.source, icon: ev.icon, price: ev.price, status: "pending" }]);
-        break;
-      case "buy_ok":
-        patchLastBuy(ev.source, { status: "ok", hash: ev.hash, url: ev.url });
-        break;
-      case "buy_blocked":
-        patchLastBuy(ev.source, { status: "blocked", reason: ev.reason });
-        break;
-      case "result":
-        setDone({ purchased: ev.purchased, budget: ev.budget });
-        break;
-      case "error":
-        setErr(ev.message);
-        break;
+      fitRef.current?.fit?.();
     }
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-5 py-10">
+    <main className="mx-auto max-w-4xl px-5 py-10">
       <Link href="/t2" className="text-sm text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
         ← Tranche 2
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold text-white">CLI demo · research agent</h1>
+      <h1 className="mt-3 text-2xl font-semibold text-white">CLI · live terminal</h1>
       <p className="mt-2 leading-relaxed text-emerald-50/80">
-        The same flow as <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">npx reapp-protocol-cli demo research-agent</code>, run live on
-        Stellar testnet. Three ephemeral accounts are funded, a mandate with a{" "}
-        <span className="text-emerald-200">3 XLM</span> budget is registered, and the agent buys research sources one at a
-        time. Each purchase is a real on-chain <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">execute_payment</code>; the contract
-        caps spending at the budget and rejects the rest. No LLM key is required to run it.
-      </p>
-      <p className="mt-2 text-sm text-emerald-50/60">
-        Enforced by the MandateRegistry contract{" "}
-        <a className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300" href={contractUrl(CONTRACT)} target="_blank" rel="noreferrer">
-          {short(CONTRACT)}
-        </a>
-        . A run takes roughly 30–60 seconds.
+        This runs the real <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp</code> CLI on the server against Stellar testnet and
+        streams its output here. Try <span className="text-emerald-200">demo research-agent</span>: it funds ephemeral accounts, registers a
+        3 XLM mandate, and the agent buys research sources on-chain until the contract caps the budget. No LLM key required.
       </p>
 
-      <button
-        onClick={run}
-        disabled={running}
-        className="mt-6 rounded-lg bg-emerald-500 px-5 py-2.5 font-semibold text-black transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+      <div className="mt-5 flex flex-wrap gap-2">
+        {QUICK.map((q) => (
+          <button
+            key={q.cmd}
+            onClick={() => {
+              setCmd(q.cmd);
+              run(q.cmd);
+            }}
+            disabled={running || !ready}
+            className="rounded-md border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 font-mono text-[12px] text-emerald-200 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {q.label}
+          </button>
+        ))}
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          run(cmd);
+        }}
+        className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-black/50 px-3 py-2 font-mono text-sm"
       >
-        {running ? "Running on testnet…" : "Run the demo"}
-      </button>
+        <span className="text-emerald-400">reapp</span>
+        <input
+          value={cmd}
+          onChange={(e) => setCmd(e.target.value)}
+          spellCheck={false}
+          disabled={running}
+          className="flex-1 bg-transparent text-emerald-50 placeholder:text-emerald-50/30 focus:outline-none"
+          placeholder="demo research-agent"
+        />
+        <button
+          type="submit"
+          disabled={running || !ready}
+          className="rounded-md bg-emerald-500 px-4 py-1.5 font-semibold text-black shadow-[0_0_20px_rgba(16,185,129,0.35)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {running ? "Running…" : "Run"}
+        </button>
+      </form>
 
-      {(lines.length > 0 || err) && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-emerald-400/15 bg-black/40 font-mono text-[13px]">
-          <div className="border-b border-emerald-400/10 px-4 py-2 text-emerald-300/70">reapp · testnet</div>
-          <div className="space-y-1.5 px-4 py-3">
-            {lines.map((l) => {
-              if (l.kind === "status")
-                return (
-                  <div key={l.id} className="text-emerald-50/70">
-                    <span className="text-emerald-400/70">›</span> {l.text}
-                  </div>
-                );
-              if (l.kind === "funded")
-                return (
-                  <div key={l.id} className="text-emerald-200">
-                    ✓ funded 3 accounts ·{" "}
-                    <a className="underline underline-offset-2 hover:text-emerald-300" href={accountUrl(l.user)} target="_blank" rel="noreferrer">
-                      user {short(l.user)}
-                    </a>{" "}
-                    ·{" "}
-                    <a className="underline underline-offset-2 hover:text-emerald-300" href={accountUrl(l.agent)} target="_blank" rel="noreferrer">
-                      agent {short(l.agent)}
-                    </a>
-                  </div>
-                );
-              if (l.kind === "mandate")
-                return (
-                  <div key={l.id} className="text-emerald-200">
-                    ✓ mandate registered · budget {l.budget} XLM · id {short(l.mandateId)}
-                  </div>
-                );
-              // buy
-              return (
-                <div key={l.id} className={l.status === "blocked" ? "text-amber-300" : l.status === "ok" ? "text-emerald-100" : "text-emerald-50/60"}>
-                  {l.status === "pending" && <span className="text-emerald-400/70">…</span>}
-                  {l.status === "ok" && <span className="text-emerald-400">✓</span>}
-                  {l.status === "blocked" && <span className="text-amber-400">✗</span>}{" "}
-                  {l.icon} agent buys {l.source} · {l.price} XLM
-                  {l.status === "ok" && l.url && (
-                    <>
-                      {" "}
-                      —{" "}
-                      <a className="underline underline-offset-2 hover:text-emerald-300" href={l.url} target="_blank" rel="noreferrer">
-                        tx {short(l.hash ?? "")}
-                      </a>
-                    </>
-                  )}
-                  {l.status === "blocked" && <> — blocked by contract ({l.reason})</>}
-                </div>
-              );
-            })}
-            {err && <div className="text-red-300">error: {err}</div>}
-          </div>
-          {done && (
-            <div className="border-t border-emerald-400/10 px-4 py-3 text-emerald-100">
-              Purchased <span className="font-semibold text-white">{done.purchased} sources</span> for{" "}
-              <span className="font-semibold text-white">{done.purchased}.00 XLM</span>; the contract enforced the{" "}
-              <span className="font-semibold text-white">{done.budget} XLM</span> cap. A compromised agent or SDK cannot exceed the mandate.
-            </div>
-          )}
+      <div className="mt-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-black shadow-[0_0_44px_rgba(16,185,129,0.14)]">
+        <div className="flex items-center gap-2 border-b border-emerald-400/10 px-4 py-2 font-mono text-[12px] text-emerald-300/70">
+          <span className="h-3 w-3 rounded-full bg-red-400/70" />
+          <span className="h-3 w-3 rounded-full bg-amber-400/70" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400/70" />
+          <span className="ml-2">reapp · testnet</span>
         </div>
-      )}
+        <div ref={hostRef} className="h-[460px] w-full px-3 py-2" />
+      </div>
+
+      <p className="mt-3 text-xs text-emerald-50/50">
+        Enforced on-chain by the MandateRegistry contract{" "}
+        <a className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300" href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT}`} target="_blank" rel="noreferrer">
+          {CONTRACT.slice(0, 6)}…{CONTRACT.slice(-4)}
+        </a>
+        . A demo run takes roughly 30–60 seconds.
+      </p>
     </main>
   );
 }
