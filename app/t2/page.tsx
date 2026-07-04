@@ -22,6 +22,16 @@ export default function T2Page() {
             contract caps the budget. No LLM key required.
           </p>
         </Link>
+        <Link
+          href="/composites"
+          className="rounded-xl border border-emerald-400/15 bg-black/30 p-5 transition hover:border-emerald-400/40"
+        >
+          <div className="text-lg font-semibold text-emerald-100">Composite mandates · clearing pools</div>
+          <p className="mt-1 text-sm text-emerald-50/70">
+            Three buyer agents pool one group buy; the contract clears everyone at one uniform price in a single
+            atomic transaction. Runs on the T2 composite build of MandateRegistry, a separate testnet deployment.
+          </p>
+        </Link>
       </div>
     </main>
   );

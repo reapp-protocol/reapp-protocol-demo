@@ -8,6 +8,7 @@ const links = [
   { href: "/", label: "Docs" },
   { href: "/research", label: "Research demo" },
   { href: "/video", label: "Video demo" },
+  { href: "/composites", label: "Composites" },
 ];
 
 export default function Nav() {
@@ -24,7 +25,7 @@ export default function Nav() {
           <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-emerald-300 to-emerald-600 text-sm font-black text-[#06241a] shadow-[0_0_18px_-2px_rgba(52,211,153,0.7)] ring-1 ring-emerald-300/40">R</span>
           <span className="font-bold tracking-tight">REAPP</span>
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap">
           {links.map((l) => {
             const active = path === l.href;
             return (

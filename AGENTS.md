@@ -34,9 +34,15 @@ video demo still works and the research page shows a notice.
   Tranche 1 review. Source: `app/t2/page.tsx`.
 - `/t2/demo` — live **xterm.js terminal** that runs the real `reapp` CLI on the
   server and streams its output. Source: `app/t2/demo/page.tsx`.
+- `/composites` — composite mandates (clearing pools) demo: three buyer agents pool one
+  group buy; the contract clears everyone at one uniform price in a single atomic
+  transaction. Runs against the T2 composite build of MandateRegistry (a separate
+  testnet deployment; id pinned in `lib/composites-client.ts`). Source: `app/composites/page.tsx`.
 
-Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video · T2.
-T1 pages stay grouped first; all Tranche 2 surfaces live under the single `/t2` section.
+Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video · Composites.
+T1 pages stay grouped first. Tranche 2 surfaces live under the single `/t2` section, with
+one deliberate exception: `/composites` is exposed top-level (product decision) and is also
+linked from the `/t2` hub.
 
 ## Key files
 
@@ -46,6 +52,8 @@ T1 pages stay grouped first; all Tranche 2 surfaces live under the single `/t2` 
 - `app/api/research/route.ts` — streams the research run as newline-delimited JSON.
 - `vendor/reapp-cli.mjs` — self-contained bundle of the reapp CLI (fixed core inlined). See `vendor/README.md` to regenerate.
 - `app/api/cli/route.ts` — spawns `vendor/reapp-cli.mjs <args>` per session (cwd + REAPP_HOME) and streams raw stdout/stderr; allow-lists the CLI subcommands.
+- `lib/composites-client.ts` — vendored typed client for the T2 composite contract build (regenerate with `stellar contract bindings typescript` in reapp-protocol).
+- `lib/composites-server.ts` — the group-buy generator: pool, three buyers, deadline auction, atomic capture; streamed by `app/api/composites/route.ts`.
 
 ## Conventions
 
