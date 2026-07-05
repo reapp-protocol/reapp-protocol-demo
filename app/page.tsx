@@ -109,7 +109,7 @@ export default function Docs() {
             "The allowance is granted to the CONTRACT, never the agent — funds stay in the user's wallet until the contract pulls them.",
             "execute_payment re-checks scope, budget, expiry, and replay against on-chain state on every spend.",
             "State is written before the transfer (checks-effects-interactions) — no reentrancy window.",
-            "Independently audited (BulletproofBar, 0 confirmed defects) + 19 contract tests.",
+            "Adversarial gate check passed (BulletproofBar, 0 confirmed defects) + 19 contract tests.",
           ].map((t) => (
             <li key={t} className="flex gap-2">
               <span className="mt-0.5 text-emerald-400">✓</span> {t}

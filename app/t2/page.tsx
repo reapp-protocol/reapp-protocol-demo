@@ -1,14 +1,14 @@
 import Link from "next/link";
 
-export const metadata = { title: "Tranche 2 · REAPP" };
+export const metadata = { title: "Toolkit preview · REAPP" };
 
 export default function T2Page() {
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
-      <h1 className="text-2xl font-semibold text-white">Tranche 2 · developer toolkit</h1>
+      <h1 className="text-2xl font-semibold text-white">Developer toolkit · preview</h1>
       <p className="mt-2 leading-relaxed text-emerald-50/80">
-        Work in progress, kept separate from the Tranche 1 deliverables under review. Everything new for Tranche 2 is
-        collected here, on the same live testnet contract.
+        Work in progress, kept separate from the main demos while it stabilizes. Everything new is collected here, on
+        the live testnet contracts.
       </p>
 
       <div className="mt-6 grid gap-4">

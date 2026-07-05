@@ -225,7 +225,7 @@ export default function CompositesPage() {
           className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90"
         >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          TRANCHE 2 · COMPOSITE MANDATES · TESTNET
+          COMPOSITE MANDATES · CLEARING POOLS · TESTNET
         </motion.div>
         <motion.h1
           variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}

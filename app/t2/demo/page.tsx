@@ -96,7 +96,7 @@ export default function T2DemoPage() {
   return (
     <main className="mx-auto max-w-4xl px-5 py-10">
       <Link href="/t2" className="text-sm text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
-        ← Tranche 2
+        ← Toolkit preview
       </Link>
       <h1 className="mt-3 text-2xl font-semibold text-white">CLI · live terminal</h1>
       <p className="mt-2 leading-relaxed text-emerald-50/80">

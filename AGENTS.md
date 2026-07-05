@@ -62,6 +62,10 @@ by direct link only; the `/t2` hub links to `/composites`.
   *LLM*. The only allowed references are functional and required to run: the
   `@anthropic-ai/sdk` import, the `model:` strings passed to `client.messages.create(...)`
   in `lib/research-agent.ts`, and the `ANTHROPIC_API_KEY` env var name.
+- **Terminology (hard rule):** never "audit" in copy/docs/commits — say "gate check";
+  never "Tranche" or "milestone"; no grant-program wording on any user-visible page.
+  (The verb "grant" for SEP-41 allowances is fine.) The `/t2` route name stays; its
+  user-visible copy says "Developer toolkit · preview".
 - **No marketing hype / AI-slop copy.** Avoid empty intensifiers ("NO MOCKS",
   "*-POWERED", "slick", "Premium", emphatic "Real …"). Keep concrete, accurate
   technical statements (the on-chain budget cap, contract-enforced limits, revocable mandate).
