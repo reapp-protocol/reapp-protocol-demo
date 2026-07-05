@@ -32,7 +32,7 @@ swapping providers is a config change, not a code change.
 - **No markup, no extra balance.** We spend the providers' own credits on
   accounts we control, not a funded OpenRouter balance with a per-call fee.
 - **Day-one models + full features**, with no wait for a router to support them.
-- **We own the policy.** ~250 auditable lines, not a black box.
+- **We own the policy.** ~250 reviewable lines, not a black box.
 - **One less key/account to secure.**
 
 Bottom line: OpenRouter solves "many providers behind one key." We have two,
