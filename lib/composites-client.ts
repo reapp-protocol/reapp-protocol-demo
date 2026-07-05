@@ -1,11 +1,12 @@
 /**
- * Vendored typed client for the Tranche 2 composite build of MandateRegistry
- * (clearing pools). Generated with `stellar contract bindings typescript` from
- * the deployed wasm in the reapp-protocol repo; regenerate there and re-copy
- * whenever the contract ABI changes. The contract id below is a SEPARATE
- * testnet deployment from the T1 contract the published SDK pins; the T1
- * demos are untouched by it. Server-side only (see next.config.mjs
- * serverExternalPackages).
+ * Vendored typed client for the composite build of MandateRegistry (clearing
+ * pools), source-verified on StellarExpert against
+ * github.com/reapp-protocol/reapp-protocol-contracts. Generated with
+ * `stellar contract bindings typescript` from the deployed wasm in the
+ * reapp-protocol repo; regenerate there and re-copy whenever the contract ABI
+ * changes. The contract id below is a SEPARATE testnet deployment from the
+ * original contract the published SDK pins; the earlier demos are untouched
+ * by it. Server-side only (see next.config.mjs serverExternalPackages).
  */
 import { Buffer } from "buffer";
 import { Address } from "@stellar/stellar-sdk";
@@ -45,7 +46,7 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CAO3X5WKCW7DGDB5UV6UPAMVA63LSMK2QPODZUAWZZBNJYLWXXJOOQPY",
+    contractId: "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX",
   },
 } as const;
 
