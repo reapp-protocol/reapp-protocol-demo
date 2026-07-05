@@ -39,10 +39,10 @@ video demo still works and the research page shows a notice.
   transaction. Runs against the T2 composite build of MandateRegistry (a separate
   testnet deployment; id pinned in `lib/composites-client.ts`). Source: `app/composites/page.tsx`.
 
-Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video · Composites.
-T1 pages stay grouped first. Tranche 2 surfaces live under the single `/t2` section, with
-one deliberate exception: `/composites` is exposed top-level (product decision) and is also
-linked from the `/t2` hub.
+Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video.
+T1 pages stay grouped first. Tranche 2 surfaces are UNLISTED (not in the nav, per team
+decision — no tranche-era items in the site chrome): `/t2` and `/composites` are reachable
+by direct link only; the `/t2` hub links to `/composites`.
 
 ## Key files
 
