@@ -1,7 +1,7 @@
 /**
  * Composite-mandate (clearing pool) demo orchestration. Runs only in API
  * routes (Node). Drives the full group-buy lifecycle on Stellar testnet
- * against the Tranche 2 composite build of MandateRegistry and yields typed
+ * against the composite MandateRegistry deployment and yields typed
  * progress events, mirroring the research agent's generator pattern.
  *
  * The scenario, from the composite spec: a vendor minimum of 9 units and
@@ -217,7 +217,7 @@ export async function* runGroupBuy(): AsyncGenerator<CompositeEvent> {
 
   // 2 · Three independent buyers join, in parallel: each signs its mandate
   // (schedule + pool binding + budget = the entire capture authorization),
-  // grants the SEP-41 allowance to the CONTRACT, then anyone commits it.
+  // approves the SEP-41 allowance to the CONTRACT, then anyone commits it.
   yield { type: "status", text: "Three buyer agents sign, fund, and commit their child mandates…" };
   const vcHashes: Buffer[] = buyers.map(() => randomBytes(32));
   const queue: CompositeEvent[] = [];

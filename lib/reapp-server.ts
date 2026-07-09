@@ -54,7 +54,7 @@ export async function init() {
  *  exact same mandate (same nonce, same id) on every action. */
 export type MandateInputs = CreateIntentMandateInput;
 
-/** Register the mandate + grant the SEP-41 allowance (user-signed). */
+/** Register the mandate + approve the SEP-41 allowance (user-signed). */
 export async function setup(args: {
   userSecret: string;
   agentPublic: string;

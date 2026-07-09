@@ -105,7 +105,7 @@ expiry: u64;
  */
 max_amount: i128;
   /**
- * MVP: single allowed payee (scope). T1: `Vec<Address>` or scope-hash.
+ * Single allowed payee (scope). Future scope forms can use `Vec<Address>` or scope-hash.
  */
 merchant: string;
   /**
@@ -118,7 +118,7 @@ pool_id: Option<Buffer>;
  */
 price_schedule: Array<SchedulePoint>;
   /**
- * Monotonic payment counter (mandate-level audit / replay guard).
+ * Monotonic payment counter (mandate-level gatecheck / replay guard).
  */
 seq: u32;
   /**
@@ -127,7 +127,7 @@ seq: u32;
 spent: i128;
   status: Status;
   /**
- * Signer of the AP2 IntentMandate; grants the SEP-41 allowance.
+ * Signer of the AP2 IntentMandate; approves the SEP-41 allowance.
  */
 user: string;
   /**
@@ -267,7 +267,7 @@ export interface Client {
 
   /**
    * Construct and simulate a get_mandate transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Read-only accessor for the stored mandate (audit / preflight).
+   * Read-only accessor for the stored mandate (gatecheck / preflight).
    */
   get_mandate: ({mandate_id}: {mandate_id: Buffer}, options?: MethodOptions) => Promise<AssembledTransaction<Result<Mandate>>>
 

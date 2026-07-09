@@ -9,7 +9,7 @@ export const maxDuration = 300;
 
 const BUNDLE = join(process.cwd(), "vendor", "reapp-cli.mjs");
 
-// Only the reapp CLI's own subcommands. spawn uses an arg array (no shell), and
+// Only the reapp-protocol-cli subcommands. spawn uses an arg array (no shell), and
 // every token must be a plain identifier/flag — no shell metacharacters.
 const ALLOWED_FIRST = new Set(["init", "setup", "mandate", "pay", "demo", "--help", "--version"]);
 const TOKEN = /^[A-Za-z0-9._:/-]+$/;
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   // Per-session working dir so init/setup/mandate/pay share state across calls.
   const sessionId = typeof body.sessionId === "string" && /^[A-Za-z0-9-]{6,40}$/.test(body.sessionId) ? body.sessionId : "anon";
-  const home = join(tmpdir(), "reapp-cli", sessionId);
+  const home = join(tmpdir(), "reapp-protocol-cli", sessionId);
   mkdirSync(home, { recursive: true });
 
   log.info("POST /api/cli", { cmd: args.join(" "), session: sessionId.slice(0, 8) });

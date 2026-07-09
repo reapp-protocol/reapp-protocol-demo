@@ -32,7 +32,7 @@ const data = await res.json(); // served only after the payment verifies`;
 const API: [string, string][] = [
   ["reapp.createIntentMandate(input)", "Build a mandate + its on-chain id (no chain call)"],
   ["reapp.registerMandate(m, { signer })", "Store it on-chain, user-signed"],
-  ["reapp.approveBudget(m, { signer })", "Grant the contract a SEP-41 allowance, user-signed"],
+  ["reapp.approveBudget(m, { signer })", "Approve the contract for SEP-41 spending, user-signed"],
   ["reapp.agent({ mandate, signer }).pay(amt)", "Execute a mandate-validated payment, agent-signed"],
   ["reapp.agent({ mandate, signer }).fetch(url)", "x402: GET a 402-gated URL, pay on-chain, return the response"],
   ["reapp.revokeMandate(m, { signer })", "Withdraw consent, user-signed"],
@@ -106,10 +106,10 @@ export default function Docs() {
         <H>Why it&apos;s safe</H>
         <ul className="space-y-2 text-sm text-emerald-100/70">
           {[
-            "The allowance is granted to the CONTRACT, never the agent — funds stay in the user's wallet until the contract pulls them.",
+            "The allowance is approved for the CONTRACT, never the agent — funds stay in the user's wallet until the contract pulls them.",
             "execute_payment re-checks scope, budget, expiry, and replay against on-chain state on every spend.",
             "State is written before the transfer (checks-effects-interactions) — no reentrancy window.",
-            "Adversarial gate check passed (BulletproofBar, 0 confirmed defects) + 19 contract tests.",
+            "Adversarial gatecheck passed (BulletproofBar, 0 confirmed defects) + 19 contract tests.",
           ].map((t) => (
             <li key={t} className="flex gap-2">
               <span className="mt-0.5 text-emerald-400">✓</span> {t}

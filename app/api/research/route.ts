@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
     log.err("research aborted: no LLM provider key set");
     return new Response(
-      line({ type: "error", message: "No LLM provider key set on the server. Add ANTHROPIC_API_KEY and/or OPENAI_API_KEY in Railway (service → Variables) to run the agent." }),
+      line({ type: "error", message: "No LLM provider key set on the server. Add a provider key in Railway variables to run the agent." }),
       { headers: { "content-type": "application/x-ndjson; charset=utf-8" } },
     );
   }
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     async start(controller) {
       try {
         for await (const ev of runResearch(body as RunArgs)) {
-          // Verbose: surface the agent's on-chain milestones in the server logs.
+          // Verbose: surface the agent's on-chain checkpoints in the server logs.
           if (ev.type === "provider_switch") log.warn(`LLM failover · ${ev.text}`);
           else if (ev.type === "purchase_attempt") log.step(`agent buying ${ev.label}`, { reason: ev.reason.slice(0, 48) });
           else if (ev.type === "purchase_ok") log.chain(`paid 1 XLM · ${ev.label}`, { tx: ev.hash.slice(0, 10) });

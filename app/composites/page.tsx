@@ -39,7 +39,7 @@ type Cleared = { hash: string; priceXlm: number; totalQty: number; totalXlm: num
 
 const STEP_LABEL: Record<StepKey, string> = {
   register: "sign mandate",
-  approve: "grant allowance",
+  approve: "approve allowance",
   commit: "commit to pool",
 };
 const short = (s: string) => `${s.slice(0, 4)}…${s.slice(-4)}`;

@@ -18,8 +18,9 @@ export default function T2Page() {
         >
           <div className="text-lg font-semibold text-emerald-100">CLI demo · research agent</div>
           <p className="mt-1 text-sm text-emerald-50/70">
-            Run the reapp CLI&apos;s research-agent flow live on testnet: the agent buys sources on-chain until the
-            contract caps the budget. No LLM key required.
+            Run the reapp-protocol-cli research-agent flow live on testnet with the installed command{" "}
+            <span className="font-mono">reapp</span>: the agent buys sources on-chain until the contract caps the
+            budget. No LLM key required.
           </p>
         </Link>
         <Link
@@ -29,7 +30,7 @@ export default function T2Page() {
           <div className="text-lg font-semibold text-emerald-100">Composite mandates · clearing pools</div>
           <p className="mt-1 text-sm text-emerald-50/70">
             Three buyer agents pool one group buy; the contract clears everyone at one uniform price in a single
-            atomic transaction. Runs on the T2 composite build of MandateRegistry, a separate testnet deployment.
+            atomic transaction. Runs on the composite MandateRegistry testnet deployment.
           </p>
         </Link>
       </div>

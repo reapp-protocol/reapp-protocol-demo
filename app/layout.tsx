@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import IntroGate from "@/components/IntroGate";
-
-const display = Space_Grotesk({ subsets: ["latin"], display: "swap" });
 
 const SITE = process.env.RAILWAY_PUBLIC_DOMAIN
   ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
@@ -39,7 +36,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={display.className}>
+    <html lang="en">
       <body className="min-h-screen antialiased">
         <Nav />
         {children}

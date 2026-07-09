@@ -3120,7 +3120,7 @@ __export(dist_exports, {
 var DEPLOYMENTS = {
   testnet: {
     /** Deployed MandateRegistry contract id. */
-    mandateRegistryId: "CB4KOTLGMM5JEPFPU6QBJLADIBP3RSGUX44FOYTFRICNXKKFPYIW7ZOA",
+    mandateRegistryId: "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX",
     /** Native XLM Stellar Asset Contract — a real SEP-41 token. */
     nativeSac: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
   }
@@ -3158,7 +3158,30 @@ var Errors = {
   6: { message: "BudgetExceeded" },
   7: { message: "MerchantOutOfScope" },
   8: { message: "BadSequence" },
-  9: { message: "InvalidAmount" }
+  9: { message: "InvalidAmount" },
+  11: { message: "PoolNotFound" },
+  12: { message: "PoolNotOpen" },
+  13: { message: "ScheduleInvalid" },
+  14: { message: "PoolMerchantMismatch" },
+  15: { message: "PoolAssetMismatch" },
+  16: { message: "DeadlinePassed" },
+  /**
+   * Reserved for outcome-style reporting; the abort branch is a success
+   * (state flip + event), not an error.
+   */
+  17: { message: "ThresholdNotMet" },
+  18: { message: "PoolFull" },
+  19: { message: "BadPoolState" },
+  20: { message: "MandatePooled" },
+  21: { message: "InsufficientFunds" },
+  22: { message: "KindNotSupported" },
+  25: { message: "NotPooled" },
+  26: { message: "ExpiryBeforeDeadline" },
+  27: { message: "BelowMinChild" },
+  28: { message: "DuplicateMember" },
+  29: { message: "DeadlineNotReached" },
+  30: { message: "DeadlineTooFar" },
+  31: { message: "MemberStillEligible" }
 };
 var Client = class extends ContractClient {
   options;
@@ -3167,22 +3190,44 @@ var Client = class extends ContractClient {
   }
   constructor(options) {
     super(new ContractSpec([
+      "AAAAAAAAACVSZWFkLW9ubHkgYWNjZXNzb3IgZm9yIGEgc3RvcmVkIHBvb2wuAAAAAAAACGdldF9wb29sAAAAAQAAAAAAAAAHcG9vbF9pZAAAAAPuAAAAIAAAAAEAAAPpAAAH0AAAAAxDbGVhcmluZ1Bvb2wAAAAD",
+      "AAAAAAAAAN9DbG9zZSB0aGUgZGVhZGxpbmUgYXVjdGlvbjogY2FwdHVyZSAoYWxsIGxlZ3MgaW4gdGhpcyBvbmUgdHJhbnNhY3Rpb24pCmlmIHRoZSB0aHJlc2hvbGQgcHJlZGljYXRlIGhvbGRzIHdpdGhpbiB0aGUgY2FwdHVyZSB3aW5kb3csIGVsc2UgYWJvcnQKYW5kIHJlbGVhc2UgZXZlcnkgY29tbWl0dGVkIGNoaWxkLiBDYWxsYWJsZSBieSBhbnlvbmUsIG5ldmVyIGJlZm9yZQp0aGUgZGVhZGxpbmUuAAAAAApjbGVhcl9wb29sAAAAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
+      "AAAAAAAAAHNSZW1vdmUgYW4gb2JqZWN0aXZlbHktaW5lbGlnaWJsZSBtZW1iZXIgYW5kIGZyZWUgaXRzIHNsb3QuClBlcm1pc3Npb25sZXNzOyBjYW4gbmV2ZXIgZXZpY3QgYSBzdGlsbC1lbGlnaWJsZSBtZW1iZXIuAAAAAAtldmljdF9jaGlsZAAAAAACAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
       "AAAAAAAAAD5SZWFkLW9ubHkgYWNjZXNzb3IgZm9yIHRoZSBzdG9yZWQgbWFuZGF0ZSAoYXVkaXQgLyBwcmVmbGlnaHQpLgAAAAAAC2dldF9tYW5kYXRlAAAAAAEAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAQAAA+kAAAfQAAAAB01hbmRhdGUAAAAAAw==",
-      "AAAAAAAAAEpVc2VyIHdpdGhkcmF3cyBjb25zZW50OyBtYXJrcyB0aGUgbWFuZGF0ZSBSZXZva2VkLiBBdXRob3JpemVkIGJ5IHRoZSB1c2VyLgAAAAAADnJldm9rZV9tYW5kYXRlAAAAAAABAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
-      "AAAAAAAAAV1UaGUgb25seSBtb25leSBwYXRoLiBBdG9taWM6IHJlcXVpcmVfYXV0aChhZ2VudCkg4oaSIHJlcGxheSBndWFyZAooYGV4cGVjdGVkX3NlcWAgPT0gY3VycmVudCBgc2VxYCwgZWxzZSBgQmFkU2VxdWVuY2VgKSDihpIgcmUtdmFsaWRhdGUg4oaSCmFkdmFuY2Ugc3BlbnQrc2VxIOKGkiBTRVAtNDEgdHJhbnNmZXJfZnJvbSh1c2VyIOKGkiBtZXJjaGFudCkuIFJldmVydHMgb24gYW55CmZhaWx1cmUuIGBleHBlY3RlZF9zZXFgIGlzIHRoZSBtYW5kYXRlJ3MgY3VycmVudCBzZXF1ZW5jZSAocmVhZCBmcm9tCmBnZXRfbWFuZGF0ZWApLCBwcmV2ZW50aW5nIGR1cGxpY2F0ZS9vdXQtb2Ytb3JkZXIgY29uc3VtcHRpb24uAAAAAAAAD2V4ZWN1dGVfcGF5bWVudAAAAAADAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAxleHBlY3RlZF9zZXEAAAAEAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
-      "AAAAAAAAAMJTdG9yZSBhIHVzZXItc2lnbmVkIG1hbmRhdGUgZnJvbSBpdHMgYXV0aG9yaXplZCBwYXJhbWV0ZXJzLiBUaGUgY29udHJhY3QKc2V0cyBgc3BlbnQ9MCwgc2VxPTAsIHN0YXR1cz1BY3RpdmVgIGl0c2VsZi4gQXV0aG9yaXplZCBieSBgdXNlcmAuClJldHVybnMgdGhlIG1hbmRhdGUgaWQgKD0gYHZjX2hhc2hgLCB0aGUgc3RvcmFnZSBrZXkpLgAAAAAAEHJlZ2lzdGVyX21hbmRhdGUAAAAHAAAAAAAAAAR1c2VyAAAAEwAAAAAAAAAFYWdlbnQAAAAAAAATAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAABWFzc2V0AAAAAAAAEwAAAAAAAAAKbWF4X2Ftb3VudAAAAAAACwAAAAAAAAAGZXhwaXJ5AAAAAAAGAAAAAAAAAAd2Y19oYXNoAAAAA+4AAAAgAAAAAQAAA+kAAAPuAAAAIAAAAAM=",
-      "AAAAAAAAAMtSZWFkLW9ubHkgcHJlZmxpZ2h0IOKAlCB3b3VsZCB0aGlzIHNwZW5kIGJlIHBlcm1pdHRlZCByaWdodCBub3c/IE11dGF0ZXMKbm90aGluZyBhbmQgcmVxdWlyZXMgbm8gYXV0aDsgdGhlIGF1dGhvcml0YXRpdmUgY29uc3VtZSBoYXBwZW5zIG9ubHkgaW4KYGV4ZWN1dGVfcGF5bWVudGAuIChJdCBpcyBhIGRyeS1ydW47IGl0IGNvbnN1bWVzIG5vdGhpbmcuKQAAAAAQdmFsaWRhdGVfbWFuZGF0ZQAAAAMAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAPpAAAD7QAAAAAAAAAD",
-      "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAACAAAAAAAAAANQWxyZWFkeUV4aXN0cwAAAAAAAAEAAAAAAAAACE5vdEZvdW5kAAAAAgAAAAAAAAAOTWFuZGF0ZUV4cGlyZWQAAAAAAAQAAAAAAAAADk1hbmRhdGVSZXZva2VkAAAAAAAFAAAAAAAAAA5CdWRnZXRFeGNlZWRlZAAAAAAABgAAAAAAAAASTWVyY2hhbnRPdXRPZlNjb3BlAAAAAAAHAAAAAAAAAAtCYWRTZXF1ZW5jZQAAAAAIAAAAAAAAAA1JbnZhbGlkQW1vdW50AAAAAAAACQ==",
+      "AAAAAAAAAIBMaW5rIGEgcG9vbGVkIG1hbmRhdGUgaW50byBpdHMgcG9vbCBhcyBhIENvbW1pdHRlZCBtZW1iZXIuClBlcm1pc3Npb25sZXNzIChvYmplY3RpdmUgY2hlY2tzIG9ubHkpOyByZXZvY2FibGUgdW50aWwgdGhlIGRlYWRsaW5lLgAAAAxjb21taXRfY2hpbGQAAAABAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
+      "AAAAAAAAAQxSZWdpc3RlciBhIGNsZWFyaW5nIHBvb2wuIFRoZSByZXR1cm5lZCBwb29sIGlkIGlzIGRlcml2ZWQgZnJvbSB0aGUKdGVybXMgKHNoYTI1NiBvZiB0aGVpciBYRFIpLCBzbyB0aGUgaWQgY29tbWl0cyB0byB0aGUgdGVybXMuCkF1dGhvcml6ZWQgYnkgYG9yaWdpbmF0b3JgIOKAlCB0aGUgbGFzdCBzcGVjaWFsIHNpZ25hdHVyZSB0aGUgcG9vbCBldmVyCnJlcXVpcmVzOiBldmVyeXRoaW5nIGFmdGVyIHRoaXMgaXMgcGVybWlzc2lvbmxlc3MgYW5kIGRldGVybWluaXN0aWMuAAAADXJlZ2lzdGVyX3Bvb2wAAAAAAAAJAAAAAAAAAApvcmlnaW5hdG9yAAAAAAATAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAABWFzc2V0AAAAAAAAEwAAAAAAAAAEa2luZAAAB9AAAAAMQ2xlYXJpbmdLaW5kAAAAAAAAAA10aHJlc2hvbGRfcXR5AAAAAAAACgAAAAAAAAAPdGhyZXNob2xkX3ZhbHVlAAAAAAoAAAAAAAAAD21pbl9jaGlsZF92YWx1ZQAAAAAKAAAAAAAAABFjbGVhcmluZ19kZWFkbGluZQAAAAAAAAYAAAAAAAAABW5vbmNlAAAAAAAD7gAAACAAAAABAAAD6QAAA+4AAAAgAAAAAw==",
+      "AAAAAAAAAJVVc2VyIHdpdGhkcmF3cyBjb25zZW50OyBtYXJrcyB0aGUgbWFuZGF0ZSBSZXZva2VkLiBBdXRob3JpemVkIGJ5IHRoZQp1c2VyLiBBbHNvIGZyZWVzIHRoZSBwb29sIHNsb3Qgb2YgYSBDb21taXR0ZWQgY2hpbGQgKGl0cyBvbmUKcHJlLWRlYWRsaW5lIGV4aXQpLgAAAAAAAA5yZXZva2VfbWFuZGF0ZQAAAAAAAQAAAAAAAAAKbWFuZGF0ZV9pZAAAAAAD7gAAACAAAAABAAAD6QAAA+0AAAAAAAAAAw==",
+      "AAAAAAAAAM1SZWFkLW9ubHk6IHRoZSBleGFjdCBvdXRjb21lIGBjbGVhcl9wb29sYCB3b3VsZCBleGVjdXRlIGFnYWluc3QgY3VycmVudApsZWRnZXIgc3RhdGUuIFNhbWUgYnVpbGRlciwgc2FtZSBjbGVhcmluZyBmdW5jdGlvbiDigJQgcmVjb21wdXRlIHRoaXMgdG8KdmVyaWZ5IHRoZSBvcmlnaW5hdG9yIGhhZCBubyBkaXNjcmV0aW9uIG92ZXIgdGhlIGFsbG9jYXRpb24uAAAAAAAADnNpbXVsYXRlX2NsZWFyAAAAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAfQAAAADENsZWFyT3V0Y29tZQAAAAM=",
+      "AAAAAAAAAV1UaGUgc29sbyBtb25leSBwYXRoLiBBdG9taWM6IHJlcXVpcmVfYXV0aChhZ2VudCkg4oaSIHJlcGxheSBndWFyZAooYGV4cGVjdGVkX3NlcWAgPT0gY3VycmVudCBgc2VxYCwgZWxzZSBgQmFkU2VxdWVuY2VgKSDihpIgcmUtdmFsaWRhdGUg4oaSCmFkdmFuY2Ugc3BlbnQrc2VxIOKGkiBTRVAtNDEgdHJhbnNmZXJfZnJvbSh1c2VyIOKGkiBtZXJjaGFudCkuIFJldmVydHMgb24gYW55CmZhaWx1cmUuIGBleHBlY3RlZF9zZXFgIGlzIHRoZSBtYW5kYXRlJ3MgY3VycmVudCBzZXF1ZW5jZSAocmVhZCBmcm9tCmBnZXRfbWFuZGF0ZWApLCBwcmV2ZW50aW5nIGR1cGxpY2F0ZS9vdXQtb2Ytb3JkZXIgY29uc3VtcHRpb24uAAAAAAAAD2V4ZWN1dGVfcGF5bWVudAAAAAADAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAxleHBlY3RlZF9zZXEAAAAEAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
+      "AAAAAAAAAFdSZWFkLW9ubHk6IGN1cnJlbnQgbWVtYmVyIG1hbmRhdGUgaWRzIChjb21taXQgb3JkZXI7IGZyb3plbiBvbmNlIHRoZQpwb29sIGlzIHRlcm1pbmFsKS4AAAAAEGdldF9wb29sX21lbWJlcnMAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAPqAAAD7gAAACAAAAAD",
+      "AAAAAAAAAbZTdG9yZSBhIHVzZXItc2lnbmVkIG1hbmRhdGUgZnJvbSBpdHMgYXV0aG9yaXplZCBwYXJhbWV0ZXJzLiBUaGUgY29udHJhY3QKc2V0cyBgc3BlbnQ9MCwgc2VxPTAsIHN0YXR1cz1BY3RpdmVgIGl0c2VsZi4gQXV0aG9yaXplZCBieSBgdXNlcmAuClJldHVybnMgdGhlIG1hbmRhdGUgaWQgKD0gYHZjX2hhc2hgLCB0aGUgc3RvcmFnZSBrZXkpLgoKYHBvb2xfaWQgPSBOb25lYCArIGVtcHR5IGBwcmljZV9zY2hlZHVsZWAgPT0gYSBzdGFuZGFsb25lIG1hbmRhdGUKKHRoZSBwcmUtY29tcG9zaXRlIGJlaGF2aW9yLCB1bmNoYW5nZWQpLiBgcG9vbF9pZCA9IFNvbWUoaWQpYCBiaW5kcyB0aGUKbWFuZGF0ZSB0byBhIGNsZWFyaW5nIHBvb2w7IHRoZSBzY2hlZHVsZSBpcyB0aGUgdXNlcidzIGF1dGhvcml6YXRpb24KZm9yIHRoZSBwb29sIHBhdGggKHNlZSBgcmVnaXN0cnlgKS4AAAAAABByZWdpc3Rlcl9tYW5kYXRlAAAACQAAAAAAAAAEdXNlcgAAABMAAAAAAAAABWFnZW50AAAAAAAAEwAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAAAAAAVhc3NldAAAAAAAABMAAAAAAAAACm1heF9hbW91bnQAAAAAAAsAAAAAAAAABmV4cGlyeQAAAAAABgAAAAAAAAAHdmNfaGFzaAAAAAPuAAAAIAAAAAAAAAAHcG9vbF9pZAAAAAPoAAAD7gAAACAAAAAAAAAADnByaWNlX3NjaGVkdWxlAAAAAAPqAAAH0AAAAA1TY2hlZHVsZVBvaW50AAAAAAAAAQAAA+kAAAPuAAAAIAAAAAM=",
+      "AAAAAAAAAURSZWFkLW9ubHkgcHJlZmxpZ2h0IOKAlCB3b3VsZCB0aGlzIHNwZW5kIGJlIHBlcm1pdHRlZCByaWdodCBub3c/IE11dGF0ZXMKbm90aGluZyBhbmQgcmVxdWlyZXMgbm8gYXV0aDsgdGhlIGF1dGhvcml0YXRpdmUgY29uc3VtZSBoYXBwZW5zIG9ubHkgaW4KYGV4ZWN1dGVfcGF5bWVudGAuIChJdCBpcyBhIGRyeS1ydW47IGl0IGNvbnN1bWVzIG5vdGhpbmcuKSBSZWZsZWN0cwpwb29sIHN0YXRlIHRvbzogYSBDb21taXR0ZWQvQ2FwdHVyZWQgY2hpbGQgcHJlZmxpZ2h0cyBgTWFuZGF0ZVBvb2xlZGAsCmV4YWN0bHkgd2hhdCBgZXhlY3V0ZV9wYXltZW50YCB3b3VsZCBkby4AAAAQdmFsaWRhdGVfbWFuZGF0ZQAAAAMAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAPpAAAD7QAAAAAAAAAD",
+      "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAGwAAAAAAAAANQWxyZWFkeUV4aXN0cwAAAAAAAAEAAAAAAAAACE5vdEZvdW5kAAAAAgAAAAAAAAAOTWFuZGF0ZUV4cGlyZWQAAAAAAAQAAAAAAAAADk1hbmRhdGVSZXZva2VkAAAAAAAFAAAAAAAAAA5CdWRnZXRFeGNlZWRlZAAAAAAABgAAAAAAAAASTWVyY2hhbnRPdXRPZlNjb3BlAAAAAAAHAAAAAAAAAAtCYWRTZXF1ZW5jZQAAAAAIAAAAAAAAAA1JbnZhbGlkQW1vdW50AAAAAAAACQAAAAAAAAAMUG9vbE5vdEZvdW5kAAAACwAAAAAAAAALUG9vbE5vdE9wZW4AAAAADAAAAAAAAAAPU2NoZWR1bGVJbnZhbGlkAAAAAA0AAAAAAAAAFFBvb2xNZXJjaGFudE1pc21hdGNoAAAADgAAAAAAAAARUG9vbEFzc2V0TWlzbWF0Y2gAAAAAAAAPAAAAAAAAAA5EZWFkbGluZVBhc3NlZAAAAAAAEAAAAGdSZXNlcnZlZCBmb3Igb3V0Y29tZS1zdHlsZSByZXBvcnRpbmc7IHRoZSBhYm9ydCBicmFuY2ggaXMgYSBzdWNjZXNzCihzdGF0ZSBmbGlwICsgZXZlbnQpLCBub3QgYW4gZXJyb3IuAAAAAA9UaHJlc2hvbGROb3RNZXQAAAAAEQAAAAAAAAAIUG9vbEZ1bGwAAAASAAAAAAAAAAxCYWRQb29sU3RhdGUAAAATAAAAAAAAAA1NYW5kYXRlUG9vbGVkAAAAAAAAFAAAAAAAAAARSW5zdWZmaWNpZW50RnVuZHMAAAAAAAAVAAAAAAAAABBLaW5kTm90U3VwcG9ydGVkAAAAFgAAAAAAAAAJTm90UG9vbGVkAAAAAAAAGQAAAAAAAAAURXhwaXJ5QmVmb3JlRGVhZGxpbmUAAAAaAAAAAAAAAA1CZWxvd01pbkNoaWxkAAAAAAAAGwAAAAAAAAAPRHVwbGljYXRlTWVtYmVyAAAAABwAAAAAAAAAEkRlYWRsaW5lTm90UmVhY2hlZAAAAAAAHQAAAAAAAAAORGVhZGxpbmVUb29GYXIAAAAAAB4AAAAAAAAAE01lbWJlclN0aWxsRWxpZ2libGUAAAAAHw==",
       "AAAAAgAAAAAAAAAAAAAABlN0YXR1cwAAAAAAAwAAAAAAAAAAAAAABkFjdGl2ZQAAAAAAAAAAAAAAAAAHUmV2b2tlZAAAAAAAAAAAAAAAAAlFeGhhdXN0ZWQAAAA=",
-      "AAAAAQAAAAAAAAAAAAAAB01hbmRhdGUAAAAACgAAADdUaGUgT05MWSBwcmluY2lwYWwgcGVybWl0dGVkIHRvIGNhbGwgYGV4ZWN1dGVfcGF5bWVudGAuAAAAAAVhZ2VudAAAAAAAABMAAAArU0VQLTQxIC8gU0FDIGNvbnRyYWN0IGlkIChVU0RDIG9uIHRlc3RuZXQpLgAAAAAFYXNzZXQAAAAAAAATAAAAQUxlZGdlciBjbG9zZSB0aW1lc3RhbXAgKHNlY29uZHMpIGFmdGVyIHdoaWNoIHRoZSBtYW5kYXRlIGlzIGRlYWQuAAAAAAAABmV4cGlyeQAAAAAABgAAACdUb3RhbCBidWRnZXQgYXV0aG9yaXplZCBieSB0aGUgbWFuZGF0ZS4AAAAACm1heF9hbW91bnQAAAAAAAsAAABETVZQOiBzaW5nbGUgYWxsb3dlZCBwYXllZSAoc2NvcGUpLiBUMTogYFZlYzxBZGRyZXNzPmAgb3Igc2NvcGUtaGFzaC4AAAAIbWVyY2hhbnQAAAATAAAAP01vbm90b25pYyBwYXltZW50IGNvdW50ZXIgKG1hbmRhdGUtbGV2ZWwgYXVkaXQgLyByZXBsYXkgZ3VhcmQpLgAAAAADc2VxAAAAAAQAAAA7Q3VtdWxhdGl2ZSBjb25zdW1lZDsgaW52YXJpYW50OiBgMCA8PSBzcGVudCA8PSBtYXhfYW1vdW50YC4AAAAABXNwZW50AAAAAAAACwAAAAAAAAAGc3RhdHVzAAAAAAfQAAAABlN0YXR1cwAAAAAAPVNpZ25lciBvZiB0aGUgQVAyIEludGVudE1hbmRhdGU7IGdyYW50cyB0aGUgU0VQLTQxIGFsbG93YW5jZS4AAAAAAAAEdXNlcgAAABMAAABJSGFzaCBiaW5kaW5nIHRvIHRoZSBvZmYtY2hhaW4gQVAyIEludGVudE1hbmRhdGUgVkM7IGFsc28gdGhlIHN0b3JhZ2Uga2V5LgAAAAAAAAd2Y19oYXNoAAAAA+4AAAAg",
-      "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAAAQAAAAEAAAAAAAAAB01hbmRhdGUAAAAAAQAAA+4AAAAg"
+      "AAAAAQAAAAAAAAAAAAAAB01hbmRhdGUAAAAADQAAADdUaGUgT05MWSBwcmluY2lwYWwgcGVybWl0dGVkIHRvIGNhbGwgYGV4ZWN1dGVfcGF5bWVudGAuAAAAAAVhZ2VudAAAAAAAABMAAAArU0VQLTQxIC8gU0FDIGNvbnRyYWN0IGlkIChVU0RDIG9uIHRlc3RuZXQpLgAAAAAFYXNzZXQAAAAAAAATAAAAQUxlZGdlciBjbG9zZSB0aW1lc3RhbXAgKHNlY29uZHMpIGFmdGVyIHdoaWNoIHRoZSBtYW5kYXRlIGlzIGRlYWQuAAAAAAAABmV4cGlyeQAAAAAABgAAACdUb3RhbCBidWRnZXQgYXV0aG9yaXplZCBieSB0aGUgbWFuZGF0ZS4AAAAACm1heF9hbW91bnQAAAAAAAsAAABETVZQOiBzaW5nbGUgYWxsb3dlZCBwYXllZSAoc2NvcGUpLiBUMTogYFZlYzxBZGRyZXNzPmAgb3Igc2NvcGUtaGFzaC4AAAAIbWVyY2hhbnQAAAATAAAAOWBOb25lYCA9PSBzdGFuZGFsb25lOiBleGFjdGx5IHRoZSBwcmUtY29tcG9zaXRlIGJlaGF2aW9yLgAAAAAAAAdwb29sX2lkAAAAA+gAAAPuAAAAIAAAAAAAAAAKcG9vbF9zdGF0ZQAAAAAH0AAAAAlQb29sU3RhdGUAAAAAAAAoVGhlIGRlbWFuZCBjdXJ2ZTsgZW1wdHkgd2hlbiBzdGFuZGFsb25lLgAAAA5wcmljZV9zY2hlZHVsZQAAAAAD6gAAB9AAAAANU2NoZWR1bGVQb2ludAAAAAAAAD9Nb25vdG9uaWMgcGF5bWVudCBjb3VudGVyIChtYW5kYXRlLWxldmVsIGF1ZGl0IC8gcmVwbGF5IGd1YXJkKS4AAAAAA3NlcQAAAAAEAAAAO0N1bXVsYXRpdmUgY29uc3VtZWQ7IGludmFyaWFudDogYDAgPD0gc3BlbnQgPD0gbWF4X2Ftb3VudGAuAAAAAAVzcGVudAAAAAAAAAsAAAAAAAAABnN0YXR1cwAAAAAH0AAAAAZTdGF0dXMAAAAAAD1TaWduZXIgb2YgdGhlIEFQMiBJbnRlbnRNYW5kYXRlOyBncmFudHMgdGhlIFNFUC00MSBhbGxvd2FuY2UuAAAAAAAABHVzZXIAAAATAAAASUhhc2ggYmluZGluZyB0byB0aGUgb2ZmLWNoYWluIEFQMiBJbnRlbnRNYW5kYXRlIFZDOyBhbHNvIHRoZSBzdG9yYWdlIGtleS4AAAAAAAAHdmNfaGFzaAAAAAPuAAAAIA==",
+      "AAAAAgAAAMNQb29sIGxpbmthZ2UgbGlmZWN5Y2xlLCBvcnRob2dvbmFsIHRvIGBTdGF0dXNgLiBgVW5saW5rZWRgIGFuZCBgUmVsZWFzZWRgCmNoaWxkcmVuIG1heSBzcGVuZCBvbiB0aGUgc29sbyBwYXRoICh0aGVpciBvd24gbGltaXRzIHN0aWxsIGFwcGx5KTsKYENvbW1pdHRlZGAgYW5kIGBDYXB0dXJlZGAgbWF5IG5vdCAoYE1hbmRhdGVQb29sZWRgKS4AAAAAAAAAAAlQb29sU3RhdGUAAAAAAAAEAAAAAAAAAAAAAAAIVW5saW5rZWQAAAAAAAAAAAAAAAlDb21taXR0ZWQAAAAAAAAAAAAAAAAAAAhDYXB0dXJlZAAAAAAAAAAAAAAACFJlbGVhc2Vk",
+      "AAAAAQAAAAAAAAAAAAAADVNjaGVkdWxlUG9pbnQAAAAAAAACAAAAPlN0cmljdGx5IGRlc2NlbmRpbmcgYWNyb3NzIHRoZSBzY2hlZHVsZTsgZWFjaCBpbiAoMCwgTUFYX1FUWV0uAAAAAAAHbWF4X3F0eQAAAAAKAAAARFN0cmljdGx5IGFzY2VuZGluZyBhY3Jvc3MgdGhlIHNjaGVkdWxlOyBlYWNoIGluICgwLCBNQVhfVU5JVF9QUklDRV0uAAAACnVuaXRfcHJpY2UAAAAAAAs=",
+      "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAAAwAAAAEAAAAAAAAAB01hbmRhdGUAAAAAAQAAA+4AAAAgAAAAAQAAAAAAAAAEUG9vbAAAAAEAAAPuAAAAIAAAAAEAAAAAAAAAC1Bvb2xNZW1iZXJzAAAAAAEAAAPuAAAAIA==",
+      "AAAAAQAAANNUaGUgcm93IGBwb29sLnJzYCBidWlsZHMgcGVyIGNvbW1pdHRlZCBjaGlsZCBhbmQgZmVlZHMgdG8gYGNsZWFyaW5nOjpjbGVhcmAuCkZlZWRpbmcgcGxhaW4gdmFsdWVzIChub3Qgc3RvcmFnZSBoYW5kbGVzKSBpcyB3aGF0IGtlZXBzIHRoZSBjbGVhcmluZwpmdW5jdGlvbiBwdXJlIGFuZCBtYWtlcyBzaW11bGF0ZSA9PSBjYXB0dXJlIGEgcHJvdmFibGUgZXF1YWxpdHkuAAAAAAAAAAAJQ2hpbGRWaWV3AAAAAAAABAAAAEJEZWNpZGVkIG9uY2UsIGJlZm9yZSBhbnkgcHJpY2UgZXhpc3RzIOKAlCBzZWUgcG9vbC5ycyBlbGlnaWJpbGl0eS4AAAAAAAhlbGlnaWJsZQAAAAEAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAhzY2hlZHVsZQAAA+oAAAfQAAAADVNjaGVkdWxlUG9pbnQAAAAAAAAAAAAACndvcnN0X2Nhc2UAAAAAAAs=",
+      "AAAAAQAAAAAAAAAAAAAACkFsbG9jYXRpb24AAAAAAAIAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAANxdHkAAAAACg==",
+      "AAAAAgAAAAAAAAAAAAAAClBvb2xTdGF0dXMAAAAAAAMAAAAAAAAAAAAAAARPcGVuAAAAAAAAAAAAAAAHQ2xlYXJlZAAAAAAAAAAAAAAAAAdBYm9ydGVkAA==",
+      "AAAAAgAAAAAAAAAAAAAADENsZWFyaW5nS2luZAAAAAMAAAAAAAAAAAAAAA5UaHJlc2hvbGRGbG9vcgAAAAAAAAAAAEZSZXNlcnZlZCBmb3IgU3RhZ2UgMjsgYHJlZ2lzdGVyX3Bvb2xgIHJlamVjdHMgd2l0aCBgS2luZE5vdFN1cHBvcnRlZGAuAAAAAAAMU3BlbmRDZWlsaW5nAAAAAAAAAEZSZXNlcnZlZCBmb3IgU3RhZ2UgMjsgYHJlZ2lzdGVyX3Bvb2xgIHJlamVjdHMgd2l0aCBgS2luZE5vdFN1cHBvcnRlZGAuAAAAAAAPQ2FwYWNpdHlDZWlsaW5nAA==",
+      "AAAAAQAAAAAAAAAAAAAADENsZWFyaW5nUG9vbAAAAAsAAAAAAAAABWFzc2V0AAAAAAAAEwAAAEdVbml4IHNlY29uZHMuIENhcHR1cmUgaXMgYSBkZWFkbGluZSBhdWN0aW9uOiBuZXZlciBiZWZvcmUgdGhpcyBpbnN0YW50LgAAAAARY2xlYXJpbmdfZGVhZGxpbmUAAAAAAAAGAAAAvEZlZSByYXRlIGNhcHR1cmVkIGF0IGByZWdpc3Rlcl9wb29sYDsgY2FwdHVyZSBuZXZlciByZWFkcyBhIGxpdmUgcmF0ZS4KQWx3YXlzIDAgaW4gdGhpcyBkZXBsb3kgKHRoZSBmZWUga25vYiBzaGlwcyBpbiBpdHMgb3duIHBhc3MpOyB0aGUgZmllbGQKZXhpc3RzIHNvIHRoYXQgcGFzcyBpcyBub3QgYW5vdGhlciBBQkkgYnJlYWsuAAAADmZlZV9icHNfcGlubmVkAAAAAAAEAAAAAAAAAARraW5kAAAH0AAAAAxDbGVhcmluZ0tpbmQAAAA9TGl2ZSBDb21taXR0ZWQgbWVtYmVycyB3aGlsZSBPcGVuOyBmcm96ZW4gYXQgdGVybWluYWwgc3RhdHVzLgAAAAAAAAxtZW1iZXJfY291bnQAAAAEAAAAAAAAAAhtZXJjaGFudAAAABMAAABCRmxvb3Igb24gZWFjaCBjb21taXR0aW5nIGNoaWxkJ3Mgd29yc3RfY2FzZSAoYW50aS1kdXN0IHNxdWF0dGluZykuAAAAAAAPbWluX2NoaWxkX3ZhbHVlAAAAAAoAAACDU2lnbnMgYHJlZ2lzdGVyX3Bvb2xgOyBob2xkcyBOTyBsYXRlciBwb3dlciDigJQgY2xlYXJpbmcgaXMgcGVybWlzc2lvbmxlc3MKYW5kIGRldGVybWluaXN0aWMsIHdoaWNoIGlzIHRoZSB3aG9sZSBuby1za2ltIGd1YXJhbnRlZS4AAAAACm9yaWdpbmF0b3IAAAAAABMAAAAAAAAABnN0YXR1cwAAAAAH0AAAAApQb29sU3RhdHVzAAAAAABGVmVuZG9yIG1pbmltdW0gdW5pdHM7IHRoZSBwb29sIGZpcmVzIG9ubHkgaWYgYWdncmVnYXRlIHF0eSByZWFjaGVzIGl0LgAAAAAADXRocmVzaG9sZF9xdHkAAAAAAAAKAAAAQFZlbmRvciBtaW5pbXVtIG9yZGVyIHZhbHVlLCBjb21wYXJlZCBORVQgb2YgZmVlIHRvIHRoZSBtZXJjaGFudC4AAAAPdGhyZXNob2xkX3ZhbHVlAAAAAAo=",
+      "AAAAAQAAAAAAAAAAAAAADENsZWFyT3V0Y29tZQAAAAcAAAAfbWFuZGF0ZV9pZCBvcmRlciwgcXR5ID4gMCBvbmx5LgAAAAALYWxsb2NhdGlvbnMAAAAD6gAAB9AAAAAKQWxsb2NhdGlvbgAAAAAALVRoZSBzaW5nbGUgdW5pZm9ybSBwcmljZSBwKjsgMCB3aGVuIGAhZmlyZXNgLgAAAAAAAA5jbGVhcmluZ19wcmljZQAAAAAACwAAAAAAAAAFZmlyZXMAAAAAAAABAAAAAAAAAAtncm9zc192YWx1ZQAAAAALAAAARGBncm9zc192YWx1ZSAtIHRvdGFsX2ZlZWA7IHRoZSBudW1iZXIgY29tcGFyZWQgdG8gYHRocmVzaG9sZF92YWx1ZWAuAAAACW5ldF92YWx1ZQAAAAAAAAsAAAAAAAAACXRvdGFsX2ZlZQAAAAAAAAsAAAAAAAAACXRvdGFsX3F0eQAAAAAAAAo="
     ]), options);
     this.options = options;
   }
   fromJSON = {
+    get_pool: this.txFromJSON,
+    clear_pool: this.txFromJSON,
+    evict_child: this.txFromJSON,
     get_mandate: this.txFromJSON,
+    commit_child: this.txFromJSON,
+    register_pool: this.txFromJSON,
     revoke_mandate: this.txFromJSON,
+    simulate_clear: this.txFromJSON,
     execute_payment: this.txFromJSON,
+    get_pool_members: this.txFromJSON,
     register_mandate: this.txFromJSON,
     validate_mandate: this.txFromJSON
   };
@@ -3287,6 +3332,9 @@ function defaultConfig() {
     budget: "3.00"
   };
 }
+function networkConfig(config) {
+  return { ...TESTNET, mandateRegistryId: config.contractId };
+}
 function configPath(cwd = process.cwd()) {
   return resolve(cwd, CONFIG_FILE);
 }
@@ -3320,7 +3368,7 @@ function runInit(opts = {}) {
 }
 
 // packages/cli/src/commands/setup.ts
-import { Keypair as Keypair2 } from "@stellar/stellar-sdk";
+import { Keypair as Keypair2, rpc as rpc3 } from "@stellar/stellar-sdk";
 
 // packages/cli/src/secrets.ts
 import { readFileSync as readFileSync2, writeFileSync as writeFileSync2, existsSync as existsSync2, mkdirSync } from "node:fs";
@@ -3348,8 +3396,20 @@ function saveCredentials(creds) {
 
 // packages/cli/src/commands/setup.ts
 var short = (s) => s ? `${s.slice(0, 6)}\u2026${s.slice(-4)}` : "";
-async function friendbot(pub) {
-  await fetch(`https://friendbot.stellar.org/?addr=${pub}`).catch(() => void 0);
+var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fund(pub, server) {
+  for (let round = 0; round < 4; round += 1) {
+    await fetch(`https://friendbot.stellar.org/?addr=${pub}`).catch(() => void 0);
+    for (let i = 0; i < 8; i += 1) {
+      try {
+        await server.getAccount(pub);
+        return;
+      } catch {
+        await sleep2(1e3);
+      }
+    }
+  }
+  throw new Error(`friendbot could not fund ${short(pub)} after several attempts`);
 }
 async function runSetup(opts = {}) {
   if (!configExists()) {
@@ -3362,6 +3422,8 @@ async function runSetup(opts = {}) {
     return;
   }
   const config = configExists() ? loadConfig() : defaultConfig();
+  const net = networkConfig(config);
+  const server = new rpc3.Server(net.rpcUrl);
   const accountUrl = (pub) => `${config.explorer}/account/${pub}`;
   const user = Keypair2.random();
   const agent = Keypair2.random();
@@ -3372,13 +3434,8 @@ async function runSetup(opts = {}) {
     merchant: short(merchant.publicKey())
   });
   log.step("funding via friendbot");
-  await Promise.all([
-    friendbot(user.publicKey()),
-    friendbot(agent.publicKey()),
-    friendbot(merchant.publicKey())
-  ]);
-  await new Promise((r) => setTimeout(r, 3e3));
-  log.chain("accounts funded + settled");
+  await Promise.all([fund(user.publicKey(), server), fund(agent.publicKey(), server), fund(merchant.publicKey(), server)]);
+  log.chain("accounts funded + visible on Soroban RPC");
   const creds = {
     network: config.network,
     userSecret: user.secret(),
@@ -3567,13 +3624,17 @@ var reapp = {
       asset: mandate2.asset,
       max_amount: mandate2.maxAmount,
       expiry: BigInt(mandate2.expiry),
-      vc_hash: mandate2.idBuffer
+      vc_hash: mandate2.idBuffer,
+      // Standalone mandate: no clearing-pool linkage (composite mandates are
+      // registered with a pool id + price schedule via the pool surface).
+      pool_id: void 0,
+      price_schedule: []
     });
     const sent = await at.signAndSend();
     sent.result.unwrap();
     return sent.sendTransactionResponse?.hash ?? "";
   },
-  /** Grant the contract a SEP-41 allowance up to the mandate budget (user-signed). */
+  /** Approve the contract for a SEP-41 allowance up to the mandate budget (user-signed). */
   async approveBudget(mandate2, opts, net = TESTNET) {
     return token_exports.approve(net, mandate2.asset, asKeypair(opts.signer), net.mandateRegistryId, mandate2.maxAmount);
   },
@@ -3626,6 +3687,7 @@ async function runMandateCreate(opts = {}) {
     return;
   }
   const config = loadConfig();
+  const net = networkConfig(config);
   const creds = loadCredentials();
   const txUrl = (hash2) => `${config.explorer}/tx/${hash2}`;
   const budget = opts.budget ?? config.budget;
@@ -3649,9 +3711,9 @@ async function runMandateCreate(opts = {}) {
     merchant: short2(creds.merchantPublic),
     id: short2(mandate2.id)
   });
-  const registerTx = await reapp.registerMandate(mandate2, { signer: creds.userSecret });
+  const registerTx = await reapp.registerMandate(mandate2, { signer: creds.userSecret }, net);
   log.chain("register_mandate confirmed", { tx: short2(registerTx) });
-  const approveTx = await reapp.approveBudget(mandate2, { signer: creds.userSecret });
+  const approveTx = await reapp.approveBudget(mandate2, { signer: creds.userSecret }, net);
   log.chain("approveBudget confirmed (SEP-41 allowance to contract)", { tx: short2(approveTx) });
   const stored = { inputs, id: mandate2.id, registerTx, approveTx };
   const path = saveMandate(stored);
@@ -3664,6 +3726,25 @@ async function runMandateCreate(opts = {}) {
 
 // packages/cli/src/commands/pay.ts
 var short3 = (s) => s ? `${s.slice(0, 6)}\u2026${s.slice(-4)}` : "";
+function rejectionSummary(reason) {
+  const code = (reason.match(/Error\(Contract,\s*#(\d+)\)/) ?? [])[1];
+  switch (code) {
+    case "4":
+      return "MandateExpired";
+    case "5":
+      return "MandateRevoked";
+    case "6":
+      return "BudgetExceeded";
+    case "7":
+      return "MerchantOutOfScope";
+    case "8":
+      return "BadSequence";
+    case "9":
+      return "InvalidAmount";
+    default:
+      return reason.split("\n")[0] ?? reason;
+  }
+}
 async function runPay(amountArg) {
   if (!configExists()) {
     log.warn("no reapp.config.json here \u2014 run `reapp init` first");
@@ -3678,6 +3759,7 @@ async function runPay(amountArg) {
     return;
   }
   const config = loadConfig();
+  const net = networkConfig(config);
   const creds = loadCredentials();
   const stored = loadMandate();
   const txUrl = (hash2) => `${config.explorer}/tx/${hash2}`;
@@ -3685,21 +3767,21 @@ async function runPay(amountArg) {
   const mandate2 = reapp.createIntentMandate(stored.inputs);
   log.step("execute_payment (agent-signed)", { amount: `${amount} XLM`, mandate: short3(mandate2.id) });
   try {
-    const hash2 = await reapp.agent({ mandate: mandate2, signer: creds.agentSecret }).pay(amount);
+    const hash2 = await reapp.agent({ mandate: mandate2, signer: creds.agentSecret }, net).pay(amount);
     log.chain("payment settled on-chain", { tx: short3(hash2) });
     console.log(
       "\n" + c.bold("Payment") + "\n" + c.gray("  amount  ") + c.white(`${amount} XLM`) + "\n" + c.gray("  tx      ") + c.dim(txUrl(hash2)) + "\n"
     );
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    log.err("payment rejected by the contract", { reason });
+    log.err("payment rejected by the contract", { reason: rejectionSummary(reason) });
     log.info("budget, expiry, and replay are enforced on-chain \u2014 the CLI cannot override them");
     process.exitCode = 1;
   }
 }
 
 // packages/cli/src/commands/demo.ts
-import { Keypair as Keypair4, rpc as rpc3 } from "@stellar/stellar-sdk";
+import { Keypair as Keypair4, rpc as rpc4 } from "@stellar/stellar-sdk";
 var SOURCES = [
   { name: "Market Data API", icon: "\u{1F4C8}" },
   { name: "Academic Papers", icon: "\u{1F4DA}" },
@@ -3710,9 +3792,9 @@ var SOURCES = [
 var SOURCE_PRICE = "1.00";
 var BUDGET = "3.00";
 var short4 = (s) => s ? `${s.slice(0, 6)}\u2026${s.slice(-4)}` : "";
-var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
-async function fund(pub) {
-  const server = new rpc3.Server(TESTNET.rpcUrl);
+var sleep3 = (ms) => new Promise((r) => setTimeout(r, ms));
+async function fund2(pub) {
+  const server = new rpc4.Server(TESTNET.rpcUrl);
   for (let round = 0; round < 4; round += 1) {
     await fetch(`https://friendbot.stellar.org/?addr=${pub}`).catch(() => void 0);
     for (let i = 0; i < 8; i += 1) {
@@ -3721,7 +3803,7 @@ async function fund(pub) {
         return;
       } catch {
       }
-      await sleep2(1e3);
+      await sleep3(1e3);
     }
   }
   throw new Error(`friendbot could not fund ${pub} after several attempts`);
@@ -3733,7 +3815,7 @@ async function waitForSeq(client, idBuffer, target, tries = 20) {
       if (Number(md.seq) >= target) return;
     } catch {
     }
-    await sleep2(1e3);
+    await sleep3(1e3);
   }
 }
 async function attemptPurchase(mandate2, agentSecret) {
@@ -3760,7 +3842,7 @@ async function runDemo(target = "research-agent") {
   const agent = Keypair4.random();
   const merchant = Keypair4.random();
   log.step("funding 3 ephemeral testnet accounts via friendbot");
-  await Promise.all([fund(user.publicKey()), fund(agent.publicKey()), fund(merchant.publicKey())]);
+  await Promise.all([fund2(user.publicKey()), fund2(agent.publicKey()), fund2(merchant.publicKey())]);
   log.chain("accounts funded", {
     user: short4(user.publicKey()),
     agent: short4(agent.publicKey()),
@@ -3778,7 +3860,7 @@ async function runDemo(target = "research-agent") {
   const mandate2 = reapp.createIntentMandate(inputs);
   await reapp.registerMandate(mandate2, { signer: user.secret() });
   await reapp.approveBudget(mandate2, { signer: user.secret() });
-  log.chain("mandate registered + allowance granted to contract", { budget: `${BUDGET} XLM`, id: short4(mandate2.id) });
+  log.chain("mandate registered + allowance approved for contract", { budget: `${BUDGET} XLM`, id: short4(mandate2.id) });
   const rclient = registryClient(TESTNET, keypairSigner(agent, TESTNET.networkPassphrase));
   let purchased = 0;
   let seq = 0;
@@ -3812,11 +3894,11 @@ async function runDemo(target = "research-agent") {
 
 // packages/cli/src/index.ts
 var program2 = new Command();
-program2.name("reapp").description("Agent payments on Stellar, enforced on-chain by the REAPP MandateRegistry.").version("0.0.0");
+program2.name("reapp").description("Agent payments on Stellar, enforced on-chain by the REAPP MandateRegistry.").version("0.1.0");
 program2.command("init").description("scaffold a project in the current directory (writes reapp.config.json)").option("-f, --force", "overwrite an existing reapp.config.json").action((opts) => runInit(opts));
 program2.command("setup").description("generate testnet burner keys and fund them via friendbot").option("-f, --force", "regenerate fresh keys, overwriting existing credentials").action((opts) => runSetup(opts));
 var mandate = program2.command("mandate").description("manage AP2 mandates");
-mandate.command("create").description("register an AP2 mandate on-chain and grant the SEP-41 allowance").option("-b, --budget <xlm>", "mandate cap in XLM (default: from reapp.config.json)").option("-e, --expiry <seconds>", "seconds until the mandate expires", "3600").option("-f, --force", "replace an existing stored mandate").action((opts) => runMandateCreate(opts));
+mandate.command("create").description("register an AP2 mandate on-chain and approve the SEP-41 allowance").option("-b, --budget <xlm>", "mandate cap in XLM (default: from reapp.config.json)").option("-e, --expiry <seconds>", "seconds until the mandate expires", "3600").option("-f, --force", "replace an existing stored mandate").action((opts) => runMandateCreate(opts));
 program2.command("pay").description("make an agent-signed payment against the active mandate (budget enforced on-chain)").argument("[amount]", "XLM amount to pay (default: unlockPrice from reapp.config.json)").action((amount) => runPay(amount));
 program2.command("demo").description("run a self-contained on-chain demo (ephemeral accounts, no setup needed)").argument("[target]", "which demo to run", "research-agent").action((target) => runDemo(target));
 program2.parseAsync(process.argv).catch((err) => {

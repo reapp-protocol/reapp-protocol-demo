@@ -57,7 +57,7 @@ export default function Page() {
   }
   async function authorize() {
     if (!wallet) return;
-    setBusy("Registering mandate + granting allowance…"); setErr("");
+    setBusy("Registering mandate + approving allowance…"); setErr("");
     try {
       const r = await api("setup", { userSecret: wallet.userSecret, agentPublic: wallet.agentPublic, merchantPublic: wallet.merchantPublic });
       if (r.error) throw new Error(r.error);

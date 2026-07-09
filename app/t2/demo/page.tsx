@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import "@xterm/xterm/css/xterm.css";
 
-const CONTRACT = "CB4KOTLGMM5JEPFPU6QBJLADIBP3RSGUX44FOYTFRICNXKKFPYIW7ZOA";
+const CONTRACT = "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX";
 
 const QUICK = [
   { label: "demo research-agent", cmd: "demo research-agent" },
@@ -44,7 +44,7 @@ export default function T2DemoPage() {
       fit.fit();
       termRef.current = term;
       fitRef.current = fit;
-      term.writeln("\x1b[2mreapp CLI · pick a command below or type one, then Run.\x1b[0m");
+      term.writeln("\x1b[2mreapp-protocol-cli · installed command: reapp · pick a command below or type one, then Run.\x1b[0m");
       term.writeln("\x1b[2mState (config, keys, mandate) persists across commands in this session.\x1b[0m\r\n");
       setReady(true);
       const onResize = () => fit.fit();
@@ -100,8 +100,8 @@ export default function T2DemoPage() {
       </Link>
       <h1 className="mt-3 text-2xl font-semibold text-white">CLI · live terminal</h1>
       <p className="mt-2 leading-relaxed text-emerald-50/80">
-        This runs the real <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp</code> CLI on the server against Stellar testnet and
-        streams its output here. Try <span className="text-emerald-200">demo research-agent</span>: it funds ephemeral accounts, registers a
+        This runs the real <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp-protocol-cli</code> package on the server through its{" "}
+        <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp</code> command against Stellar testnet and streams its output here. Try <span className="text-emerald-200">demo research-agent</span>: it funds ephemeral accounts, registers a
         3 XLM mandate, and the agent buys research sources on-chain until the contract caps the budget. No LLM key required.
       </p>
 
