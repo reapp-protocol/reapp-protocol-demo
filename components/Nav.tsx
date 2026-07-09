@@ -8,52 +8,67 @@ import { ArrowUpRight } from "lucide-react";
 const links = [
   { href: "/", label: "Docs" },
   { href: "/cli", label: "CLI" },
-  { href: "/research", label: "Research demo" },
-  { href: "/video", label: "Video demo" },
+  { href: "/research", label: "Research" },
+  { href: "/video", label: "Video" },
 ];
 
 export default function Nav() {
   const path = usePathname();
   return (
     <motion.nav
-      initial={{ y: -24, opacity: 0 }}
+      initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="sticky top-0 z-50 border-b border-white/10 bg-[#050807]/72 backdrop-blur-2xl"
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="sticky top-0 z-50 border-b border-white/10 bg-[#050807]/70 backdrop-blur-xl"
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-2.5 sm:px-5">
-        <Link href="/" className="group flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-md border border-emerald-300/20 bg-emerald-400/90 text-sm font-black text-[#06241a] shadow-[0_0_20px_rgba(52,211,153,0.22)] transition group-hover:bg-emerald-300">R</span>
-          <span className="text-sm font-semibold tracking-tight text-emerald-50/90">REAPP</span>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
+        {/* Brand */}
+        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-400 text-sm font-bold text-[#06241a] shadow-[0_0_16px_rgba(52,211,153,0.25)] transition-colors group-hover:bg-emerald-300">
+            R
+          </span>
+          <span className="text-[15px] font-semibold tracking-tight text-white">
+            REAPP
+          </span>
         </Link>
-        <div className="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap rounded-full border border-white/8 bg-white/[0.035] p-1">
+
+        {/* Links */}
+        <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap rounded-full border border-white/10 bg-white/[0.03] p-1">
           {links.map((l) => {
             const active = path === l.href;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                  active ? "text-emerald-100" : "text-emerald-100/48 hover:text-emerald-100/82"
+                className={`relative rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                  active
+                    ? "text-emerald-100"
+                    : "text-white/50 hover:text-white/90"
                 }`}
               >
                 {l.label}
                 {active && (
-                  <motion.span layoutId="nav-active" className="absolute inset-0 -z-10 rounded-full bg-emerald-400/12 ring-1 ring-emerald-300/18" />
+                  <motion.span
+                    layoutId="nav-active"
+                    className="absolute inset-0 -z-10 rounded-full bg-emerald-400/15 ring-1 ring-emerald-300/20"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
                 )}
               </Link>
             );
           })}
-          <a
-            href="https://www.npmjs.com/package/reapp-protocol-cli"
-            target="_blank"
-            rel="noreferrer"
-            className="ml-1 inline-flex items-center gap-1 rounded-full border border-emerald-300/18 bg-emerald-400/10 px-3 py-1.5 text-[13px] font-semibold text-emerald-200 transition hover:border-emerald-300/35 hover:bg-emerald-400/16 hover:text-emerald-100"
-          >
-            npm
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-          </a>
         </div>
+
+        {/* CTA */}
+        <a
+          href="https://www.npmjs.com/package/reapp-protocol-cli"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3.5 py-1.5 text-[13px] font-semibold text-emerald-200 transition hover:border-emerald-300/40 hover:bg-emerald-400/20 hover:text-emerald-100"
+        >
+          npm
+          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+        </a>
       </div>
     </motion.nav>
   );
