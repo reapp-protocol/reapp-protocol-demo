@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { Package, Play, Terminal } from "lucide-react";
 
 const INSTALL = `npm install @reapp-sdk/core @stellar/stellar-sdk`;
 
@@ -63,7 +65,37 @@ export default function Docs() {
           A user signs a budget-capped mandate; an AI agent pays under it; a Soroban contract enforces every limit
           on-chain, so even a buggy or malicious SDK can't exceed the mandate.
         </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <Link href="/cli" className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_0_28px_rgba(52,211,153,0.35)] transition hover:bg-emerald-300">
+            <Play className="h-4 w-4" aria-hidden />
+            Run the CLI live
+          </Link>
+          <a href="https://www.npmjs.com/package/reapp-protocol-cli" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
+            <Package className="h-4 w-4" aria-hidden />
+            reapp-protocol-cli
+          </a>
+        </div>
       </motion.div>
+
+      <motion.section {...fade(0.06)} className="mt-10 rounded-2xl border border-emerald-300/15 bg-black/30 p-5 shadow-[0_0_48px_rgba(16,185,129,0.12)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-emerald-400 text-[#06241a]">
+              <Terminal className="h-5 w-5" aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-emerald-100">Live terminal on reapp.live</h2>
+              <p className="mt-1 text-sm leading-relaxed text-emerald-100/65">
+                Run <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">reapp demo research-agent</code>
+                {" "}against testnet without leaving the browser.
+              </p>
+            </div>
+          </div>
+          <Link href="/cli" className="inline-flex items-center justify-center rounded-xl border border-emerald-400/30 px-4 py-2.5 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/10">
+            Open CLI
+          </Link>
+        </div>
+      </motion.section>
 
       <motion.section {...fade(0.08)} className="mt-9">
         <H>Install</H>
@@ -121,7 +153,7 @@ export default function Docs() {
       <motion.div {...fade(0.32)} className="mt-10 flex flex-wrap gap-3">
         <a href="https://www.npmjs.com/package/@reapp-sdk/core" target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#06241a] hover:bg-emerald-300">View on npm ↗</a>
         <a href="https://github.com/reapp-protocol/reapp-protocol" target="_blank" rel="noreferrer" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Contract + protocol ↗</a>
-        <a href="/" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Try the live demo →</a>
+        <Link href="/cli" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Run CLI live →</Link>
       </motion.div>
     </main>
   );

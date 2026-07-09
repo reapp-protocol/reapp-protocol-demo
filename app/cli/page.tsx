@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, Package, Play, ShieldCheck, Terminal } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ExternalLink,
+  Gauge,
+  Package,
+  Play,
+  ShieldCheck,
+  Terminal,
+  WalletCards,
+} from "lucide-react";
 import "@xterm/xterm/css/xterm.css";
 
 const PACKAGE = "reapp-protocol-cli";
@@ -36,6 +45,13 @@ const COMMANDS = [
   { name: "mandate create", desc: "Registers an AP2 mandate and approves the allowance to the contract.", Icon: ShieldCheck },
   { name: "pay", desc: "Makes an agent-signed payment through MandateRegistry.execute_payment.", Icon: Terminal },
   { name: "demo research-agent", desc: "Runs the complete budget-capped research-agent flow from a cold start.", Icon: Play },
+];
+
+const PROOF = [
+  { label: "package", value: `${PACKAGE}@${VERSION}`, Icon: Package },
+  { label: "command", value: COMMAND, Icon: Terminal },
+  { label: "network", value: "Stellar testnet", Icon: Gauge },
+  { label: "custody", value: "contract enforced", Icon: ShieldCheck },
 ];
 
 const fade = (d = 0) => ({
@@ -123,140 +139,183 @@ export default function CliPage() {
   }
 
   return (
-    <main className="relative mx-auto w-full max-w-5xl px-4 py-10 sm:px-5">
+    <main className="relative mx-auto w-full max-w-6xl px-4 py-8 sm:px-5">
       <div className="glow" aria-hidden />
 
-      <motion.header {...fade()} className="pt-5">
-        <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          {PACKAGE}@{VERSION}
-        </div>
-        <h1 className="mt-5 max-w-4xl text-4xl font-black leading-[1.04] tracking-tight sm:text-6xl">
-          Run the REAPP protocol from a terminal.
-        </h1>
-        <p className="mt-5 max-w-3xl text-base leading-relaxed text-emerald-100/70 sm:text-lg">
-          The package is <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-sm text-emerald-100">{PACKAGE}</code>.
-          The installed command is <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-sm text-emerald-100">{COMMAND}</code>.
-          It scaffolds config, creates testnet actors, authorizes mandates, and makes agent-signed payments that the
-          MandateRegistry contract enforces on-chain.
-        </p>
-      </motion.header>
-
-      <motion.section {...fade(0.08)} className="mt-9 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
-        <div>
-          <H>Install</H>
-          <Code>{INSTALL}</Code>
-        </div>
-        <div>
-          <H>Project Flow</H>
-          <Code>{PROJECT_FLOW}</Code>
-        </div>
-      </motion.section>
-
-      <motion.section {...fade(0.14)} className="mt-8">
-          <H>Commands</H>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {COMMANDS.map(({ name, desc, Icon }) => (
-            <div key={name} className="rounded-xl border border-white/10 bg-black/25 p-4">
-              <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-emerald-300" aria-hidden />
-                <code className="text-sm text-emerald-300">reapp {name}</code>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-emerald-100/65">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section {...fade(0.2)} className="mt-9">
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <H>Live Terminal</H>
-            <p className="text-sm leading-relaxed text-emerald-100/60">
-              This server runs the same bundled CLI against Stellar testnet. State persists per browser session, so
-              <code className="mx-1 rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">init</code>,
-              <code className="mx-1 rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">setup</code>,
-              <code className="mx-1 rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">mandate create</code>,
-              and <code className="mx-1 rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">pay</code> work as a sequence.
-            </p>
+      <section className="grid min-h-[calc(100vh-92px)] gap-8 py-6 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
+        <motion.div {...fade()} className="flex flex-col justify-center">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.95)]" />
+            LIVE TESTNET CLI
           </div>
-          <Link href="/t2/demo" className="text-sm text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
-            Focused terminal view
-          </Link>
-        </div>
+          <h1 className="mt-5 max-w-3xl text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl">
+            Ship an agent payment from the browser terminal.
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-emerald-100/70 sm:text-lg">
+            <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-sm text-emerald-100">{PACKAGE}</code>
+            {" "}is live on npm. Run the exact same command surface here: create testnet actors, authorize a mandate,
+            and watch the contract reject payments past budget.
+          </p>
 
-        <div className="flex flex-wrap gap-2">
-          {QUICK.map((q) => (
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            {PROOF.map(({ label, value, Icon }) => (
+              <div key={label} className="rounded-xl border border-white/10 bg-black/25 p-3">
+                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-300/70">
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                  {label}
+                </div>
+                <div className="mt-2 truncate font-mono text-sm text-emerald-50">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-3">
             <button
-              key={q.cmd}
               onClick={() => {
-                setCmd(q.cmd);
-                run(q.cmd);
+                setCmd("demo research-agent");
+                run("demo research-agent");
               }}
               disabled={running || !ready}
-              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-400/25 bg-emerald-500/10 px-3 py-1.5 font-mono text-[12px] text-emerald-200 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_0_28px_rgba(52,211,153,0.35)] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Terminal className="h-3.5 w-3.5" aria-hidden />
-              {q.label}
+              <Play className="h-4 w-4" aria-hidden />
+              Run demo
             </button>
-          ))}
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(cmd);
-          }}
-          className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-black/50 px-3 py-2 font-mono text-sm"
-        >
-          <span className="text-emerald-400">{COMMAND}</span>
-          <input
-            value={cmd}
-            onChange={(e) => setCmd(e.target.value)}
-            spellCheck={false}
-            disabled={running}
-            className="min-w-0 flex-1 bg-transparent text-emerald-50 placeholder:text-emerald-50/30 focus:outline-none"
-            placeholder="demo research-agent"
-          />
-          <button
-            type="submit"
-            disabled={running || !ready}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-4 py-1.5 font-semibold text-black shadow-[0_0_20px_rgba(16,185,129,0.35)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Play className="h-4 w-4" aria-hidden />
-            {running ? "Running..." : "Run"}
-          </button>
-        </form>
-
-        <div className="mt-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-black shadow-[0_0_44px_rgba(16,185,129,0.14)]">
-          <div className="flex items-center gap-2 border-b border-emerald-400/10 px-4 py-2 font-mono text-[12px] text-emerald-300/70">
-            <span className="h-3 w-3 rounded-full bg-red-400/70" />
-            <span className="h-3 w-3 rounded-full bg-amber-400/70" />
-            <span className="h-3 w-3 rounded-full bg-emerald-400/70" />
-            <span className="ml-2">reapp · testnet</span>
+            <a
+              href="https://www.npmjs.com/package/reapp-protocol-cli"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100"
+            >
+              npm package
+              <ExternalLink className="h-4 w-4" aria-hidden />
+            </a>
           </div>
-          <div ref={hostRef} className="h-[460px] w-full px-3 py-2" />
-        </div>
 
-        <p className="mt-3 text-xs text-emerald-50/50">
-          Enforced on-chain by the composite MandateRegistry contract{" "}
-          <a className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300" href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT}`} target="_blank" rel="noreferrer">
-            {CONTRACT.slice(0, 6)}...{CONTRACT.slice(-4)}
-          </a>
-          . A demo run takes roughly 30-60 seconds.
-        </p>
+          <div className="mt-7 space-y-3">
+            {[
+              "The allowance is approved for the contract, never the agent.",
+              "Every spend routes through MandateRegistry.execute_payment.",
+              "The demo intentionally spends until the contract blocks the next purchase.",
+            ].map((text) => (
+              <div key={text} className="flex gap-3 text-sm leading-relaxed text-emerald-100/70">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-300" aria-hidden />
+                <span>{text}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.section {...fade(0.08)} className="rounded-2xl border border-emerald-300/15 bg-black/35 p-3 shadow-[0_0_64px_rgba(16,185,129,0.16)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-400/10 px-3 pb-3">
+            <div>
+              <div className="flex items-center gap-2 font-mono text-sm text-emerald-200">
+                <Terminal className="h-4 w-4" aria-hidden />
+                {COMMAND} demo research-agent
+              </div>
+              <div className="mt-1 text-xs text-emerald-50/45">Server-side CLI bundle, per-session state, Stellar testnet.</div>
+            </div>
+            <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 font-mono text-[11px] text-emerald-200">
+              {running ? "running" : ready ? "ready" : "booting"}
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 px-1">
+            {QUICK.map((q) => (
+              <button
+                key={q.cmd}
+                onClick={() => {
+                  setCmd(q.cmd);
+                  run(q.cmd);
+                }}
+                disabled={running || !ready}
+                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-400/20 bg-emerald-500/10 px-3 py-1.5 font-mono text-[12px] text-emerald-200 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Terminal className="h-3.5 w-3.5" aria-hidden />
+                {q.label}
+              </button>
+            ))}
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              run(cmd);
+            }}
+            className="mt-3 flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-black/50 px-3 py-2 font-mono text-sm"
+          >
+            <span className="text-emerald-400">{COMMAND}</span>
+            <input
+              value={cmd}
+              onChange={(e) => setCmd(e.target.value)}
+              spellCheck={false}
+              disabled={running}
+              className="min-w-0 flex-1 bg-transparent text-emerald-50 placeholder:text-emerald-50/30 focus:outline-none"
+              placeholder="demo research-agent"
+            />
+            <button
+              type="submit"
+              disabled={running || !ready}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-4 py-1.5 font-semibold text-black shadow-[0_0_20px_rgba(16,185,129,0.35)] transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Play className="h-4 w-4" aria-hidden />
+              {running ? "Running..." : "Run"}
+            </button>
+          </form>
+
+          <div className="mt-4 overflow-hidden rounded-xl border border-emerald-400/20 bg-black shadow-[0_0_44px_rgba(16,185,129,0.14)]">
+            <div className="flex items-center gap-2 border-b border-emerald-400/10 px-4 py-2 font-mono text-[12px] text-emerald-300/70">
+              <span className="h-3 w-3 rounded-full bg-red-400/70" />
+              <span className="h-3 w-3 rounded-full bg-amber-400/70" />
+              <span className="h-3 w-3 rounded-full bg-emerald-400/70" />
+              <span className="ml-2">reapp-protocol-cli · testnet</span>
+            </div>
+            <div ref={hostRef} className="h-[520px] w-full px-3 py-2" />
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2 px-1 text-xs text-emerald-50/50 sm:flex-row sm:items-center sm:justify-between">
+            <span>Demo runs usually take 30-60 seconds.</span>
+            <a className="inline-flex items-center gap-1 text-emerald-400 underline underline-offset-2 hover:text-emerald-300" href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT}`} target="_blank" rel="noreferrer">
+              Contract {CONTRACT.slice(0, 6)}...{CONTRACT.slice(-4)}
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          </div>
+        </motion.section>
+      </section>
+
+      <motion.section {...fade(0.16)} className="grid gap-4 pb-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-100">
+            <WalletCards className="h-4 w-4 text-emerald-300" aria-hidden />
+            Install
+          </div>
+          <Code>{INSTALL}</Code>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-black/25 p-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-100">
+            <ShieldCheck className="h-4 w-4 text-emerald-300" aria-hidden />
+            Commands
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {COMMANDS.map(({ name, desc, Icon }) => (
+              <div key={name} className="rounded-lg border border-white/10 bg-black/30 p-3">
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-emerald-300" aria-hidden />
+                  <code className="text-xs text-emerald-300">reapp {name}</code>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-emerald-100/60">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </motion.section>
     </main>
   );
 }
 
-function H({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-3 text-lg font-semibold text-emerald-100">{children}</h2>;
-}
-
 function Code({ children }: { children: string }) {
   return (
-    <pre className="overflow-x-auto rounded-xl glass bg-black/25 p-4 text-xs leading-relaxed text-emerald-100/90">
+    <pre className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/35 p-4 text-xs leading-relaxed text-emerald-100/90">
       <code>{children}</code>
     </pre>
   );
