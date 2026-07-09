@@ -48,10 +48,10 @@ const COMMANDS = [
 ];
 
 const PROOF = [
-  { label: "package", value: `${PACKAGE}@${VERSION}`, Icon: Package },
+  { label: "package", value: PACKAGE, Icon: Package },
   { label: "command", value: COMMAND, Icon: Terminal },
-  { label: "network", value: "Stellar testnet", Icon: Gauge },
-  { label: "custody", value: "contract enforced", Icon: ShieldCheck },
+  { label: "network", value: "testnet", Icon: Gauge },
+  { label: "custody", value: "contract", Icon: ShieldCheck },
 ];
 
 const fade = (d = 0) => ({
@@ -157,14 +157,14 @@ export default function CliPage() {
             and watch the contract reject payments past budget.
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-2.5">
             {PROOF.map(({ label, value, Icon }) => (
-              <div key={label} className="rounded-xl border border-white/10 bg-black/25 p-3">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-300/70">
-                  <Icon className="h-3.5 w-3.5" aria-hidden />
+              <div key={label} className="rounded-lg border border-white/10 bg-black/20 px-3 py-2.5">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-emerald-300/60">
+                  <Icon className="h-3 w-3" aria-hidden />
                   {label}
                 </div>
-                <div className="mt-2 truncate font-mono text-sm text-emerald-50">{value}</div>
+                <div className="mt-1.5 font-mono text-xs text-emerald-50">{value}</div>
               </div>
             ))}
           </div>
