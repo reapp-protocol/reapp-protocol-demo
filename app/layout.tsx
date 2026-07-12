@@ -4,13 +4,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import IntroGate from "@/components/IntroGate";
 
-const SITE = process.env.RAILWAY_PUBLIC_DOMAIN
-  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-  : process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://reapp.live";
 
 const title = "REAPP — agent payments, enforced on-chain";
 const description =
