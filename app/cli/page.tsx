@@ -16,7 +16,7 @@ import {
 import "@xterm/xterm/css/xterm.css";
 
 const PACKAGE = "reapp-protocol-cli";
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 const COMMAND = "reapp";
 const CONTRACT = "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX";
 

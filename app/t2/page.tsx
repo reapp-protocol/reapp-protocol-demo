@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { createPageMetadata } from "@/lib/site-metadata";
 
-export const metadata = { title: "Toolkit preview · REAPP" };
+export const metadata = createPageMetadata({
+  title: "REAPP Agentic Payments Toolkit Preview",
+  description: "Preview the REAPP developer toolkit, research-agent runner, and composite mandate demonstrations on live Stellar testnet contracts.",
+  path: "/t2",
+  keywords: ["developer toolkit", "testnet", "composite mandates"],
+});
 
 export default function T2Page() {
   return (

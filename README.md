@@ -7,7 +7,23 @@ by the REAPP **MandateRegistry** Soroban contract on Stellar testnet.
 Real payments move, and the contract **blocks the agent** the moment it overspends
 or after you revoke.
 
-## Two demos
+## Live protocol surfaces
+
+The site is both the implementation guide and a set of inspectable agentic payments demonstrations:
+
+- **Docs** (`/`) — published SDK installation, consumer flow, Express verification, testnet run, and safety boundary.
+- **CLI** (`/cli`) — initialize actors, create mandates, pay, and inspect rejection paths from the terminal.
+- **Express** (`/express`) — payment-required API flow with settlement and one-time redemption verification.
+- **AP2** (`/ap2`) — intent and transaction mandate binding, canonical signatures, scope, expiry, and replay checks.
+- **Composite mandates** (`/composites`) — multiple buyer agents coordinate an atomic group purchase.
+- **Research agent** (`/research`) — paid-source selection constrained by an on-chain budget.
+- **Video paywall** (`/video`) — three permitted unlocks followed by a contract-rejected fourth payment.
+
+Machine-readable maps are published at `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, and `/robots.txt`.
+
+REAPP is the live implementation companion to [REAPP NETWORK](https://reapp.network), the source-linked research and architecture field guide for agentic payments. The two sites share ownership and link to each other transparently.
+
+## Demonstration details
 
 **Video paywall** (`/video`) — the agent pays 1 XLM per video unlock under a 3 XLM
 mandate; after 3 the contract blocks the 4th, and revoke kills it instantly.

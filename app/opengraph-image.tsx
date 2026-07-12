@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "REAPP — agent payments, enforced on-chain";
+export const alt = "REAPP — agentic payments, bounded by code";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,7 +16,7 @@ export default function OpengraphImage() {
           justifyContent: "center",
           padding: "90px",
           background: "#0a0e0d",
-          backgroundImage: "radial-gradient(900px 500px at 50% -10%, #1a1430, #0a0e0d 60%)",
+          backgroundImage: "radial-gradient(900px 520px at 50% -10%, #14372b, #0a0e0d 62%)",
           fontFamily: "sans-serif",
         }}
       >
@@ -27,34 +27,33 @@ export default function OpengraphImage() {
               height: 104,
               borderRadius: 26,
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
-              fontSize: 68,
-              fontWeight: 900,
-              color: "#fff",
+              position: "relative",
+              background: "linear-gradient(145deg, #34d399, #10b981)",
             }}
           >
-            r
+            <div style={{ background: "#06241a", borderRadius: 4, height: 43, left: 44, position: "absolute", top: 19, width: 17 }} />
+            <div style={{ background: "#06241a", borderRadius: 4, height: 16, left: 24, position: "absolute", top: 48, width: 56 }} />
+            <div style={{ background: "#06241a", borderRadius: 4, height: 24, left: 24, position: "absolute", top: 61, width: 16 }} />
+            <div style={{ background: "#06241a", borderRadius: 4, height: 24, left: 64, position: "absolute", top: 61, width: 16 }} />
           </div>
           <div
             style={{
               fontSize: 104,
               fontWeight: 800,
               letterSpacing: -2,
-              backgroundImage: "linear-gradient(90deg, #a78bfa, #60a5fa)",
+              backgroundImage: "linear-gradient(90deg, #d1fae5, #5eead4)",
               backgroundClip: "text",
               color: "transparent",
             }}
           >
-            reapp
+            REAPP
           </div>
         </div>
         <div style={{ marginTop: 46, fontSize: 48, fontWeight: 700, color: "#eef2ff" }}>
-          Agent payments, enforced on-chain.
+          Agentic payments, bounded by code.
         </div>
         <div style={{ marginTop: 20, fontSize: 28, color: "#9aa6c0" }}>
-          Stellar · MandateRegistry · @reapp-sdk/core
+          Live testnet · MandateRegistry · TypeScript SDK
         </div>
       </div>
     ),
