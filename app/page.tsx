@@ -4,41 +4,57 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Package, Play, Terminal } from "lucide-react";
 
-const INSTALL = `npm install @reapp-sdk/core @stellar/stellar-sdk`;
+const CONTRACT_ID = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
-const QUICKSTART = `import { reapp } from "@reapp-sdk/core";
-import { Keypair } from "@stellar/stellar-sdk";
+const INSTALL = `npm install @reapp-sdk/core@0.2.2 @reapp-sdk/stellar@0.2.1 \\
+  @reapp-sdk/ap2@0.1.0 @reapp-sdk/express-middleware@0.1.0 \\
+  @stellar/stellar-sdk express
+npm install --global reapp-protocol-cli@0.1.1`;
 
-const user = Keypair.fromSecret(USER_SECRET);   // owns funds, signs the mandate
-const agent = Keypair.fromSecret(AGENT_SECRET);  // the autonomous spender
+const CLEAN_CLONE = `git clone https://github.com/reapp-protocol/reapp-protocol.git
+cd reapp-protocol
+npm ci
+npm run agents:testnet`;
 
-const m = reapp.createIntentMandate({
-  user: user.publicKey(),
-  agent: agent.publicKey(),
-  merchant: MERCHANT,
-  asset: reapp.testnet.nativeSac,
-  maxAmount: "5.00",
-  expiry: Math.floor(Date.now() / 1000) + 3600,
+const CONSUMER = `import { reapp } from "@reapp-sdk/core";
+
+const agent = reapp.agent({ mandate, signer: agentSecret });
+const response = await agent.fetch(\`\${serverUrl}/source/\${id}\`);
+const resource = await response.json();`;
+
+const FULFILLMENT = `import express from "express";
+import {
+  InMemoryRedemptionStore,
+  createReappPaymentMiddleware,
+  getVerifiedPayment,
+} from "@reapp-sdk/express-middleware";
+
+const app = express();
+const requirePayment = createReappPaymentMiddleware({
+  merchant: process.env.REAPP_MERCHANT_ADDRESS!,
+  sourceAccount: process.env.REAPP_READ_SOURCE_ADDRESS!,
+  amount: "1.00",
+  resource: (request) => request.originalUrl,
+  redemptionStore: new InMemoryRedemptionStore(), // one-process demo
 });
 
-await reapp.registerMandate(m, { signer: user }); // authorize on-chain
-await reapp.approveBudget(m,  { signer: user });   // SEP-41 allowance -> contract
-await reapp.agent({ mandate: m, signer: agent }).pay("1.00"); // agent-signed`;
+app.get("/source/:id", requirePayment, (_request, response) => {
+  const payment = getVerifiedPayment(response);
+  response.json({ settledTx: payment?.txHash, data: "protected value" });
+});`;
 
-const FETCH = `// 0.2.0: the x402 client. Fetch a 402-gated URL; the SDK pays
-// on-chain and retries with the settlement proof, all under the mandate.
-const agent = reapp.agent({ mandate: m, signer });
-const res = await agent.fetch("https://merchant.example/report");
-const data = await res.json(); // served only after the payment verifies`;
+const PACKAGES: [string, string][] = [
+  ["@reapp-sdk/core 0.2.2", "Mandates, contract-enforced payments, and agent.fetch()"],
+  ["@reapp-sdk/stellar 0.2.1", "Typed contract client, testnet config, signers, and token helpers"],
+  ["@reapp-sdk/ap2 0.1.0", "Version-pinned AP2 IntentMandate bridge"],
+  ["@reapp-sdk/express-middleware 0.1.0", "Express 4/5 settlement verification and one-time redemption"],
+  ["reapp-protocol-cli 0.1.1", "Terminal setup, mandate, payment, and demo commands"],
+];
 
-const API: [string, string][] = [
-  ["reapp.createIntentMandate(input)", "Build a mandate + its on-chain id (no chain call)"],
-  ["reapp.registerMandate(m, { signer })", "Store it on-chain, user-signed"],
-  ["reapp.approveBudget(m, { signer })", "Approve the contract for SEP-41 spending, user-signed"],
-  ["reapp.agent({ mandate, signer }).pay(amt)", "Execute a mandate-validated payment, agent-signed"],
-  ["reapp.agent({ mandate, signer }).fetch(url)", "x402: GET a 402-gated URL, pay on-chain, return the response"],
-  ["reapp.revokeMandate(m, { signer })", "Withdraw consent, user-signed"],
-  ["Errors", "Typed contract errors for branching (Errors[6] = BudgetExceeded)"],
+const RESULT: [string, string][] = [
+  ["Sources 1–3", "Each settles 1 XLM and is served after Express verifies the payment"],
+  ["Source 4", "The contract rejects it because the 3 XLM mandate budget is exhausted"],
+  ["Final balance", "The merchant receives exactly 3 XLM; the fourth resource stays locked"],
 ];
 
 const fade = (d = 0) => ({
@@ -55,24 +71,24 @@ export default function Docs() {
       <motion.div {...fade()}>
         <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          @reapp-sdk/core 0.2.0 · DOCS
+          @reapp-sdk/core 0.2.2 · DOCS
         </div>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">
-          Agent payments in{" "}
-          <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">5 lines</span>.
+          Agent payments,{" "}
+          <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">end to end</span>.
         </h1>
         <p className="mt-4 text-sm leading-relaxed text-emerald-100/70 sm:text-base">
-          A user signs a budget-capped mandate; an AI agent pays under it; a Soroban contract enforces every limit
-          on-chain, so even a buggy or malicious SDK can't exceed the mandate.
+          A user signs a scoped budget, a consumer pays with <code>agent.fetch()</code>, and an Express API verifies
+          the on-chain settlement before serving. MandateRegistry remains the authority for every spend.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
-          <Link href="/cli" className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_0_28px_rgba(52,211,153,0.35)] transition hover:bg-emerald-300">
+          <Link href="/express" className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] shadow-[0_0_28px_rgba(52,211,153,0.35)] transition hover:bg-emerald-300">
             <Play className="h-4 w-4" aria-hidden />
-            Run the CLI live
+            Run the Express flow
           </Link>
-          <a href="https://www.npmjs.com/package/reapp-protocol-cli" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
+          <a href="https://www.npmjs.com/package/@reapp-sdk/core/v/0.2.2" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
             <Package className="h-4 w-4" aria-hidden />
-            reapp-protocol-cli
+            @reapp-sdk/core 0.2.2
           </a>
         </div>
       </motion.div>
@@ -84,76 +100,117 @@ export default function Docs() {
               <Terminal className="h-5 w-5" aria-hidden />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-emerald-100">Live terminal on reapp.live</h2>
+              <h2 className="text-lg font-semibold text-emerald-100">Clean-clone testnet run</h2>
               <p className="mt-1 text-sm leading-relaxed text-emerald-100/65">
-                Run <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">reapp demo research-agent</code>
-                {" "}against testnet without leaving the browser.
+                Clone the protocol repository, install its locked dependencies, then run{" "}
+                <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[12px] text-emerald-100">npm run agents:testnet</code>.
+                No local keys or environment file are required.
               </p>
             </div>
           </div>
-          <Link href="/cli" className="inline-flex items-center justify-center rounded-xl border border-emerald-400/30 px-4 py-2.5 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/10">
-            Open CLI
+          <Link href="/express" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl border border-emerald-400/30 px-4 py-2.5 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-400/10">
+            Open guide
           </Link>
         </div>
       </motion.section>
 
       <motion.section {...fade(0.08)} className="mt-9">
-        <H>Install</H>
+        <H>Install the published packages</H>
         <Code>{INSTALL}</Code>
       </motion.section>
 
-      <motion.section {...fade(0.14)} className="mt-8">
-        <H>Quick start (testnet)</H>
-        <Code>{QUICKSTART}</Code>
+      <motion.section {...fade(0.11)} className="mt-8">
+        <H>Run from a clean clone</H>
+        <Code>{CLEAN_CLONE}</Code>
         <p className="mt-3 text-sm text-emerald-100/60">
-          That&apos;s the whole flow. <code>pay()</code> routes through{" "}
-          <code>MandateRegistry.execute_payment</code>, which re-validates everything and moves funds atomically. Overspend,
-          wrong merchant, replay, or pay-after-revoke → the contract rejects and <code>pay()</code> throws.
+          The script creates and funds fresh testnet actors, signs a 3 XLM mandate, starts the protected Express API,
+          and drives four sequential purchases through <code>agent.fetch()</code>.
+        </p>
+      </motion.section>
+
+      <motion.section {...fade(0.14)} className="mt-8">
+        <H>Consumer: pay with agent.fetch()</H>
+        <Code>{CONSUMER}</Code>
+        <p className="mt-3 text-sm text-emerald-100/60">
+          A 402 response describes the requirement. The SDK checks it against the mandate, settles through{" "}
+          <code>MandateRegistry.execute_payment</code>, then retries with the payment proof.
         </p>
       </motion.section>
 
       <motion.section {...fade(0.17)} className="mt-8">
-        <H>Pay for a resource (x402)</H>
-        <Code>{FETCH}</Code>
+        <H>Express: verify before serving</H>
+        <Code>{FULFILLMENT}</Code>
         <p className="mt-3 text-sm text-emerald-100/60">
-          <code>fetch()</code> never treats the 402 as authorization. It settles through the same{" "}
-          <code>execute_payment</code> path, so a revoked, expired, over-budget, or out-of-scope request is rejected
-          on-chain and <code>fetch()</code> throws.
+          The middleware verifies the configured network, successful transaction, MandateRegistry event, matching
+          SEP-41 transfer, and one-time redemption before the route handler runs. Use a shared durable redemption store
+          across workers in production.
         </p>
       </motion.section>
 
       <motion.section {...fade(0.2)} className="mt-8">
-        <H>API</H>
+        <H>What the testnet run proves</H>
         <div className="overflow-hidden rounded-xl border border-white/10">
-          {API.map(([sig, desc], i) => (
-            <div key={sig} className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${i % 2 ? "bg-white/[0.02]" : ""}`}>
-              <code className="text-xs text-emerald-300">{sig}</code>
-              <span className="text-xs text-emerald-100/60 sm:max-w-[55%] sm:text-right">{desc}</span>
+          {RESULT.map(([step, result], i) => (
+            <div key={step} className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+              <code className="text-xs text-emerald-300">{step}</code>
+              <span className="text-xs text-emerald-100/60 sm:max-w-[55%] sm:text-right">{result}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-sm text-emerald-100/60">
+          Three resources are paid for and served. The fourth payment is rejected on-chain with the budget exhausted,
+          so the fourth resource is not delivered.
+        </p>
+      </motion.section>
+
+      <motion.section {...fade(0.23)} className="mt-8">
+        <H>Current public packages</H>
+        <div className="overflow-hidden rounded-xl border border-white/10">
+          {PACKAGES.map(([name, purpose], i) => (
+            <div key={name} className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${i % 2 ? "bg-white/[0.02]" : ""}`}>
+              <code className="text-xs text-emerald-300">{name}</code>
+              <span className="text-xs text-emerald-100/60 sm:max-w-[55%] sm:text-right">{purpose}</span>
             </div>
           ))}
         </div>
       </motion.section>
 
       <motion.section {...fade(0.26)} className="mt-8">
-        <H>Why it&apos;s safe</H>
+        <H>Current testnet contract</H>
+        <a
+          href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`}
+          target="_blank"
+          rel="noreferrer"
+          className="block break-all rounded-xl border border-white/10 bg-black/25 p-4 font-mono text-xs text-emerald-300 transition hover:border-emerald-400/40"
+        >
+          {CONTRACT_ID}
+        </a>
+        <p className="mt-3 text-sm text-emerald-100/60">
+          This is the current upgradeable simple MandateRegistry used by the public testnet configuration. The contract
+          re-checks caller, merchant scope, asset, budget, expiry, and sequence for every payment.
+        </p>
+      </motion.section>
+
+      <motion.section {...fade(0.29)} className="mt-8">
+        <H>Verification boundary</H>
         <ul className="space-y-2 text-sm text-emerald-100/70">
           {[
-            "The allowance is approved for the CONTRACT, never the agent — funds stay in the user's wallet until the contract pulls them.",
-            "execute_payment re-checks scope, budget, expiry, and replay against on-chain state on every spend.",
-            "State is written before the transfer (checks-effects-interactions) — no reentrancy window.",
-            "Adversarial gatecheck passed (BulletproofBar, 0 confirmed defects) + 19 contract tests.",
-          ].map((t) => (
-            <li key={t} className="flex gap-2">
-              <span className="mt-0.5 text-emerald-400">✓</span> {t}
+            "The user approves the SEP-41 allowance for the contract, never for the agent or SDK.",
+            "MandateRegistry validates and consumes authorization before the token transfer in one transaction.",
+            "The Express middleware independently verifies contract and transfer evidence before fulfillment.",
+            "Repository tests and the gate check cover allowed payments and contract-enforced rejection paths.",
+          ].map((text) => (
+            <li key={text} className="flex gap-2">
+              <span className="mt-0.5 text-emerald-400">✓</span> {text}
             </li>
           ))}
         </ul>
       </motion.section>
 
       <motion.div {...fade(0.32)} className="mt-10 flex flex-wrap gap-3">
-        <a href="https://www.npmjs.com/package/@reapp-sdk/core" target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#06241a] hover:bg-emerald-300">View on npm ↗</a>
-        <a href="https://github.com/reapp-protocol/reapp-protocol" target="_blank" rel="noreferrer" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Contract + protocol ↗</a>
-        <Link href="/cli" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Run CLI live →</Link>
+        <Link href="/express" className="rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#06241a] hover:bg-emerald-300">Open the Express guide →</Link>
+        <a href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`} target="_blank" rel="noreferrer" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">View contract ↗</a>
+        <a href="https://github.com/reapp-protocol/reapp-protocol" target="_blank" rel="noreferrer" className="rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">Protocol repository ↗</a>
       </motion.div>
     </main>
   );
