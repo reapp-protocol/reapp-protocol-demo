@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
-    "@reapp-sdk/core": "^0.2.2",
+    "@reapp-sdk/ap2": "^0.2.0",
+    "@reapp-sdk/core": "^0.2.3",
     "@reapp-sdk/express-middleware": "^0.1.0",
     "@reapp-sdk/stellar": "^0.2.1",
     "@stellar/stellar-sdk": "^14.5.0",
