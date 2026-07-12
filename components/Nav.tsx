@@ -23,7 +23,7 @@ export default function Nav() {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="sticky top-0 z-50 border-b border-white/10 bg-[#050807]/70 backdrop-blur-xl"
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
+      <div className="flex h-16 w-full items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <Link href="/" className="group flex shrink-0 items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-400 text-sm font-bold text-[#06241a] shadow-[0_0_16px_rgba(52,211,153,0.25)] transition-colors group-hover:bg-emerald-300">
