@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title,
   description,
+  icons: { icon: "/icon.svg", apple: "/apple-icon" },
   // og:image + twitter:image are generated from app/opengraph-image.tsx automatically.
   openGraph: { title, description, siteName: "REAPP", type: "website", url: "/" },
   twitter: { card: "summary_large_image", title, description },
