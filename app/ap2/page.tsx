@@ -55,6 +55,101 @@ const OPTIONS: Array<{
   { id: "replay", label: "Replayed hash", detail: "Expected REPLAYED", Icon: RefreshCw },
 ];
 
+const TEST_GROUPS = [
+  {
+    title: "Binding & canonicalization",
+    start: 1,
+    tests: [
+      "canonical JSON is independent of object key insertion order",
+      "binds the supported AP2 v0.2.0 intent to a 32-byte REAPP vc_hash",
+      "pins a canonical AP2 hash vector",
+      "provided nonce makes the full binding reproducible across key order",
+      "secure default nonces keep identical intents distinct",
+      "fails closed for AP2 constraints MandateRegistry cannot enforce",
+      "rejects ambiguous expiry and invalid Stellar authorization",
+      "fails closed on unknown intent and Stellar authorization fields",
+      "rejects impossible calendar expiries instead of normalizing them",
+      "signer and validator share the same canonical UTC year range",
+      "signer and validator share the same decimal range",
+      "agent authorization requires an Ed25519 G-address",
+    ],
+  },
+  {
+    title: "Credential, signature & identity",
+    start: 13,
+    lastNumber: 59,
+    tests: [
+      "valid signed AP2 mandate succeeds",
+      "returned mandate hash equals the recomputed REAPP id",
+      "fixed seed and nonce produce a deterministic signature digest and signature",
+      "exact signed maximum amount succeeds",
+      "one-stroop positive amount succeeds",
+      "signing key must match the payload user",
+      "trusted expected user mismatch is rejected",
+      "tampered natural-language intent is rejected by binding",
+      "tampered merchant is rejected by binding",
+      "tampered maximum amount is rejected by binding",
+      "tampered decimals are rejected by the full-payload signature",
+      "tampered expiry is rejected by binding",
+      "tampered agent is rejected by binding",
+      "tampered asset is rejected before signature verification",
+      "malformed base64 signature is rejected",
+      "non-canonical base64 signature is rejected",
+      "signature with the wrong decoded length is rejected",
+      "signature created by another Ed25519 key is rejected",
+      "unsupported signature algorithm is rejected",
+      "unsupported credential version is rejected",
+      "unsupported AP2 version is rejected",
+      "unsupported REAPP binding version is rejected",
+      "wrong AP2 data key is rejected",
+      "envelope mandate hash mismatch is rejected",
+      "unknown top-level credential field fails closed",
+      "unknown intent field fails closed",
+      "invalid user, agent, and asset identities fail closed",
+    ],
+  },
+  {
+    title: "Scope & amount",
+    start: 39,
+    tests: [
+      "trusted merchant outside signed scope is rejected",
+      "zero amount is rejected",
+      "negative amount is rejected",
+      "scientific-notation amount is rejected",
+      "excess fractional precision is rejected",
+      "one stroop over the signed maximum is rejected as overspend",
+      "amount beyond contract i128 is rejected",
+    ],
+  },
+  {
+    title: "Expiry & trusted clock",
+    start: 46,
+    tests: [
+      "expired signed mandate is rejected",
+      "expiry exactly equal to the trusted clock is rejected",
+      "future expiry succeeds under the injected clock",
+      "impossible calendar expiry fails closed",
+    ],
+  },
+  {
+    title: "Replay & storage isolation",
+    start: 50,
+    tests: [
+      "replayed mandate hash is rejected on second admission",
+      "100 concurrent admissions yield exactly one success",
+      "replay store exception fails closed",
+      "unsupported replay store result fails closed",
+      "bad signature does not poison the replay store",
+      "wrong merchant does not poison the replay store",
+      "overspend does not poison the replay store",
+      "expired credential does not poison the replay store",
+      "explicit replay namespaces isolate independent registries",
+    ],
+  },
+] as const;
+
+const PUBLISHED_TEST_COUNT = TEST_GROUPS.reduce((total, group) => total + group.tests.length, 0);
+
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
@@ -282,7 +377,53 @@ export default function Ap2Page() {
         </motion.section>
       </section>
 
-      <motion.section {...fade(0.14)} className="mt-6 grid gap-3 sm:grid-cols-3">
+      <motion.section {...fade(0.14)} className="glass mt-6 rounded-2xl p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.17em] text-emerald-300/70">Published package gate</div>
+            <h2 className="mt-2 text-xl font-bold text-white">Complete AP2 test matrix</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-emerald-100/55">
+              The console above runs six representative checks live. The published package gate runs every named case below.
+            </p>
+          </div>
+          <div className="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3.5 py-1.5 font-mono text-xs text-emerald-200">
+            {PUBLISHED_TEST_COUNT} / {PUBLISHED_TEST_COUNT} PASSING
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {TEST_GROUPS.map((group) => (
+            <div key={group.title} className="rounded-xl border border-white/10 bg-black/20 p-3.5 sm:p-4">
+              <div className="flex items-center justify-between gap-3 border-b border-emerald-400/10 pb-3">
+                <h3 className="text-sm font-semibold text-emerald-50">{group.title}</h3>
+                <span className="flex-none rounded-full bg-emerald-400/10 px-2.5 py-1 font-mono text-[10px] text-emerald-200">
+                  {group.tests.length} cases
+                </span>
+              </div>
+              <ol className="mt-3 space-y-2.5" start={group.start}>
+                {group.tests.map((test, index) => {
+                  const number = "lastNumber" in group && index === group.tests.length - 1
+                    ? group.lastNumber
+                    : group.start + index;
+                  return (
+                    <li key={test} className="flex items-start gap-2.5 text-xs leading-relaxed text-emerald-100/60">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-none text-emerald-300/80" aria-hidden />
+                      <span>
+                        <span className="mr-2 font-mono text-[10px] text-emerald-300/45">
+                          {String(number).padStart(2, "0")}
+                        </span>
+                        {test}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+
+      <motion.section {...fade(0.18)} className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="glass rounded-xl p-4">
           <div className="text-3xl font-black text-emerald-200">59 / 59</div>
           <div className="mt-1 text-xs uppercase tracking-[0.14em] text-emerald-300/55">package tests passing</div>
@@ -316,7 +457,7 @@ export default function Ap2Page() {
         </a>
       </motion.section>
 
-      <motion.div {...fade(0.18)} className="mt-6 flex gap-3 rounded-xl border border-emerald-300/12 bg-emerald-400/[0.035] p-4 text-sm leading-relaxed text-emerald-100/60">
+      <motion.div {...fade(0.22)} className="mt-6 flex gap-3 rounded-xl border border-emerald-300/12 bg-emerald-400/[0.035] p-4 text-sm leading-relaxed text-emerald-100/60">
         <ShieldCheck className="mt-0.5 h-5 w-5 flex-none text-emerald-300/70" aria-hidden />
         <p>
           Admission replay is consumed once here. Multi-purchase budget and payment replay remain atomically enforced by{" "}
