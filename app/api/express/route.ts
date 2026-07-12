@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 const MAX_CONCURRENT_CREATES = 2;
 const MAX_ACTIVE_SESSIONS = 4;
 const CREATE_COOLDOWN_MS = 60_000;
+const CANONICAL_ORIGIN = "https://reapp.live";
 const recentCreates = new Map<string, number>();
 let activeCreates = 0;
 
@@ -35,6 +36,48 @@ function pruneCooldowns(now: number): void {
   for (const [ip, startedAt] of recentCreates) {
     if (now - startedAt > CREATE_COOLDOWN_MS * 2) recentCreates.delete(ip);
   }
+}
+
+function isLocalHostname(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function publicOrigin(request: Request): string | undefined {
+  const requestUrl = new URL(request.url);
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",", 1)[0]?.trim();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",", 1)[0]?.trim();
+
+  if (forwardedHost && /^[a-z0-9.:-]+$/i.test(forwardedHost)) {
+    try {
+      const candidate = new URL(`${forwardedProto === "http" ? "http" : "https"}://${forwardedHost}`);
+      if (candidate.hostname === "reapp.live" || candidate.hostname === "www.reapp.live") {
+        return CANONICAL_ORIGIN;
+      }
+      if (candidate.hostname.endsWith(".up.railway.app")) return candidate.origin;
+      if (isLocalHostname(candidate.hostname)) {
+        if (process.env.RAILWAY_ENVIRONMENT_ID || process.env.RAILWAY_PROJECT_ID) {
+          return CANONICAL_ORIGIN;
+        }
+        return candidate.origin;
+      }
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (requestUrl.hostname === "reapp.live" || requestUrl.hostname === "www.reapp.live") {
+    return CANONICAL_ORIGIN;
+  }
+  if (requestUrl.hostname.endsWith(".up.railway.app")) return requestUrl.origin;
+  if (isLocalHostname(requestUrl.hostname)) {
+    // Railway can expose the internal localhost URL to the application even
+    // when the external request used the custom domain.
+    if (process.env.RAILWAY_ENVIRONMENT_ID || process.env.RAILWAY_PROJECT_ID) {
+      return CANONICAL_ORIGIN;
+    }
+    return requestUrl.origin;
+  }
+  return undefined;
 }
 
 function parseBody(value: unknown): ActionBody | undefined {
@@ -124,11 +167,14 @@ export async function POST(request: Request): Promise<Response> {
       recentCreates.set(owner, now);
       activeCreates += 1;
       try {
-        const requestUrl = new URL(request.url);
-        if (requestUrl.protocol !== "http:" && requestUrl.protocol !== "https:") {
+        const origin = publicOrigin(request);
+        if (!origin) {
           return errorResponse("invalid_request", 400, "The public demo URL is invalid.");
         }
-        return json(await createExpressDemoSession(owner, request.signal, requestUrl.origin));
+        return json(await createExpressDemoSession(owner, request.signal, origin));
+      } catch (error) {
+        if (recentCreates.get(owner) === now) recentCreates.delete(owner);
+        throw error;
       } finally {
         activeCreates = Math.max(0, activeCreates - 1);
       }
