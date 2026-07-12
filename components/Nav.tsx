@@ -8,6 +8,7 @@ import { ArrowUpRight } from "lucide-react";
 const links = [
   { href: "/", label: "Docs" },
   { href: "/cli", label: "CLI" },
+  { href: "/express", label: "Express" },
   { href: "/research", label: "Research" },
   { href: "/video", label: "Video" },
 ];
