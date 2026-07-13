@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import type { Server } from "node:http";
 import express, {
@@ -8,16 +8,21 @@ import express, {
 } from "express";
 import { Keypair } from "@stellar/stellar-sdk";
 import {
+  BOUND_PAYMENT_CAPABILITY,
+  DeliveryPendingError,
+  REAPP_PAYMENT_CAPABILITIES_HEADER,
   X_PAYMENT_HEADER,
+  getSettlementReceipt,
   reapp,
   type Agent,
   type IntentMandate,
+  type SettlementReceipt,
+  type SettlementReceiptStore,
 } from "@reapp-sdk/core";
 import {
-  InMemoryRedemptionStore,
-  createReappPaymentMiddleware,
+  InMemoryBoundRedemptionStore,
+  createBoundReappPaidJsonRoute,
   createStellarPaymentVerifier,
-  getVerifiedPayment,
   type PaymentRequirement,
   type PaymentVerifier,
 } from "@reapp-sdk/express-middleware";
@@ -38,6 +43,20 @@ const EXPIRED_TOMBSTONE_MS = 5 * 60_000;
 const MAX_ACTIVE_SESSIONS = 4;
 const FUNDING_ATTEMPTS = 5;
 const ACCOUNT_POLL_ATTEMPTS = 18;
+const PROCESS_CHALLENGE_SECRET = randomBytes(32);
+
+function configuredChallengeSecret(): string | Uint8Array {
+  const secret = process.env.REAPP_CHALLENGE_SECRET;
+  if (secret === undefined || secret.length === 0) return PROCESS_CHALLENGE_SECRET;
+  if (new TextEncoder().encode(secret).byteLength < 32) {
+    throw new ExpressDemoError(
+      "failed",
+      503,
+      "The bound payment service is unavailable because its challenge authority is not configured.",
+    );
+  }
+  return secret;
+}
 
 export type DemoResourceId = "market" | "academic" | "news" | "patents";
 
@@ -157,6 +176,7 @@ export type ExpressDemoSuccessResponse =
   | {
       ok: true;
       action: "purchase";
+      operationId: string;
       sessionId: string;
       outcome: "delivered";
       resource: DemoResourceSummary;
@@ -170,6 +190,7 @@ export type ExpressDemoSuccessResponse =
   | {
       ok: true;
       action: "purchase";
+      operationId: string;
       sessionId: string;
       outcome: "blocked";
       resource: DemoResourceSummary;
@@ -269,6 +290,11 @@ interface DemoSession {
   served: number;
   settledByAttempt: Map<number, string>;
   paymentTransactions: string[];
+  purchaseOperations: Map<string, {
+    attempt: number;
+    resource: DemoResourceId;
+    response: Extract<ExpressDemoSuccessResponse, { action: "purchase" }>;
+  }>;
   publicEvents: ExpressDemoEvent[];
   publicServed: number;
   publicTransactions: string[];
@@ -468,6 +494,8 @@ async function startFulfillmentServer(
   merchant: string,
   hooks: SessionHooks,
   sessionId: string,
+  publicOrigin: string,
+  challengeSecret: string | Uint8Array,
 ): Promise<{ server: Server; origin: string }> {
   const app = express();
   app.disable("x-powered-by");
@@ -508,19 +536,37 @@ async function startFulfillmentServer(
       return verdict;
     },
   };
-  const requirePayment = createReappPaymentMiddleware({
+  // Each interactive workspace is ephemeral and single-process. Production
+  // fulfillment must supply a durable, shared BoundRedemptionStore instead.
+  const redemptionStore = new InMemoryBoundRedemptionStore();
+  let runtimeOrigin = "";
+  const paidSource = createBoundReappPaidJsonRoute({
     merchant,
     sourceAccount: merchant,
+    audience: () => hooks.mode === "external" ? publicOrigin : runtimeOrigin,
+    challengeSecret,
+    redemptionStore,
     amount: PRICE_XLM,
     resource: (request) => {
       const resource = resourceFromPath(request.originalUrl);
-      return resource
+      return hooks.mode === "external" && resource
         ? `/api/express/${sessionId}/source/${resource.id}`
         : request.originalUrl;
     },
     networkConfig: reapp.testnet,
-    redemptionStore: new InMemoryRedemptionStore(),
     verifier,
+  }, ({ request, payment }) => {
+    const resource = resourceFromPath(request.originalUrl);
+    if (!resource) throw new Error("validated demo resource disappeared before fulfillment");
+    return {
+      body: {
+        ok: true,
+        resource: resource.id,
+        label: resource.label,
+        data: resource.data,
+        settledTx: payment.txHash,
+      },
+    };
   });
 
   app.get(
@@ -547,21 +593,7 @@ async function startFulfillmentServer(
       }
       next();
     },
-    requirePayment,
-    (request: Request, response: ExpressResponse): void => {
-      const resource = resourceFromPath(request.originalUrl);
-      const payment = getVerifiedPayment(response);
-      if (!resource || !payment) {
-        response.status(500).json({ error: "verified fulfillment evidence was unavailable" });
-        return;
-      }
-      response.status(200).json({
-        resource: resource.id,
-        label: resource.label,
-        data: resource.data,
-        settledTx: payment.txHash,
-      });
-    },
+    paidSource,
   );
   app.use((_request: Request, response: ExpressResponse): void => {
     response.status(404).json({ error: "not found" });
@@ -579,7 +611,8 @@ async function startFulfillmentServer(
     await closeServer(server);
     throw new Error("ephemeral fulfillment server did not bind a TCP port");
   }
-  return { server, origin: `http://127.0.0.1:${address.port}` };
+  runtimeOrigin = `http://127.0.0.1:${address.port}`;
+  return { server, origin: runtimeOrigin };
 }
 
 function parseDelivery(value: unknown, resource: DemoResource, expectedHash: string): {
@@ -588,6 +621,7 @@ function parseDelivery(value: unknown, resource: DemoResource, expectedHash: str
   settledTx: string;
 } {
   if (!isRecord(value)) throw new Error("fulfillment returned a non-object body");
+  if (value.ok !== true) throw new Error("fulfillment returned a terminal failure result");
   if (value.resource !== resource.id) throw new Error("fulfillment returned the wrong resource");
   if (typeof value.label !== "string" || value.label.length === 0) {
     throw new Error("fulfillment response omitted its label");
@@ -730,6 +764,13 @@ export async function proxyExpressDemoResource(
       }
       headers.set(X_PAYMENT_HEADER, payment);
     }
+    const capability = request.headers.get(REAPP_PAYMENT_CAPABILITIES_HEADER);
+    if (capability) {
+      if (new TextEncoder().encode(capability).byteLength > 256) {
+        throw new ExpressDemoError("invalid_request", 400, "Payment capability header is too large.");
+      }
+      headers.set(REAPP_PAYMENT_CAPABILITIES_HEADER, capability);
+    }
     headers.set(ATTEMPT_HEADER, String(resourceIndex + 1));
 
     session.hooks.active = { attempt, resource };
@@ -765,7 +806,12 @@ export async function proxyExpressDemoResource(
       if (upstream.status === 200) {
         try {
           const parsed = JSON.parse(new TextDecoder().decode(body)) as unknown;
-          if (isRecord(parsed) && typeof parsed.settledTx === "string" && typeof parsed.data === "string") {
+          if (
+            isRecord(parsed)
+            && parsed.ok === true
+            && typeof parsed.settledTx === "string"
+            && typeof parsed.data === "string"
+          ) {
             const settledTx = parsed.settledTx.toLowerCase();
             if (
               /^[0-9a-f]{64}$/.test(settledTx)
@@ -902,6 +948,7 @@ export async function createExpressDemoSession(
   if (sessions.size >= MAX_ACTIVE_SESSIONS) {
     throw new ExpressDemoError("capacity", 429, "The live testnet demo is at capacity. Try again shortly.");
   }
+  const challengeSecret = configuredChallengeSecret();
   const events: ExpressDemoEvent[] = [];
   const emit: EventSink = (event) => events.push(event);
   let server: Server | undefined;
@@ -954,12 +1001,29 @@ export async function createExpressDemoSession(
 
     const id = randomUUID();
     const hooks: SessionHooks = {};
-    const fulfillment = await startFulfillmentServer(accounts.merchant, hooks, id);
+    const fulfillment = await startFulfillmentServer(
+      accounts.merchant,
+      hooks,
+      id,
+      publicOrigin,
+      challengeSecret,
+    );
     server = fulfillment.server;
     throwIfAborted(signal);
     emit({ type: "fulfillment_start", origin: "localhost", merchant: accounts.merchant });
 
-    const consumer = reapp.agent({ mandate, signer: agentKeypair });
+    const pendingReceipts = new Map<string, Readonly<SettlementReceipt>>();
+    const receiptStore: SettlementReceiptStore = {
+      async savePending(receipt) { pendingReceipts.set(receipt.receiptId, receipt); },
+      async clearPending(receiptId) { pendingReceipts.delete(receiptId); },
+      async listPending() { return [...pendingReceipts.values()]; },
+    };
+    const consumer = reapp.agent({
+      mandate,
+      signer: agentKeypair,
+      proofPolicy: "bound-v2-only",
+      receiptStore,
+    });
     const registry = registryClient(
       reapp.testnet,
       keypairSigner(merchant, reapp.testnet.networkPassphrase),
@@ -967,7 +1031,8 @@ export async function createExpressDemoSession(
     const settledByAttempt = new Map<number, string>();
     const paymentTransactions: string[] = [];
     const contractPay = consumer.pay.bind(consumer);
-    consumer.pay = async (amount: string): Promise<string> => {
+    consumer.pay = async (...args: Parameters<typeof contractPay>): Promise<string> => {
+      const [amount] = args;
       const active = hooks.active;
       if (!active) throw new Error("payment started outside a demo purchase");
       hooks.sink?.({
@@ -976,7 +1041,7 @@ export async function createExpressDemoSession(
         resource: active.resource.id,
         amountXlm: PRICE_XLM,
       });
-      const hash = await contractPay(amount);
+      const hash = await contractPay(...args);
       settledByAttempt.set(active.attempt, hash);
       paymentTransactions.push(hash);
       hooks.sink?.({
@@ -1008,6 +1073,7 @@ export async function createExpressDemoSession(
       served: 0,
       settledByAttempt,
       paymentTransactions,
+      purchaseOperations: new Map(),
       publicEvents: [],
       publicServed: 0,
       publicTransactions: [],
@@ -1064,7 +1130,12 @@ export async function challengeExpressDemoSession(
     try {
       const response = await boundedFetch(
         `${session.origin}/source/${resource.id}`,
-        { headers: { [ATTEMPT_HEADER]: String(attempt) } },
+        {
+          headers: {
+            [ATTEMPT_HEADER]: String(attempt),
+            [REAPP_PAYMENT_CAPABILITIES_HEADER]: BOUND_PAYMENT_CAPABILITY,
+          },
+        },
         signal,
       );
       const body = await response.json().catch(() => undefined) as unknown;
@@ -1101,31 +1172,50 @@ export async function purchaseExpressDemoSession(
   id: string,
   owner: string,
   signal: AbortSignal,
+  operationId: string,
+  expectedAttempt: number,
+  expectedResource: DemoResourceId,
 ): Promise<Extract<ExpressDemoSuccessResponse, { action: "purchase" }>> {
   return withSession(id, owner, signal, async (session) => {
+    const replay = session.purchaseOperations.get(operationId);
+    if (replay) {
+      if (replay.attempt !== expectedAttempt || replay.resource !== expectedResource) {
+        throw new ExpressDemoError("invalid_request", 409, "Purchase operation id was reused for different inputs.");
+      }
+      return replay.response;
+    }
     const resource = RESOURCES[session.nextIndex];
     if (!resource) {
       throw new ExpressDemoError("invalid_request", 409, "This demo workspace already reached its final result.");
     }
     const attempt = session.nextIndex + 1;
+    if (attempt !== expectedAttempt || resource.id !== expectedResource) {
+      throw new ExpressDemoError(
+        "invalid_request",
+        409,
+        "Purchase expectation is stale; refresh the workspace instead of charging the next resource.",
+      );
+    }
     const events: ExpressDemoEvent[] = [];
     session.hooks.active = { attempt, resource };
     session.hooks.mode = "hosted";
     session.hooks.sink = (event) => events.push(event);
     events.push({ type: "request", attempt, resource: resource.id, label: resource.label });
 
-    try {
-      const response = await session.consumer.fetch(`${session.origin}/source/${resource.id}`, {
-        headers: { [ATTEMPT_HEADER]: String(attempt) },
-        signal,
-      });
+    const completeDelivery = async (
+      response: globalThis.Response,
+      hash: string,
+    ): Promise<Extract<ExpressDemoSuccessResponse, { action: "purchase"; outcome: "delivered" }>> => {
       if (attempt === 4) {
         throw new Error("contract accepted a fourth payment beyond the 3 XLM mandate budget");
       }
       if (response.status !== 200) throw new Error(`paid fulfillment returned HTTP ${response.status}`);
-      const hash = session.settledByAttempt.get(attempt);
-      if (!hash) throw new Error("settled payment hash was not retained by the consumer");
       const body = parseDelivery(await response.json(), resource, hash);
+      const receipt = getSettlementReceipt(response);
+      if (!receipt) throw new Error("paid fulfillment response omitted its settlement receipt");
+      // This hosted workspace is deliberately ephemeral and single-process.
+      // Accept its in-memory application result before acknowledging transport;
+      // generated local code below demonstrates the durable production order.
       session.served += 1;
       session.nextIndex += 1;
       const budget = budgetSummary(session);
@@ -1141,9 +1231,10 @@ export async function purchaseExpressDemoSession(
       events.push({ type: "budget", ...budget });
       const next = nextResource(session);
       if (!next) throw new Error("the fourth budget-rejection step was skipped");
-      return {
+      const completed = Object.freeze({
         ok: true,
         action: "purchase",
+        operationId,
         sessionId: session.id,
         outcome: "delivered",
         resource: resourceSummary(resource, attempt),
@@ -1153,7 +1244,20 @@ export async function purchaseExpressDemoSession(
         budget,
         nextResource: next,
         events,
-      };
+      }) satisfies Extract<ExpressDemoSuccessResponse, { action: "purchase"; outcome: "delivered" }>;
+      session.purchaseOperations.set(operationId, { attempt, resource: resource.id, response: completed });
+      await session.consumer.acknowledgeDelivery(receipt);
+      return completed;
+    };
+
+    try {
+      const response = await session.consumer.fetch(`${session.origin}/source/${resource.id}`, {
+        headers: { [ATTEMPT_HEADER]: String(attempt) },
+        signal,
+      });
+      const hash = session.settledByAttempt.get(attempt);
+      if (!hash) throw new Error("settled payment hash was not retained by the consumer");
+      return await completeDelivery(response, hash);
     } catch (error) {
       if (signal.aborted) {
         // The client can no longer reconcile whether settlement completed. Burn
@@ -1162,10 +1266,31 @@ export async function purchaseExpressDemoSession(
         throw error;
       }
       const settledHash = session.settledByAttempt.get(attempt);
+      if (error instanceof DeliveryPendingError) {
+        const receiptHash = error.receipt.txHash;
+        try {
+          const recovered = await session.consumer.retryDelivery(error.receipt, {
+            headers: { [ATTEMPT_HEADER]: String(attempt) },
+            signal,
+          });
+          if (recovered.status === 200) {
+            return await completeDelivery(recovered, receiptHash);
+          }
+          throw new Error(`exact-proof delivery recovery returned HTTP ${recovered.status}`);
+        } catch (recoveryError) {
+          await disposeSession(session);
+          const reason = recoveryError instanceof Error ? recoveryError.message : "delivery recovery failed";
+          throw new ExpressDemoError(
+            "failed",
+            502,
+            `Transaction ${receiptHash} is unresolved; ${reason}. The workspace was closed and no second payment was attempted.`,
+          );
+        }
+      }
       if (settledHash) {
         // A payment exists but the protected response was not safely confirmed.
-        // Never leave this session retryable: the published core API cannot
-        // recover a receipt here without risking a second payment.
+        // No reusable signed receipt reached this branch, so close the ephemeral
+        // workspace rather than ever restarting the payment flow.
         await disposeSession(session);
         throw new ExpressDemoError(
           "failed",
@@ -1192,9 +1317,10 @@ export async function purchaseExpressDemoSession(
         budgetXlm: BUDGET_XLM,
         transactions: [...session.paymentTransactions],
       });
-      return {
+      const completed = Object.freeze({
         ok: true,
         action: "purchase",
+        operationId,
         sessionId: session.id,
         outcome: "blocked",
         resource: resourceSummary(resource, attempt),
@@ -1202,7 +1328,9 @@ export async function purchaseExpressDemoSession(
         budget,
         nextResource: null,
         events,
-      };
+      }) satisfies Extract<ExpressDemoSuccessResponse, { action: "purchase"; outcome: "blocked" }>;
+      session.purchaseOperations.set(operationId, { attempt, resource: resource.id, response: completed });
+      return completed;
     } finally {
       session.hooks.active = undefined;
       session.hooks.mode = undefined;

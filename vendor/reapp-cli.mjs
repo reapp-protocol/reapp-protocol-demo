@@ -41,9 +41,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/commander/lib/error.js
+// packages/cli/node_modules/commander/lib/error.js
 var require_error = __commonJS({
-  "node_modules/commander/lib/error.js"(exports) {
+  "packages/cli/node_modules/commander/lib/error.js"(exports) {
     var CommanderError2 = class extends Error {
       /**
        * Constructs the CommanderError class
@@ -76,9 +76,9 @@ var require_error = __commonJS({
   }
 });
 
-// node_modules/commander/lib/argument.js
+// packages/cli/node_modules/commander/lib/argument.js
 var require_argument = __commonJS({
-  "node_modules/commander/lib/argument.js"(exports) {
+  "packages/cli/node_modules/commander/lib/argument.js"(exports) {
     var { InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var Argument2 = class {
       /**
@@ -110,7 +110,7 @@ var require_argument = __commonJS({
             this._name = name;
             break;
         }
-        if (this._name.endsWith("...")) {
+        if (this._name.length > 3 && this._name.slice(-3) === "...") {
           this.variadic = true;
           this._name = this._name.slice(0, -3);
         }
@@ -126,12 +126,11 @@ var require_argument = __commonJS({
       /**
        * @package
        */
-      _collectValue(value, previous) {
+      _concatValue(value, previous) {
         if (previous === this.defaultValue || !Array.isArray(previous)) {
           return [value];
         }
-        previous.push(value);
-        return previous;
+        return previous.concat(value);
       }
       /**
        * Set the default value, and optionally supply the description to be displayed in the help.
@@ -170,7 +169,7 @@ var require_argument = __commonJS({
             );
           }
           if (this.variadic) {
-            return this._collectValue(arg, previous);
+            return this._concatValue(arg, previous);
           }
           return arg;
         };
@@ -204,28 +203,16 @@ var require_argument = __commonJS({
   }
 });
 
-// node_modules/commander/lib/help.js
+// packages/cli/node_modules/commander/lib/help.js
 var require_help = __commonJS({
-  "node_modules/commander/lib/help.js"(exports) {
+  "packages/cli/node_modules/commander/lib/help.js"(exports) {
     var { humanReadableArgName } = require_argument();
     var Help2 = class {
       constructor() {
         this.helpWidth = void 0;
-        this.minWidthToWrap = 40;
         this.sortSubcommands = false;
         this.sortOptions = false;
         this.showGlobalOptions = false;
-      }
-      /**
-       * prepareContext is called by Commander after applying overrides from `Command.configureHelp()`
-       * and just before calling `formatHelp()`.
-       *
-       * Commander just uses the helpWidth and the rest is provided for optional use by more complex subclasses.
-       *
-       * @param {{ error?: boolean, helpWidth?: number, outputHasColors?: boolean }} contextOptions
-       */
-      prepareContext(contextOptions) {
-        this.helpWidth = this.helpWidth ?? contextOptions.helpWidth ?? 80;
       }
       /**
        * Get an array of the visible subcommands. Includes a placeholder for the implicit help command, if there is one.
@@ -363,12 +350,7 @@ var require_help = __commonJS({
        */
       longestSubcommandTermLength(cmd, helper) {
         return helper.visibleCommands(cmd).reduce((max, command) => {
-          return Math.max(
-            max,
-            this.displayWidth(
-              helper.styleSubcommandTerm(helper.subcommandTerm(command))
-            )
-          );
+          return Math.max(max, helper.subcommandTerm(command).length);
         }, 0);
       }
       /**
@@ -380,10 +362,7 @@ var require_help = __commonJS({
        */
       longestOptionTermLength(cmd, helper) {
         return helper.visibleOptions(cmd).reduce((max, option) => {
-          return Math.max(
-            max,
-            this.displayWidth(helper.styleOptionTerm(helper.optionTerm(option)))
-          );
+          return Math.max(max, helper.optionTerm(option).length);
         }, 0);
       }
       /**
@@ -395,10 +374,7 @@ var require_help = __commonJS({
        */
       longestGlobalOptionTermLength(cmd, helper) {
         return helper.visibleGlobalOptions(cmd).reduce((max, option) => {
-          return Math.max(
-            max,
-            this.displayWidth(helper.styleOptionTerm(helper.optionTerm(option)))
-          );
+          return Math.max(max, helper.optionTerm(option).length);
         }, 0);
       }
       /**
@@ -410,12 +386,7 @@ var require_help = __commonJS({
        */
       longestArgumentTermLength(cmd, helper) {
         return helper.visibleArguments(cmd).reduce((max, argument) => {
-          return Math.max(
-            max,
-            this.displayWidth(
-              helper.styleArgumentTerm(helper.argumentTerm(argument))
-            )
-          );
+          return Math.max(max, helper.argumentTerm(argument).length);
         }, 0);
       }
       /**
@@ -483,11 +454,7 @@ var require_help = __commonJS({
           extraInfo.push(`env: ${option.envVar}`);
         }
         if (extraInfo.length > 0) {
-          const extraDescription = `(${extraInfo.join(", ")})`;
-          if (option.description) {
-            return `${option.description} ${extraDescription}`;
-          }
-          return extraDescription;
+          return `${option.description} (${extraInfo.join(", ")})`;
         }
         return option.description;
       }
@@ -511,48 +478,13 @@ var require_help = __commonJS({
           );
         }
         if (extraInfo.length > 0) {
-          const extraDescription = `(${extraInfo.join(", ")})`;
+          const extraDescripton = `(${extraInfo.join(", ")})`;
           if (argument.description) {
-            return `${argument.description} ${extraDescription}`;
+            return `${argument.description} ${extraDescripton}`;
           }
-          return extraDescription;
+          return extraDescripton;
         }
         return argument.description;
-      }
-      /**
-       * Format a list of items, given a heading and an array of formatted items.
-       *
-       * @param {string} heading
-       * @param {string[]} items
-       * @param {Help} helper
-       * @returns string[]
-       */
-      formatItemList(heading, items, helper) {
-        if (items.length === 0) return [];
-        return [helper.styleTitle(heading), ...items, ""];
-      }
-      /**
-       * Group items by their help group heading.
-       *
-       * @param {Command[] | Option[]} unsortedItems
-       * @param {Command[] | Option[]} visibleItems
-       * @param {Function} getGroup
-       * @returns {Map<string, Command[] | Option[]>}
-       */
-      groupItems(unsortedItems, visibleItems, getGroup) {
-        const result = /* @__PURE__ */ new Map();
-        unsortedItems.forEach((item) => {
-          const group = getGroup(item);
-          if (!result.has(group)) result.set(group, []);
-        });
-        visibleItems.forEach((item) => {
-          const group = getGroup(item);
-          if (!result.has(group)) {
-            result.set(group, []);
-          }
-          result.get(group).push(item);
-        });
-        return result;
       }
       /**
        * Generate the built-in help text.
@@ -563,141 +495,74 @@ var require_help = __commonJS({
        */
       formatHelp(cmd, helper) {
         const termWidth = helper.padWidth(cmd, helper);
-        const helpWidth = helper.helpWidth ?? 80;
-        function callFormatItem(term, description) {
-          return helper.formatItem(term, termWidth, description, helper);
+        const helpWidth = helper.helpWidth || 80;
+        const itemIndentWidth = 2;
+        const itemSeparatorWidth = 2;
+        function formatItem(term, description) {
+          if (description) {
+            const fullText = `${term.padEnd(termWidth + itemSeparatorWidth)}${description}`;
+            return helper.wrap(
+              fullText,
+              helpWidth - itemIndentWidth,
+              termWidth + itemSeparatorWidth
+            );
+          }
+          return term;
         }
-        let output = [
-          `${helper.styleTitle("Usage:")} ${helper.styleUsage(helper.commandUsage(cmd))}`,
-          ""
-        ];
+        function formatList(textArray) {
+          return textArray.join("\n").replace(/^/gm, " ".repeat(itemIndentWidth));
+        }
+        let output = [`Usage: ${helper.commandUsage(cmd)}`, ""];
         const commandDescription = helper.commandDescription(cmd);
         if (commandDescription.length > 0) {
           output = output.concat([
-            helper.boxWrap(
-              helper.styleCommandDescription(commandDescription),
-              helpWidth
-            ),
+            helper.wrap(commandDescription, helpWidth, 0),
             ""
           ]);
         }
         const argumentList = helper.visibleArguments(cmd).map((argument) => {
-          return callFormatItem(
-            helper.styleArgumentTerm(helper.argumentTerm(argument)),
-            helper.styleArgumentDescription(helper.argumentDescription(argument))
+          return formatItem(
+            helper.argumentTerm(argument),
+            helper.argumentDescription(argument)
           );
         });
-        output = output.concat(
-          this.formatItemList("Arguments:", argumentList, helper)
-        );
-        const optionGroups = this.groupItems(
-          cmd.options,
-          helper.visibleOptions(cmd),
-          (option) => option.helpGroupHeading ?? "Options:"
-        );
-        optionGroups.forEach((options, group) => {
-          const optionList = options.map((option) => {
-            return callFormatItem(
-              helper.styleOptionTerm(helper.optionTerm(option)),
-              helper.styleOptionDescription(helper.optionDescription(option))
-            );
-          });
-          output = output.concat(this.formatItemList(group, optionList, helper));
-        });
-        if (helper.showGlobalOptions) {
-          const globalOptionList = helper.visibleGlobalOptions(cmd).map((option) => {
-            return callFormatItem(
-              helper.styleOptionTerm(helper.optionTerm(option)),
-              helper.styleOptionDescription(helper.optionDescription(option))
-            );
-          });
-          output = output.concat(
-            this.formatItemList("Global Options:", globalOptionList, helper)
-          );
+        if (argumentList.length > 0) {
+          output = output.concat(["Arguments:", formatList(argumentList), ""]);
         }
-        const commandGroups = this.groupItems(
-          cmd.commands,
-          helper.visibleCommands(cmd),
-          (sub) => sub.helpGroup() || "Commands:"
-        );
-        commandGroups.forEach((commands, group) => {
-          const commandList = commands.map((sub) => {
-            return callFormatItem(
-              helper.styleSubcommandTerm(helper.subcommandTerm(sub)),
-              helper.styleSubcommandDescription(helper.subcommandDescription(sub))
+        const optionList = helper.visibleOptions(cmd).map((option) => {
+          return formatItem(
+            helper.optionTerm(option),
+            helper.optionDescription(option)
+          );
+        });
+        if (optionList.length > 0) {
+          output = output.concat(["Options:", formatList(optionList), ""]);
+        }
+        if (this.showGlobalOptions) {
+          const globalOptionList = helper.visibleGlobalOptions(cmd).map((option) => {
+            return formatItem(
+              helper.optionTerm(option),
+              helper.optionDescription(option)
             );
           });
-          output = output.concat(this.formatItemList(group, commandList, helper));
+          if (globalOptionList.length > 0) {
+            output = output.concat([
+              "Global Options:",
+              formatList(globalOptionList),
+              ""
+            ]);
+          }
+        }
+        const commandList = helper.visibleCommands(cmd).map((cmd2) => {
+          return formatItem(
+            helper.subcommandTerm(cmd2),
+            helper.subcommandDescription(cmd2)
+          );
         });
+        if (commandList.length > 0) {
+          output = output.concat(["Commands:", formatList(commandList), ""]);
+        }
         return output.join("\n");
-      }
-      /**
-       * Return display width of string, ignoring ANSI escape sequences. Used in padding and wrapping calculations.
-       *
-       * @param {string} str
-       * @returns {number}
-       */
-      displayWidth(str) {
-        return stripColor(str).length;
-      }
-      /**
-       * Style the title for displaying in the help. Called with 'Usage:', 'Options:', etc.
-       *
-       * @param {string} str
-       * @returns {string}
-       */
-      styleTitle(str) {
-        return str;
-      }
-      styleUsage(str) {
-        return str.split(" ").map((word) => {
-          if (word === "[options]") return this.styleOptionText(word);
-          if (word === "[command]") return this.styleSubcommandText(word);
-          if (word[0] === "[" || word[0] === "<")
-            return this.styleArgumentText(word);
-          return this.styleCommandText(word);
-        }).join(" ");
-      }
-      styleCommandDescription(str) {
-        return this.styleDescriptionText(str);
-      }
-      styleOptionDescription(str) {
-        return this.styleDescriptionText(str);
-      }
-      styleSubcommandDescription(str) {
-        return this.styleDescriptionText(str);
-      }
-      styleArgumentDescription(str) {
-        return this.styleDescriptionText(str);
-      }
-      styleDescriptionText(str) {
-        return str;
-      }
-      styleOptionTerm(str) {
-        return this.styleOptionText(str);
-      }
-      styleSubcommandTerm(str) {
-        return str.split(" ").map((word) => {
-          if (word === "[options]") return this.styleOptionText(word);
-          if (word[0] === "[" || word[0] === "<")
-            return this.styleArgumentText(word);
-          return this.styleSubcommandText(word);
-        }).join(" ");
-      }
-      styleArgumentTerm(str) {
-        return this.styleArgumentText(str);
-      }
-      styleOptionText(str) {
-        return str;
-      }
-      styleArgumentText(str) {
-        return str;
-      }
-      styleSubcommandText(str) {
-        return str;
-      }
-      styleCommandText(str) {
-        return str;
       }
       /**
        * Calculate the pad width from the maximum term length.
@@ -715,100 +580,46 @@ var require_help = __commonJS({
         );
       }
       /**
-       * Detect manually wrapped and indented strings by checking for line break followed by whitespace.
-       *
-       * @param {string} str
-       * @returns {boolean}
-       */
-      preformatted(str) {
-        return /\n[^\S\r\n]/.test(str);
-      }
-      /**
-       * Format the "item", which consists of a term and description. Pad the term and wrap the description, indenting the following lines.
-       *
-       * So "TTT", 5, "DDD DDDD DD DDD" might be formatted for this.helpWidth=17 like so:
-       *   TTT  DDD DDDD
-       *        DD DDD
-       *
-       * @param {string} term
-       * @param {number} termWidth
-       * @param {string} description
-       * @param {Help} helper
-       * @returns {string}
-       */
-      formatItem(term, termWidth, description, helper) {
-        const itemIndent = 2;
-        const itemIndentStr = " ".repeat(itemIndent);
-        if (!description) return itemIndentStr + term;
-        const paddedTerm = term.padEnd(
-          termWidth + term.length - helper.displayWidth(term)
-        );
-        const spacerWidth = 2;
-        const helpWidth = this.helpWidth ?? 80;
-        const remainingWidth = helpWidth - termWidth - spacerWidth - itemIndent;
-        let formattedDescription;
-        if (remainingWidth < this.minWidthToWrap || helper.preformatted(description)) {
-          formattedDescription = description;
-        } else {
-          const wrappedDescription = helper.boxWrap(description, remainingWidth);
-          formattedDescription = wrappedDescription.replace(
-            /\n/g,
-            "\n" + " ".repeat(termWidth + spacerWidth)
-          );
-        }
-        return itemIndentStr + paddedTerm + " ".repeat(spacerWidth) + formattedDescription.replace(/\n/g, `
-${itemIndentStr}`);
-      }
-      /**
-       * Wrap a string at whitespace, preserving existing line breaks.
-       * Wrapping is skipped if the width is less than `minWidthToWrap`.
+       * Wrap the given string to width characters per line, with lines after the first indented.
+       * Do not wrap if insufficient room for wrapping (minColumnWidth), or string is manually formatted.
        *
        * @param {string} str
        * @param {number} width
-       * @returns {string}
+       * @param {number} indent
+       * @param {number} [minColumnWidth=40]
+       * @return {string}
+       *
        */
-      boxWrap(str, width) {
-        if (width < this.minWidthToWrap) return str;
-        const rawLines = str.split(/\r\n|\n/);
-        const chunkPattern = /[\s]*[^\s]+/g;
-        const wrappedLines = [];
-        rawLines.forEach((line2) => {
-          const chunks = line2.match(chunkPattern);
-          if (chunks === null) {
-            wrappedLines.push("");
-            return;
-          }
-          let sumChunks = [chunks.shift()];
-          let sumWidth = this.displayWidth(sumChunks[0]);
-          chunks.forEach((chunk) => {
-            const visibleWidth = this.displayWidth(chunk);
-            if (sumWidth + visibleWidth <= width) {
-              sumChunks.push(chunk);
-              sumWidth += visibleWidth;
-              return;
-            }
-            wrappedLines.push(sumChunks.join(""));
-            const nextChunk = chunk.trimStart();
-            sumChunks = [nextChunk];
-            sumWidth = this.displayWidth(nextChunk);
-          });
-          wrappedLines.push(sumChunks.join(""));
-        });
-        return wrappedLines.join("\n");
+      wrap(str, width, indent, minColumnWidth = 40) {
+        const indents = " \\f\\t\\v\xA0\u1680\u2000-\u200A\u202F\u205F\u3000\uFEFF";
+        const manualIndent = new RegExp(`[\\n][${indents}]+`);
+        if (str.match(manualIndent)) return str;
+        const columnWidth = width - indent;
+        if (columnWidth < minColumnWidth) return str;
+        const leadingStr = str.slice(0, indent);
+        const columnText = str.slice(indent).replace("\r\n", "\n");
+        const indentString = " ".repeat(indent);
+        const zeroWidthSpace = "\u200B";
+        const breaks = `\\s${zeroWidthSpace}`;
+        const regex = new RegExp(
+          `
+|.{1,${columnWidth - 1}}([${breaks}]|$)|[^${breaks}]+?([${breaks}]|$)`,
+          "g"
+        );
+        const lines = columnText.match(regex) || [];
+        return leadingStr + lines.map((line2, i) => {
+          if (line2 === "\n") return "";
+          return (i > 0 ? indentString : "") + line2.trimEnd();
+        }).join("\n");
       }
     };
-    function stripColor(str) {
-      const sgrPattern = /\x1b\[\d*(;\d*)*m/g;
-      return str.replace(sgrPattern, "");
-    }
     exports.Help = Help2;
-    exports.stripColor = stripColor;
   }
 });
 
-// node_modules/commander/lib/option.js
+// packages/cli/node_modules/commander/lib/option.js
 var require_option = __commonJS({
-  "node_modules/commander/lib/option.js"(exports) {
+  "packages/cli/node_modules/commander/lib/option.js"(exports) {
     var { InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var Option2 = class {
       /**
@@ -840,7 +651,6 @@ var require_option = __commonJS({
         this.argChoices = void 0;
         this.conflictsWith = [];
         this.implied = void 0;
-        this.helpGroupHeading = void 0;
       }
       /**
        * Set the default value, and optionally supply the description to be displayed in the help.
@@ -951,12 +761,11 @@ var require_option = __commonJS({
       /**
        * @package
        */
-      _collectValue(value, previous) {
+      _concatValue(value, previous) {
         if (previous === this.defaultValue || !Array.isArray(previous)) {
           return [value];
         }
-        previous.push(value);
-        return previous;
+        return previous.concat(value);
       }
       /**
        * Only allow option value to be one of choices.
@@ -973,7 +782,7 @@ var require_option = __commonJS({
             );
           }
           if (this.variadic) {
-            return this._collectValue(arg, previous);
+            return this._concatValue(arg, previous);
           }
           return arg;
         };
@@ -992,25 +801,12 @@ var require_option = __commonJS({
       }
       /**
        * Return option name, in a camelcase format that can be used
-       * as an object attribute key.
+       * as a object attribute key.
        *
        * @return {string}
        */
       attributeName() {
-        if (this.negate) {
-          return camelcase(this.name().replace(/^no-/, ""));
-        }
-        return camelcase(this.name());
-      }
-      /**
-       * Set the help group heading.
-       *
-       * @param {string} heading
-       * @return {Option}
-       */
-      helpGroup(heading) {
-        this.helpGroupHeading = heading;
-        return this;
+        return camelcase(this.name().replace(/^no-/, ""));
       }
       /**
        * Check if `arg` matches the short or long flag.
@@ -1078,40 +874,14 @@ var require_option = __commonJS({
     function splitOptionFlags(flags) {
       let shortFlag;
       let longFlag;
-      const shortFlagExp = /^-[^-]$/;
-      const longFlagExp = /^--[^-]/;
-      const flagParts = flags.split(/[ |,]+/).concat("guard");
-      if (shortFlagExp.test(flagParts[0])) shortFlag = flagParts.shift();
-      if (longFlagExp.test(flagParts[0])) longFlag = flagParts.shift();
-      if (!shortFlag && shortFlagExp.test(flagParts[0]))
+      const flagParts = flags.split(/[ |,]+/);
+      if (flagParts.length > 1 && !/^[[<]/.test(flagParts[1]))
         shortFlag = flagParts.shift();
-      if (!shortFlag && longFlagExp.test(flagParts[0])) {
+      longFlag = flagParts.shift();
+      if (!shortFlag && /^-[^-]$/.test(longFlag)) {
         shortFlag = longFlag;
-        longFlag = flagParts.shift();
+        longFlag = void 0;
       }
-      if (flagParts[0].startsWith("-")) {
-        const unsupportedFlag = flagParts[0];
-        const baseError = `option creation failed due to '${unsupportedFlag}' in option flags '${flags}'`;
-        if (/^-[^-][^-]/.test(unsupportedFlag))
-          throw new Error(
-            `${baseError}
-- a short flag is a single dash and a single character
-  - either use a single dash and a single character (for a short flag)
-  - or use a double dash for a long option (and can have two, like '--ws, --workspace')`
-          );
-        if (shortFlagExp.test(unsupportedFlag))
-          throw new Error(`${baseError}
-- too many short flags`);
-        if (longFlagExp.test(unsupportedFlag))
-          throw new Error(`${baseError}
-- too many long flags`);
-        throw new Error(`${baseError}
-- unrecognised flag format`);
-      }
-      if (shortFlag === void 0 && longFlag === void 0)
-        throw new Error(
-          `option creation failed due to no flags found in '${flags}'.`
-        );
       return { shortFlag, longFlag };
     }
     exports.Option = Option2;
@@ -1119,9 +889,9 @@ var require_option = __commonJS({
   }
 });
 
-// node_modules/commander/lib/suggestSimilar.js
+// packages/cli/node_modules/commander/lib/suggestSimilar.js
 var require_suggestSimilar = __commonJS({
-  "node_modules/commander/lib/suggestSimilar.js"(exports) {
+  "packages/cli/node_modules/commander/lib/suggestSimilar.js"(exports) {
     var maxDistance = 3;
     function editDistance(a, b) {
       if (Math.abs(a.length - b.length) > maxDistance)
@@ -1199,9 +969,9 @@ var require_suggestSimilar = __commonJS({
   }
 });
 
-// node_modules/commander/lib/command.js
+// packages/cli/node_modules/commander/lib/command.js
 var require_command = __commonJS({
-  "node_modules/commander/lib/command.js"(exports) {
+  "packages/cli/node_modules/commander/lib/command.js"(exports) {
     var EventEmitter = __require("node:events").EventEmitter;
     var childProcess = __require("node:child_process");
     var path = __require("node:path");
@@ -1209,7 +979,7 @@ var require_command = __commonJS({
     var process2 = __require("node:process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
-    var { Help: Help2, stripColor } = require_help();
+    var { Help: Help2 } = require_help();
     var { Option: Option2, DualOptions } = require_option();
     var { suggestSimilar } = require_suggestSimilar();
     var Command2 = class _Command extends EventEmitter {
@@ -1224,7 +994,7 @@ var require_command = __commonJS({
         this.options = [];
         this.parent = null;
         this._allowUnknownOption = false;
-        this._allowExcessArguments = false;
+        this._allowExcessArguments = true;
         this.registeredArguments = [];
         this._args = this.registeredArguments;
         this.args = [];
@@ -1251,25 +1021,18 @@ var require_command = __commonJS({
         this._lifeCycleHooks = {};
         this._showHelpAfterError = false;
         this._showSuggestionAfterError = true;
-        this._savedState = null;
         this._outputConfiguration = {
           writeOut: (str) => process2.stdout.write(str),
           writeErr: (str) => process2.stderr.write(str),
-          outputError: (str, write) => write(str),
           getOutHelpWidth: () => process2.stdout.isTTY ? process2.stdout.columns : void 0,
           getErrHelpWidth: () => process2.stderr.isTTY ? process2.stderr.columns : void 0,
-          getOutHasColors: () => useColor() ?? (process2.stdout.isTTY && process2.stdout.hasColors?.()),
-          getErrHasColors: () => useColor() ?? (process2.stderr.isTTY && process2.stderr.hasColors?.()),
-          stripColor: (str) => stripColor(str)
+          outputError: (str, write) => write(str)
         };
         this._hidden = false;
         this._helpOption = void 0;
         this._addImplicitHelpCommand = void 0;
         this._helpCommand = void 0;
         this._helpConfiguration = {};
-        this._helpGroupHeading = void 0;
-        this._defaultCommandGroup = void 0;
-        this._defaultOptionGroup = void 0;
       }
       /**
        * Copy settings that are useful to have in common across root command and subcommands.
@@ -1391,28 +1154,21 @@ var require_command = __commonJS({
        *
        * The configuration properties are all functions:
        *
-       *     // change how output being written, defaults to stdout and stderr
+       *     // functions to change where being written, stdout and stderr
        *     writeOut(str)
        *     writeErr(str)
-       *     // change how output being written for errors, defaults to writeErr
-       *     outputError(str, write) // used for displaying errors and not used for displaying help
-       *     // specify width for wrapping help
+       *     // matching functions to specify width for wrapping help
        *     getOutHelpWidth()
        *     getErrHelpWidth()
-       *     // color support, currently only used with Help
-       *     getOutHasColors()
-       *     getErrHasColors()
-       *     stripColor() // used to remove ANSI escape codes if output does not have colors
+       *     // functions based on what is being written out
+       *     outputError(str, write) // used for displaying errors, and not used for displaying help
        *
        * @param {object} [configuration] - configuration options
        * @return {(Command | object)} `this` command for chaining, or stored configuration
        */
       configureOutput(configuration) {
         if (configuration === void 0) return this._outputConfiguration;
-        this._outputConfiguration = {
-          ...this._outputConfiguration,
-          ...configuration
-        };
+        Object.assign(this._outputConfiguration, configuration);
         return this;
       }
       /**
@@ -1483,16 +1239,16 @@ var require_command = __commonJS({
        *
        * @param {string} name
        * @param {string} [description]
-       * @param {(Function|*)} [parseArg] - custom argument processing function or default value
+       * @param {(Function|*)} [fn] - custom argument processing function
        * @param {*} [defaultValue]
        * @return {Command} `this` command for chaining
        */
-      argument(name, description, parseArg, defaultValue) {
+      argument(name, description, fn, defaultValue) {
         const argument = this.createArgument(name, description);
-        if (typeof parseArg === "function") {
-          argument.default(defaultValue).argParser(parseArg);
+        if (typeof fn === "function") {
+          argument.default(defaultValue).argParser(fn);
         } else {
-          argument.default(parseArg);
+          argument.default(fn);
         }
         this.addArgument(argument);
         return this;
@@ -1522,7 +1278,7 @@ var require_command = __commonJS({
        */
       addArgument(argument) {
         const previousArgument = this.registeredArguments.slice(-1)[0];
-        if (previousArgument?.variadic) {
+        if (previousArgument && previousArgument.variadic) {
           throw new Error(
             `only the last argument can be variadic '${previousArgument.name()}'`
           );
@@ -1551,13 +1307,10 @@ var require_command = __commonJS({
       helpCommand(enableOrNameAndArgs, description) {
         if (typeof enableOrNameAndArgs === "boolean") {
           this._addImplicitHelpCommand = enableOrNameAndArgs;
-          if (enableOrNameAndArgs && this._defaultCommandGroup) {
-            this._initCommandGroup(this._getHelpCommand());
-          }
           return this;
         }
-        const nameAndArgs = enableOrNameAndArgs ?? "help [command]";
-        const [, helpName, helpArgs] = nameAndArgs.match(/([^ ]+) *(.*)/);
+        enableOrNameAndArgs = enableOrNameAndArgs ?? "help [command]";
+        const [, helpName, helpArgs] = enableOrNameAndArgs.match(/([^ ]+) *(.*)/);
         const helpDescription = description ?? "display help for command";
         const helpCommand = this.createCommand(helpName);
         helpCommand.helpOption(false);
@@ -1565,7 +1318,6 @@ var require_command = __commonJS({
         if (helpDescription) helpCommand.description(helpDescription);
         this._addImplicitHelpCommand = true;
         this._helpCommand = helpCommand;
-        if (enableOrNameAndArgs || description) this._initCommandGroup(helpCommand);
         return this;
       }
       /**
@@ -1582,7 +1334,6 @@ var require_command = __commonJS({
         }
         this._addImplicitHelpCommand = true;
         this._helpCommand = helpCommand;
-        this._initCommandGroup(helpCommand);
         return this;
       }
       /**
@@ -1731,7 +1482,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
           throw new Error(`Cannot add option '${option.flags}'${this._name && ` to command '${this._name}'`} due to conflicting flag '${matchingFlag}'
 -  already used by option '${matchingOption.flags}'`);
         }
-        this._initOptionGroup(option);
         this.options.push(option);
       }
       /**
@@ -1755,7 +1505,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
             `cannot add command '${newCmd}' as already have command '${existingCmd}'`
           );
         }
-        this._initCommandGroup(command);
         this.commands.push(command);
       }
       /**
@@ -1788,7 +1537,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           if (val !== null && option.parseArg) {
             val = this._callParseArg(option, val, oldValue, invalidValueMessage);
           } else if (val !== null && option.variadic) {
-            val = option._collectValue(val, oldValue);
+            val = option._concatValue(val, oldValue);
           }
           if (val == null) {
             if (option.negate) {
@@ -1852,7 +1601,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @example
        * program
        *     .option('-p, --pepper', 'add pepper')
-       *     .option('--pt, --pizza-type <TYPE>', 'type of pizza') // required option-argument
+       *     .option('-p, --pizza-type <TYPE>', 'type of pizza') // required option-argument
        *     .option('-c, --cheese [CHEESE]', 'add extra cheese', 'mozzarella') // optional option-argument with default
        *     .option('-t, --tip <VALUE>', 'add tip to purchase cost', parseFloat) // custom parse function
        *
@@ -2119,7 +1868,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command} `this` command for chaining
        */
       parse(argv, parseOptions) {
-        this._prepareForParse();
         const userArgs = this._prepareUserArgs(argv, parseOptions);
         this._parseCommand([], userArgs);
         return this;
@@ -2145,67 +1893,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Promise}
        */
       async parseAsync(argv, parseOptions) {
-        this._prepareForParse();
         const userArgs = this._prepareUserArgs(argv, parseOptions);
         await this._parseCommand([], userArgs);
         return this;
-      }
-      _prepareForParse() {
-        if (this._savedState === null) {
-          this.saveStateBeforeParse();
-        } else {
-          this.restoreStateBeforeParse();
-        }
-      }
-      /**
-       * Called the first time parse is called to save state and allow a restore before subsequent calls to parse.
-       * Not usually called directly, but available for subclasses to save their custom state.
-       *
-       * This is called in a lazy way. Only commands used in parsing chain will have state saved.
-       */
-      saveStateBeforeParse() {
-        this._savedState = {
-          // name is stable if supplied by author, but may be unspecified for root command and deduced during parsing
-          _name: this._name,
-          // option values before parse have default values (including false for negated options)
-          // shallow clones
-          _optionValues: { ...this._optionValues },
-          _optionValueSources: { ...this._optionValueSources }
-        };
-      }
-      /**
-       * Restore state before parse for calls after the first.
-       * Not usually called directly, but available for subclasses to save their custom state.
-       *
-       * This is called in a lazy way. Only commands used in parsing chain will have state restored.
-       */
-      restoreStateBeforeParse() {
-        if (this._storeOptionsAsProperties)
-          throw new Error(`Can not call parse again when storeOptionsAsProperties is true.
-- either make a new Command for each call to parse, or stop storing options as properties`);
-        this._name = this._savedState._name;
-        this._scriptPath = null;
-        this.rawArgs = [];
-        this._optionValues = { ...this._savedState._optionValues };
-        this._optionValueSources = { ...this._savedState._optionValueSources };
-        this.args = [];
-        this.processedArgs = [];
-      }
-      /**
-       * Throw if expected executable is missing. Add lots of help for author.
-       *
-       * @param {string} executableFile
-       * @param {string} executableDir
-       * @param {string} subcommandName
-       */
-      _checkForMissingExecutable(executableFile, executableDir, subcommandName) {
-        if (fs.existsSync(executableFile)) return;
-        const executableDirMessage = executableDir ? `searched for local subcommand relative to directory '${executableDir}'` : "no directory for search for local subcommand, use .executableDir() to supply a custom directory";
-        const executableMissing = `'${executableFile}' does not exist
- - if '${subcommandName}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
- - if the default executable name is not suitable, use the executableFile option to supply a custom name or path
- - ${executableDirMessage}`;
-        throw new Error(executableMissing);
       }
       /**
        * Execute a sub-command executable.
@@ -2234,7 +1924,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           let resolvedScriptPath;
           try {
             resolvedScriptPath = fs.realpathSync(this._scriptPath);
-          } catch {
+          } catch (err) {
             resolvedScriptPath = this._scriptPath;
           }
           executableDir = path.resolve(
@@ -2269,11 +1959,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
             proc = childProcess.spawn(executableFile, args, { stdio: "inherit" });
           }
         } else {
-          this._checkForMissingExecutable(
-            executableFile,
-            executableDir,
-            subcommand._name
-          );
           args.unshift(executableFile);
           args = incrementNodeInspectorPort(process2.execArgv).concat(args);
           proc = childProcess.spawn(process2.execPath, args, { stdio: "inherit" });
@@ -2305,11 +1990,12 @@ Expecting one of '${allowedValues.join("', '")}'`);
         });
         proc.on("error", (err) => {
           if (err.code === "ENOENT") {
-            this._checkForMissingExecutable(
-              executableFile,
-              executableDir,
-              subcommand._name
-            );
+            const executableDirMessage = executableDir ? `searched for local subcommand relative to directory '${executableDir}'` : "no directory for search for local subcommand, use .executableDir() to supply a custom directory";
+            const executableMissing = `'${executableFile}' does not exist
+ - if '${subcommand._name}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
+ - if the default executable name is not suitable, use the executableFile option to supply a custom name or path
+ - ${executableDirMessage}`;
+            throw new Error(executableMissing);
           } else if (err.code === "EACCES") {
             throw new Error(`'${executableFile}' not executable`);
           }
@@ -2333,7 +2019,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
       _dispatchSubcommand(commandName, operands, unknown) {
         const subCommand = this._findCommand(commandName);
         if (!subCommand) this.help({ error: true });
-        subCommand._prepareForParse();
         let promiseChain;
         promiseChain = this._chainOrCallSubCommandHook(
           promiseChain,
@@ -2440,7 +2125,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @private
        */
       _chainOrCall(promise, fn) {
-        if (promise?.then && typeof promise.then === "function") {
+        if (promise && promise.then && typeof promise.then === "function") {
           return promise.then(() => fn());
         }
         return fn();
@@ -2545,7 +2230,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           promiseChain = this._chainOrCallHooks(promiseChain, "postAction");
           return promiseChain;
         }
-        if (this.parent?.listenerCount(commandEvent)) {
+        if (this.parent && this.parent.listenerCount(commandEvent)) {
           checkForUnknownOptions();
           this._processArguments();
           this.parent.emit(commandEvent, operands, unknown);
@@ -2646,8 +2331,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * Parse options from `argv` removing known options,
        * and return argv split into operands and unknown arguments.
        *
-       * Side effects: modifies command by storing options. Does not reset state if called again.
-       *
        * Examples:
        *
        *     argv => operands, unknown
@@ -2656,34 +2339,26 @@ Expecting one of '${allowedValues.join("', '")}'`);
        *     sub --unknown uuu op => [sub], [--unknown uuu op]
        *     sub -- --unknown uuu op => [sub --unknown uuu op], []
        *
-       * @param {string[]} args
+       * @param {string[]} argv
        * @return {{operands: string[], unknown: string[]}}
        */
-      parseOptions(args) {
+      parseOptions(argv) {
         const operands = [];
         const unknown = [];
         let dest = operands;
+        const args = argv.slice();
         function maybeOption(arg) {
           return arg.length > 1 && arg[0] === "-";
         }
-        const negativeNumberArg = (arg) => {
-          if (!/^-(\d+|\d*\.\d+)(e[+-]?\d+)?$/.test(arg)) return false;
-          return !this._getCommandAndAncestors().some(
-            (cmd) => cmd.options.map((opt) => opt.short).some((short5) => /^-\d$/.test(short5))
-          );
-        };
         let activeVariadicOption = null;
-        let activeGroup = null;
-        let i = 0;
-        while (i < args.length || activeGroup) {
-          const arg = activeGroup ?? args[i++];
-          activeGroup = null;
+        while (args.length) {
+          const arg = args.shift();
           if (arg === "--") {
             if (dest === unknown) dest.push(arg);
-            dest.push(...args.slice(i));
+            dest.push(...args);
             break;
           }
-          if (activeVariadicOption && (!maybeOption(arg) || negativeNumberArg(arg))) {
+          if (activeVariadicOption && !maybeOption(arg)) {
             this.emit(`option:${activeVariadicOption.name()}`, arg);
             continue;
           }
@@ -2692,13 +2367,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
             const option = this._findOption(arg);
             if (option) {
               if (option.required) {
-                const value = args[i++];
+                const value = args.shift();
                 if (value === void 0) this.optionMissingArgument(option);
                 this.emit(`option:${option.name()}`, value);
               } else if (option.optional) {
                 let value = null;
-                if (i < args.length && (!maybeOption(args[i]) || negativeNumberArg(args[i]))) {
-                  value = args[i++];
+                if (args.length > 0 && !maybeOption(args[0])) {
+                  value = args.shift();
                 }
                 this.emit(`option:${option.name()}`, value);
               } else {
@@ -2715,7 +2390,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
                 this.emit(`option:${option.name()}`, arg.slice(2));
               } else {
                 this.emit(`option:${option.name()}`);
-                activeGroup = `-${arg.slice(2)}`;
+                args.unshift(`-${arg.slice(2)}`);
               }
               continue;
             }
@@ -2728,24 +2403,27 @@ Expecting one of '${allowedValues.join("', '")}'`);
               continue;
             }
           }
-          if (dest === operands && maybeOption(arg) && !(this.commands.length === 0 && negativeNumberArg(arg))) {
+          if (maybeOption(arg)) {
             dest = unknown;
           }
           if ((this._enablePositionalOptions || this._passThroughOptions) && operands.length === 0 && unknown.length === 0) {
             if (this._findCommand(arg)) {
               operands.push(arg);
-              unknown.push(...args.slice(i));
+              if (args.length > 0) unknown.push(...args);
               break;
             } else if (this._getHelpCommand() && arg === this._getHelpCommand().name()) {
-              operands.push(arg, ...args.slice(i));
+              operands.push(arg);
+              if (args.length > 0) operands.push(...args);
               break;
             } else if (this._defaultCommandName) {
-              unknown.push(arg, ...args.slice(i));
+              unknown.push(arg);
+              if (args.length > 0) unknown.push(...args);
               break;
             }
           }
           if (this._passThroughOptions) {
-            dest.push(arg, ...args.slice(i));
+            dest.push(arg);
+            if (args.length > 0) dest.push(...args);
             break;
           }
           dest.push(arg);
@@ -3098,69 +2776,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
         return this;
       }
       /**
-       * Set/get the help group heading for this subcommand in parent command's help.
-       *
-       * @param {string} [heading]
-       * @return {Command | string}
-       */
-      helpGroup(heading) {
-        if (heading === void 0) return this._helpGroupHeading ?? "";
-        this._helpGroupHeading = heading;
-        return this;
-      }
-      /**
-       * Set/get the default help group heading for subcommands added to this command.
-       * (This does not override a group set directly on the subcommand using .helpGroup().)
-       *
-       * @example
-       * program.commandsGroup('Development Commands:);
-       * program.command('watch')...
-       * program.command('lint')...
-       * ...
-       *
-       * @param {string} [heading]
-       * @returns {Command | string}
-       */
-      commandsGroup(heading) {
-        if (heading === void 0) return this._defaultCommandGroup ?? "";
-        this._defaultCommandGroup = heading;
-        return this;
-      }
-      /**
-       * Set/get the default help group heading for options added to this command.
-       * (This does not override a group set directly on the option using .helpGroup().)
-       *
-       * @example
-       * program
-       *   .optionsGroup('Development Options:')
-       *   .option('-d, --debug', 'output extra debugging')
-       *   .option('-p, --profile', 'output profiling information')
-       *
-       * @param {string} [heading]
-       * @returns {Command | string}
-       */
-      optionsGroup(heading) {
-        if (heading === void 0) return this._defaultOptionGroup ?? "";
-        this._defaultOptionGroup = heading;
-        return this;
-      }
-      /**
-       * @param {Option} option
-       * @private
-       */
-      _initOptionGroup(option) {
-        if (this._defaultOptionGroup && !option.helpGroupHeading)
-          option.helpGroup(this._defaultOptionGroup);
-      }
-      /**
-       * @param {Command} cmd
-       * @private
-       */
-      _initCommandGroup(cmd) {
-        if (this._defaultCommandGroup && !cmd.helpGroup())
-          cmd.helpGroup(this._defaultCommandGroup);
-      }
-      /**
        * Set the name of the command from script filename, such as process.argv[1],
        * or require.main.filename, or __filename.
        *
@@ -3200,47 +2815,26 @@ Expecting one of '${allowedValues.join("', '")}'`);
        */
       helpInformation(contextOptions) {
         const helper = this.createHelp();
-        const context = this._getOutputContext(contextOptions);
-        helper.prepareContext({
-          error: context.error,
-          helpWidth: context.helpWidth,
-          outputHasColors: context.hasColors
-        });
-        const text = helper.formatHelp(this, helper);
-        if (context.hasColors) return text;
-        return this._outputConfiguration.stripColor(text);
+        if (helper.helpWidth === void 0) {
+          helper.helpWidth = contextOptions && contextOptions.error ? this._outputConfiguration.getErrHelpWidth() : this._outputConfiguration.getOutHelpWidth();
+        }
+        return helper.formatHelp(this, helper);
       }
       /**
-       * @typedef HelpContext
-       * @type {object}
-       * @property {boolean} error
-       * @property {number} helpWidth
-       * @property {boolean} hasColors
-       * @property {function} write - includes stripColor if needed
-       *
-       * @returns {HelpContext}
        * @private
        */
-      _getOutputContext(contextOptions) {
+      _getHelpContext(contextOptions) {
         contextOptions = contextOptions || {};
-        const error = !!contextOptions.error;
-        let baseWrite;
-        let hasColors;
-        let helpWidth;
-        if (error) {
-          baseWrite = (str) => this._outputConfiguration.writeErr(str);
-          hasColors = this._outputConfiguration.getErrHasColors();
-          helpWidth = this._outputConfiguration.getErrHelpWidth();
+        const context = { error: !!contextOptions.error };
+        let write;
+        if (context.error) {
+          write = (arg) => this._outputConfiguration.writeErr(arg);
         } else {
-          baseWrite = (str) => this._outputConfiguration.writeOut(str);
-          hasColors = this._outputConfiguration.getOutHasColors();
-          helpWidth = this._outputConfiguration.getOutHelpWidth();
+          write = (arg) => this._outputConfiguration.writeOut(arg);
         }
-        const write = (str) => {
-          if (!hasColors) str = this._outputConfiguration.stripColor(str);
-          return baseWrite(str);
-        };
-        return { error, write, hasColors, helpWidth };
+        context.write = contextOptions.write || write;
+        context.command = this;
+        return context;
       }
       /**
        * Output help information for this command.
@@ -3255,28 +2849,23 @@ Expecting one of '${allowedValues.join("', '")}'`);
           deprecatedCallback = contextOptions;
           contextOptions = void 0;
         }
-        const outputContext = this._getOutputContext(contextOptions);
-        const eventContext = {
-          error: outputContext.error,
-          write: outputContext.write,
-          command: this
-        };
-        this._getCommandAndAncestors().reverse().forEach((command) => command.emit("beforeAllHelp", eventContext));
-        this.emit("beforeHelp", eventContext);
-        let helpInformation = this.helpInformation({ error: outputContext.error });
+        const context = this._getHelpContext(contextOptions);
+        this._getCommandAndAncestors().reverse().forEach((command) => command.emit("beforeAllHelp", context));
+        this.emit("beforeHelp", context);
+        let helpInformation = this.helpInformation(context);
         if (deprecatedCallback) {
           helpInformation = deprecatedCallback(helpInformation);
           if (typeof helpInformation !== "string" && !Buffer.isBuffer(helpInformation)) {
             throw new Error("outputHelp callback must return a string or a Buffer");
           }
         }
-        outputContext.write(helpInformation);
+        context.write(helpInformation);
         if (this._getHelpOption()?.long) {
           this.emit(this._getHelpOption().long);
         }
-        this.emit("afterHelp", eventContext);
+        this.emit("afterHelp", context);
         this._getCommandAndAncestors().forEach(
-          (command) => command.emit("afterAllHelp", eventContext)
+          (command) => command.emit("afterAllHelp", context)
         );
       }
       /**
@@ -3294,20 +2883,15 @@ Expecting one of '${allowedValues.join("', '")}'`);
       helpOption(flags, description) {
         if (typeof flags === "boolean") {
           if (flags) {
-            if (this._helpOption === null) this._helpOption = void 0;
-            if (this._defaultOptionGroup) {
-              this._initOptionGroup(this._getHelpOption());
-            }
+            this._helpOption = this._helpOption ?? void 0;
           } else {
             this._helpOption = null;
           }
           return this;
         }
-        this._helpOption = this.createOption(
-          flags ?? "-h, --help",
-          description ?? "display help for command"
-        );
-        if (flags || description) this._initOptionGroup(this._helpOption);
+        flags = flags ?? "-h, --help";
+        description = description ?? "display help for command";
+        this._helpOption = this.createOption(flags, description);
         return this;
       }
       /**
@@ -3332,7 +2916,6 @@ Expecting one of '${allowedValues.join("', '")}'`);
        */
       addHelpOption(option) {
         this._helpOption = option;
-        this._initOptionGroup(option);
         return this;
       }
       /**
@@ -3344,20 +2927,12 @@ Expecting one of '${allowedValues.join("', '")}'`);
        */
       help(contextOptions) {
         this.outputHelp(contextOptions);
-        let exitCode = Number(process2.exitCode ?? 0);
+        let exitCode = process2.exitCode || 0;
         if (exitCode === 0 && contextOptions && typeof contextOptions !== "function" && contextOptions.error) {
           exitCode = 1;
         }
         this._exit(exitCode, "commander.help", "(outputHelp)");
       }
-      /**
-       * // Do a little typing to coordinate emit and listener for the help text events.
-       * @typedef HelpTextEventContext
-       * @type {object}
-       * @property {boolean} error
-       * @property {Command} command
-       * @property {function} write
-       */
       /**
        * Add additional text to be displayed with the built-in help.
        *
@@ -3368,7 +2943,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {(string | Function)} text - string to add, or a function returning a string
        * @return {Command} `this` command for chaining
        */
-      addHelpText(position, text) {
+      addHelpText(position, text2) {
         const allowedValues = ["beforeAll", "before", "after", "afterAll"];
         if (!allowedValues.includes(position)) {
           throw new Error(`Unexpected value for position to addHelpText.
@@ -3377,10 +2952,10 @@ Expecting one of '${allowedValues.join("', '")}'`);
         const helpEvent = `${position}Help`;
         this.on(helpEvent, (context) => {
           let helpStr;
-          if (typeof text === "function") {
-            helpStr = text({ error: context.error, command: context.command });
+          if (typeof text2 === "function") {
+            helpStr = text2({ error: context.error, command: context.command });
           } else {
-            helpStr = text;
+            helpStr = text2;
           }
           if (helpStr) {
             context.write(`${helpStr}
@@ -3433,21 +3008,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
         return arg;
       });
     }
-    function useColor() {
-      if (process2.env.NO_COLOR || process2.env.FORCE_COLOR === "0" || process2.env.FORCE_COLOR === "false")
-        return false;
-      if (process2.env.FORCE_COLOR || process2.env.CLICOLOR_FORCE !== void 0)
-        return true;
-      return void 0;
-    }
     exports.Command = Command2;
-    exports.useColor = useColor;
   }
 });
 
-// node_modules/commander/index.js
+// packages/cli/node_modules/commander/index.js
 var require_commander = __commonJS({
-  "node_modules/commander/index.js"(exports) {
+  "packages/cli/node_modules/commander/index.js"(exports) {
     var { Argument: Argument2 } = require_argument();
     var { Command: Command2 } = require_command();
     var { CommanderError: CommanderError2, InvalidArgumentError: InvalidArgumentError2 } = require_error();
@@ -3467,7 +3034,7 @@ var require_commander = __commonJS({
   }
 });
 
-// node_modules/commander/esm.mjs
+// packages/cli/node_modules/commander/esm.mjs
 var import_index = __toESM(require_commander(), 1);
 var {
   program,
@@ -3486,7 +3053,7 @@ var {
 
 // packages/cli/src/ui.ts
 var E = "\x1B[";
-var wrap = (open, s, close = "39") => `${E}${open}m${s}${E}${close}m`;
+var wrap = (open2, s, close = "39") => `${E}${open2}m${s}${E}${close}m`;
 var c = {
   reset: `${E}0m`,
   bold: (s) => `${E}1m${s}${E}22m`,
@@ -3553,7 +3120,7 @@ __export(dist_exports, {
 var DEPLOYMENTS = {
   testnet: {
     /** Deployed MandateRegistry contract id. */
-    mandateRegistryId: "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX",
+    mandateRegistryId: "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE",
     /** Native XLM Stellar Asset Contract — a real SEP-41 token. */
     nativeSac: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
   }
@@ -3592,77 +3159,59 @@ var Errors = {
   7: { message: "MerchantOutOfScope" },
   8: { message: "BadSequence" },
   9: { message: "InvalidAmount" },
-  11: { message: "PoolNotFound" },
-  12: { message: "PoolNotOpen" },
-  13: { message: "ScheduleInvalid" },
-  14: { message: "PoolMerchantMismatch" },
-  15: { message: "PoolAssetMismatch" },
-  16: { message: "DeadlinePassed" },
-  /**
-   * Reserved for outcome-style reporting; the abort branch is a success
-   * (state flip + event), not an error.
-   */
-  17: { message: "ThresholdNotMet" },
-  18: { message: "PoolFull" },
-  19: { message: "BadPoolState" },
-  20: { message: "MandatePooled" },
-  21: { message: "InsufficientFunds" },
-  22: { message: "KindNotSupported" },
-  25: { message: "NotPooled" },
-  26: { message: "ExpiryBeforeDeadline" },
-  27: { message: "BelowMinChild" },
-  28: { message: "DuplicateMember" },
-  29: { message: "DeadlineNotReached" },
-  30: { message: "DeadlineTooFar" },
-  31: { message: "MemberStillEligible" }
+  10: { message: "Paused" },
+  11: { message: "UpgradeNotScheduled" },
+  12: { message: "UpgradeNotReady" },
+  13: { message: "UpgradeAlreadyScheduled" },
+  14: { message: "UpgradeRequiresPause" }
 };
 var Client = class extends ContractClient {
   options;
-  static async deploy(options) {
-    return ContractClient.deploy(null, options);
+  static async deploy({ admin }, options) {
+    return ContractClient.deploy({ admin }, options);
   }
   constructor(options) {
     super(new ContractSpec([
-      "AAAAAAAAACVSZWFkLW9ubHkgYWNjZXNzb3IgZm9yIGEgc3RvcmVkIHBvb2wuAAAAAAAACGdldF9wb29sAAAAAQAAAAAAAAAHcG9vbF9pZAAAAAPuAAAAIAAAAAEAAAPpAAAH0AAAAAxDbGVhcmluZ1Bvb2wAAAAD",
-      "AAAAAAAAAN9DbG9zZSB0aGUgZGVhZGxpbmUgYXVjdGlvbjogY2FwdHVyZSAoYWxsIGxlZ3MgaW4gdGhpcyBvbmUgdHJhbnNhY3Rpb24pCmlmIHRoZSB0aHJlc2hvbGQgcHJlZGljYXRlIGhvbGRzIHdpdGhpbiB0aGUgY2FwdHVyZSB3aW5kb3csIGVsc2UgYWJvcnQKYW5kIHJlbGVhc2UgZXZlcnkgY29tbWl0dGVkIGNoaWxkLiBDYWxsYWJsZSBieSBhbnlvbmUsIG5ldmVyIGJlZm9yZQp0aGUgZGVhZGxpbmUuAAAAAApjbGVhcl9wb29sAAAAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
-      "AAAAAAAAAHNSZW1vdmUgYW4gb2JqZWN0aXZlbHktaW5lbGlnaWJsZSBtZW1iZXIgYW5kIGZyZWUgaXRzIHNsb3QuClBlcm1pc3Npb25sZXNzOyBjYW4gbmV2ZXIgZXZpY3QgYSBzdGlsbC1lbGlnaWJsZSBtZW1iZXIuAAAAAAtldmljdF9jaGlsZAAAAAACAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
-      "AAAAAAAAAD5SZWFkLW9ubHkgYWNjZXNzb3IgZm9yIHRoZSBzdG9yZWQgbWFuZGF0ZSAoYXVkaXQgLyBwcmVmbGlnaHQpLgAAAAAAC2dldF9tYW5kYXRlAAAAAAEAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAQAAA+kAAAfQAAAAB01hbmRhdGUAAAAAAw==",
-      "AAAAAAAAAIBMaW5rIGEgcG9vbGVkIG1hbmRhdGUgaW50byBpdHMgcG9vbCBhcyBhIENvbW1pdHRlZCBtZW1iZXIuClBlcm1pc3Npb25sZXNzIChvYmplY3RpdmUgY2hlY2tzIG9ubHkpOyByZXZvY2FibGUgdW50aWwgdGhlIGRlYWRsaW5lLgAAAAxjb21taXRfY2hpbGQAAAABAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
-      "AAAAAAAAAQxSZWdpc3RlciBhIGNsZWFyaW5nIHBvb2wuIFRoZSByZXR1cm5lZCBwb29sIGlkIGlzIGRlcml2ZWQgZnJvbSB0aGUKdGVybXMgKHNoYTI1NiBvZiB0aGVpciBYRFIpLCBzbyB0aGUgaWQgY29tbWl0cyB0byB0aGUgdGVybXMuCkF1dGhvcml6ZWQgYnkgYG9yaWdpbmF0b3JgIOKAlCB0aGUgbGFzdCBzcGVjaWFsIHNpZ25hdHVyZSB0aGUgcG9vbCBldmVyCnJlcXVpcmVzOiBldmVyeXRoaW5nIGFmdGVyIHRoaXMgaXMgcGVybWlzc2lvbmxlc3MgYW5kIGRldGVybWluaXN0aWMuAAAADXJlZ2lzdGVyX3Bvb2wAAAAAAAAJAAAAAAAAAApvcmlnaW5hdG9yAAAAAAATAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAABWFzc2V0AAAAAAAAEwAAAAAAAAAEa2luZAAAB9AAAAAMQ2xlYXJpbmdLaW5kAAAAAAAAAA10aHJlc2hvbGRfcXR5AAAAAAAACgAAAAAAAAAPdGhyZXNob2xkX3ZhbHVlAAAAAAoAAAAAAAAAD21pbl9jaGlsZF92YWx1ZQAAAAAKAAAAAAAAABFjbGVhcmluZ19kZWFkbGluZQAAAAAAAAYAAAAAAAAABW5vbmNlAAAAAAAD7gAAACAAAAABAAAD6QAAA+4AAAAgAAAAAw==",
-      "AAAAAAAAAJVVc2VyIHdpdGhkcmF3cyBjb25zZW50OyBtYXJrcyB0aGUgbWFuZGF0ZSBSZXZva2VkLiBBdXRob3JpemVkIGJ5IHRoZQp1c2VyLiBBbHNvIGZyZWVzIHRoZSBwb29sIHNsb3Qgb2YgYSBDb21taXR0ZWQgY2hpbGQgKGl0cyBvbmUKcHJlLWRlYWRsaW5lIGV4aXQpLgAAAAAAAA5yZXZva2VfbWFuZGF0ZQAAAAAAAQAAAAAAAAAKbWFuZGF0ZV9pZAAAAAAD7gAAACAAAAABAAAD6QAAA+0AAAAAAAAAAw==",
-      "AAAAAAAAAM1SZWFkLW9ubHk6IHRoZSBleGFjdCBvdXRjb21lIGBjbGVhcl9wb29sYCB3b3VsZCBleGVjdXRlIGFnYWluc3QgY3VycmVudApsZWRnZXIgc3RhdGUuIFNhbWUgYnVpbGRlciwgc2FtZSBjbGVhcmluZyBmdW5jdGlvbiDigJQgcmVjb21wdXRlIHRoaXMgdG8KdmVyaWZ5IHRoZSBvcmlnaW5hdG9yIGhhZCBubyBkaXNjcmV0aW9uIG92ZXIgdGhlIGFsbG9jYXRpb24uAAAAAAAADnNpbXVsYXRlX2NsZWFyAAAAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAfQAAAADENsZWFyT3V0Y29tZQAAAAM=",
-      "AAAAAAAAAV1UaGUgc29sbyBtb25leSBwYXRoLiBBdG9taWM6IHJlcXVpcmVfYXV0aChhZ2VudCkg4oaSIHJlcGxheSBndWFyZAooYGV4cGVjdGVkX3NlcWAgPT0gY3VycmVudCBgc2VxYCwgZWxzZSBgQmFkU2VxdWVuY2VgKSDihpIgcmUtdmFsaWRhdGUg4oaSCmFkdmFuY2Ugc3BlbnQrc2VxIOKGkiBTRVAtNDEgdHJhbnNmZXJfZnJvbSh1c2VyIOKGkiBtZXJjaGFudCkuIFJldmVydHMgb24gYW55CmZhaWx1cmUuIGBleHBlY3RlZF9zZXFgIGlzIHRoZSBtYW5kYXRlJ3MgY3VycmVudCBzZXF1ZW5jZSAocmVhZCBmcm9tCmBnZXRfbWFuZGF0ZWApLCBwcmV2ZW50aW5nIGR1cGxpY2F0ZS9vdXQtb2Ytb3JkZXIgY29uc3VtcHRpb24uAAAAAAAAD2V4ZWN1dGVfcGF5bWVudAAAAAADAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAxleHBlY3RlZF9zZXEAAAAEAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
-      "AAAAAAAAAFdSZWFkLW9ubHk6IGN1cnJlbnQgbWVtYmVyIG1hbmRhdGUgaWRzIChjb21taXQgb3JkZXI7IGZyb3plbiBvbmNlIHRoZQpwb29sIGlzIHRlcm1pbmFsKS4AAAAAEGdldF9wb29sX21lbWJlcnMAAAABAAAAAAAAAAdwb29sX2lkAAAAA+4AAAAgAAAAAQAAA+kAAAPqAAAD7gAAACAAAAAD",
-      "AAAAAAAAAbZTdG9yZSBhIHVzZXItc2lnbmVkIG1hbmRhdGUgZnJvbSBpdHMgYXV0aG9yaXplZCBwYXJhbWV0ZXJzLiBUaGUgY29udHJhY3QKc2V0cyBgc3BlbnQ9MCwgc2VxPTAsIHN0YXR1cz1BY3RpdmVgIGl0c2VsZi4gQXV0aG9yaXplZCBieSBgdXNlcmAuClJldHVybnMgdGhlIG1hbmRhdGUgaWQgKD0gYHZjX2hhc2hgLCB0aGUgc3RvcmFnZSBrZXkpLgoKYHBvb2xfaWQgPSBOb25lYCArIGVtcHR5IGBwcmljZV9zY2hlZHVsZWAgPT0gYSBzdGFuZGFsb25lIG1hbmRhdGUKKHRoZSBwcmUtY29tcG9zaXRlIGJlaGF2aW9yLCB1bmNoYW5nZWQpLiBgcG9vbF9pZCA9IFNvbWUoaWQpYCBiaW5kcyB0aGUKbWFuZGF0ZSB0byBhIGNsZWFyaW5nIHBvb2w7IHRoZSBzY2hlZHVsZSBpcyB0aGUgdXNlcidzIGF1dGhvcml6YXRpb24KZm9yIHRoZSBwb29sIHBhdGggKHNlZSBgcmVnaXN0cnlgKS4AAAAAABByZWdpc3Rlcl9tYW5kYXRlAAAACQAAAAAAAAAEdXNlcgAAABMAAAAAAAAABWFnZW50AAAAAAAAEwAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAAAAAAVhc3NldAAAAAAAABMAAAAAAAAACm1heF9hbW91bnQAAAAAAAsAAAAAAAAABmV4cGlyeQAAAAAABgAAAAAAAAAHdmNfaGFzaAAAAAPuAAAAIAAAAAAAAAAHcG9vbF9pZAAAAAPoAAAD7gAAACAAAAAAAAAADnByaWNlX3NjaGVkdWxlAAAAAAPqAAAH0AAAAA1TY2hlZHVsZVBvaW50AAAAAAAAAQAAA+kAAAPuAAAAIAAAAAM=",
-      "AAAAAAAAAURSZWFkLW9ubHkgcHJlZmxpZ2h0IOKAlCB3b3VsZCB0aGlzIHNwZW5kIGJlIHBlcm1pdHRlZCByaWdodCBub3c/IE11dGF0ZXMKbm90aGluZyBhbmQgcmVxdWlyZXMgbm8gYXV0aDsgdGhlIGF1dGhvcml0YXRpdmUgY29uc3VtZSBoYXBwZW5zIG9ubHkgaW4KYGV4ZWN1dGVfcGF5bWVudGAuIChJdCBpcyBhIGRyeS1ydW47IGl0IGNvbnN1bWVzIG5vdGhpbmcuKSBSZWZsZWN0cwpwb29sIHN0YXRlIHRvbzogYSBDb21taXR0ZWQvQ2FwdHVyZWQgY2hpbGQgcHJlZmxpZ2h0cyBgTWFuZGF0ZVBvb2xlZGAsCmV4YWN0bHkgd2hhdCBgZXhlY3V0ZV9wYXltZW50YCB3b3VsZCBkby4AAAAQdmFsaWRhdGVfbWFuZGF0ZQAAAAMAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAPpAAAD7QAAAAAAAAAD",
-      "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAGwAAAAAAAAANQWxyZWFkeUV4aXN0cwAAAAAAAAEAAAAAAAAACE5vdEZvdW5kAAAAAgAAAAAAAAAOTWFuZGF0ZUV4cGlyZWQAAAAAAAQAAAAAAAAADk1hbmRhdGVSZXZva2VkAAAAAAAFAAAAAAAAAA5CdWRnZXRFeGNlZWRlZAAAAAAABgAAAAAAAAASTWVyY2hhbnRPdXRPZlNjb3BlAAAAAAAHAAAAAAAAAAtCYWRTZXF1ZW5jZQAAAAAIAAAAAAAAAA1JbnZhbGlkQW1vdW50AAAAAAAACQAAAAAAAAAMUG9vbE5vdEZvdW5kAAAACwAAAAAAAAALUG9vbE5vdE9wZW4AAAAADAAAAAAAAAAPU2NoZWR1bGVJbnZhbGlkAAAAAA0AAAAAAAAAFFBvb2xNZXJjaGFudE1pc21hdGNoAAAADgAAAAAAAAARUG9vbEFzc2V0TWlzbWF0Y2gAAAAAAAAPAAAAAAAAAA5EZWFkbGluZVBhc3NlZAAAAAAAEAAAAGdSZXNlcnZlZCBmb3Igb3V0Y29tZS1zdHlsZSByZXBvcnRpbmc7IHRoZSBhYm9ydCBicmFuY2ggaXMgYSBzdWNjZXNzCihzdGF0ZSBmbGlwICsgZXZlbnQpLCBub3QgYW4gZXJyb3IuAAAAAA9UaHJlc2hvbGROb3RNZXQAAAAAEQAAAAAAAAAIUG9vbEZ1bGwAAAASAAAAAAAAAAxCYWRQb29sU3RhdGUAAAATAAAAAAAAAA1NYW5kYXRlUG9vbGVkAAAAAAAAFAAAAAAAAAARSW5zdWZmaWNpZW50RnVuZHMAAAAAAAAVAAAAAAAAABBLaW5kTm90U3VwcG9ydGVkAAAAFgAAAAAAAAAJTm90UG9vbGVkAAAAAAAAGQAAAAAAAAAURXhwaXJ5QmVmb3JlRGVhZGxpbmUAAAAaAAAAAAAAAA1CZWxvd01pbkNoaWxkAAAAAAAAGwAAAAAAAAAPRHVwbGljYXRlTWVtYmVyAAAAABwAAAAAAAAAEkRlYWRsaW5lTm90UmVhY2hlZAAAAAAAHQAAAAAAAAAORGVhZGxpbmVUb29GYXIAAAAAAB4AAAAAAAAAE01lbWJlclN0aWxsRWxpZ2libGUAAAAAHw==",
+      "AAAAAAAAAC5FbWVyZ2VuY3kgc3RvcCBmb3IgdGhlIHNvbGUgbW9uZXktbW92aW5nIHBhdGguAAAAAAAFcGF1c2UAAAAAAAAAAAAAAA==",
+      "AAAAAAAAADZSZXN0b3JlIHRoZSBtb25leS1tb3ZpbmcgcGF0aCBhZnRlciBhbiBlbWVyZ2VuY3kgc3RvcC4AAAAAAAd1bnBhdXNlAAAAAAAAAAAA",
+      "AAAAAAAAACJDdXJyZW50IG9wZXJhdGlvbmFsIGFkbWluaXN0cmF0b3IuAAAAAAAJZ2V0X2FkbWluAAAAAAAAAAAAAAEAAAAT",
+      "AAAAAAAAADRSZWFkIHRoZSBlbWVyZ2VuY3ktc3RvcCBzdGF0ZSB3aXRob3V0IGF1dGhvcml6YXRpb24uAAAACWlzX3BhdXNlZAAAAAAAAAAAAAABAAAAAQ==",
+      "AAAAAAAAAEZSb3RhdGUgb3BlcmF0aW9uYWwgYXV0aG9yaXR5LiBBdXRob3JpemVkIGJ5IHRoZSBjdXJyZW50IGFkbWluaXN0cmF0b3IuAAAAAAAJc2V0X2FkbWluAAAAAAAAAQAAAAAAAAAJbmV3X2FkbWluAAAAAAAAEwAAAAA=",
+      "AAAAAAAAAENSZWFkLW9ubHkgYWNjZXNzb3IgZm9yIHRoZSBzdG9yZWQgbWFuZGF0ZSAoaW5zcGVjdGlvbiAvIHByZWZsaWdodCkuAAAAAAtnZXRfbWFuZGF0ZQAAAAABAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAH0AAAAAdNYW5kYXRlAAAAAAM=",
+      "AAAAAAAAAIRBdG9taWNhbGx5IGVzdGFibGlzaGVzIHRoZSBpbml0aWFsIGFkbWluaXN0cmF0b3IgZHVyaW5nIGRlcGxveW1lbnQuCkNvbnN0cnVjdG9ycyBydW4gb25seSBvbmNlOyBXQVNNIHVwZ3JhZGVzIGRvIG5vdCBydW4gdGhlbSBhZ2Fpbi4AAAANX19jb25zdHJ1Y3RvcgAAAAAAAAEAAAAAAAAABWFkbWluAAAAAAAAEwAAAAA=",
+      "AAAAAAAAACdDYW5jZWwgdGhlIGN1cnJlbnRseSBzY2hlZHVsZWQgdXBncmFkZS4AAAAADmNhbmNlbF91cGdyYWRlAAAAAAAAAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
+      "AAAAAAAAAEpVc2VyIHdpdGhkcmF3cyBjb25zZW50OyBtYXJrcyB0aGUgbWFuZGF0ZSBSZXZva2VkLiBBdXRob3JpemVkIGJ5IHRoZSB1c2VyLgAAAAAADnJldm9rZV9tYW5kYXRlAAAAAAABAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAEAAAPpAAAD7QAAAAAAAAAD",
+      "AAAAAAAAAV1UaGUgb25seSBtb25leSBwYXRoLiBBdG9taWM6IHJlcXVpcmVfYXV0aChhZ2VudCkg4oaSIHJlcGxheSBndWFyZAooYGV4cGVjdGVkX3NlcWAgPT0gY3VycmVudCBgc2VxYCwgZWxzZSBgQmFkU2VxdWVuY2VgKSDihpIgcmUtdmFsaWRhdGUg4oaSCmFkdmFuY2Ugc3BlbnQrc2VxIOKGkiBTRVAtNDEgdHJhbnNmZXJfZnJvbSh1c2VyIOKGkiBtZXJjaGFudCkuIFJldmVydHMgb24gYW55CmZhaWx1cmUuIGBleHBlY3RlZF9zZXFgIGlzIHRoZSBtYW5kYXRlJ3MgY3VycmVudCBzZXF1ZW5jZSAocmVhZCBmcm9tCmBnZXRfbWFuZGF0ZWApLCBwcmV2ZW50aW5nIGR1cGxpY2F0ZS9vdXQtb2Ytb3JkZXIgY29uc3VtcHRpb24uAAAAAAAAD2V4ZWN1dGVfcGF5bWVudAAAAAADAAAAAAAAAAptYW5kYXRlX2lkAAAAAAPuAAAAIAAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAxleHBlY3RlZF9zZXEAAAAEAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
+      "AAAAAAAAAEtFeGVjdXRlIHRoZSBzY2hlZHVsZWQgdXBncmFkZSBhZnRlciB0aGUgZGVsYXkgd2hpbGUgdGhlIGNvbnRyYWN0IGlzIHBhdXNlZC4AAAAAD2V4ZWN1dGVfdXBncmFkZQAAAAAAAAAAAQAAA+kAAAPtAAAAAAAAAAM=",
+      "AAAAAAAAAMJTdG9yZSBhIHVzZXItc2lnbmVkIG1hbmRhdGUgZnJvbSBpdHMgYXV0aG9yaXplZCBwYXJhbWV0ZXJzLiBUaGUgY29udHJhY3QKc2V0cyBgc3BlbnQ9MCwgc2VxPTAsIHN0YXR1cz1BY3RpdmVgIGl0c2VsZi4gQXV0aG9yaXplZCBieSBgdXNlcmAuClJldHVybnMgdGhlIG1hbmRhdGUgaWQgKD0gYHZjX2hhc2hgLCB0aGUgc3RvcmFnZSBrZXkpLgAAAAAAEHJlZ2lzdGVyX21hbmRhdGUAAAAHAAAAAAAAAAR1c2VyAAAAEwAAAAAAAAAFYWdlbnQAAAAAAAATAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAABWFzc2V0AAAAAAAAEwAAAAAAAAAKbWF4X2Ftb3VudAAAAAAACwAAAAAAAAAGZXhwaXJ5AAAAAAAGAAAAAAAAAAd2Y19oYXNoAAAAA+4AAAAgAAAAAQAAA+kAAAPuAAAAIAAAAAM=",
+      "AAAAAAAAAENTY2hlZHVsZSBhIHNhbWUtYWRkcmVzcyBXQVNNIHVwZ3JhZGUgYWZ0ZXIgdGhlIGZpeGVkIDI0LWhvdXIgZGVsYXkuAAAAABBzY2hlZHVsZV91cGdyYWRlAAAAAQAAAAAAAAANbmV3X3dhc21faGFzaAAAAAAAA+4AAAAgAAAAAQAAA+kAAAAGAAAAAw==",
+      "AAAAAAAAAMtSZWFkLW9ubHkgcHJlZmxpZ2h0IOKAlCB3b3VsZCB0aGlzIHNwZW5kIGJlIHBlcm1pdHRlZCByaWdodCBub3c/IE11dGF0ZXMKbm90aGluZyBhbmQgcmVxdWlyZXMgbm8gYXV0aDsgdGhlIGF1dGhvcml0YXRpdmUgY29uc3VtZSBoYXBwZW5zIG9ubHkgaW4KYGV4ZWN1dGVfcGF5bWVudGAuIChJdCBpcyBhIGRyeS1ydW47IGl0IGNvbnN1bWVzIG5vdGhpbmcuKQAAAAAQdmFsaWRhdGVfbWFuZGF0ZQAAAAMAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAZhbW91bnQAAAAAAAsAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAPpAAAD7QAAAAAAAAAD",
+      "AAAAAAAAACNGaXhlZCB0aW1lbG9jayBkdXJhdGlvbiBpbiBzZWNvbmRzLgAAAAARZ2V0X3VwZ3JhZGVfZGVsYXkAAAAAAAAAAAAAAQAAAAY=",
+      "AAAAAAAAAEVSZWFkIHRoZSBwZW5kaW5nIHVwZ3JhZGUsIGluY2x1ZGluZyBoYXNoIGFuZCBlYXJsaWVzdCBleGVjdXRpb24gdGltZS4AAAAAAAATZ2V0X3BlbmRpbmdfdXBncmFkZQAAAAAAAAAAAQAAA+gAAAfQAAAADlBlbmRpbmdVcGdyYWRlAAA=",
+      "AAAAAQAAAAAAAAAAAAAADlBlbmRpbmdVcGdyYWRlAAAAAAACAAAAAAAAAA1leGVjdXRlX2FmdGVyAAAAAAAABgAAAAAAAAAJd2FzbV9oYXNoAAAAAAAD7gAAACA=",
+      "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAADQAAAAAAAAANQWxyZWFkeUV4aXN0cwAAAAAAAAEAAAAAAAAACE5vdEZvdW5kAAAAAgAAAAAAAAAOTWFuZGF0ZUV4cGlyZWQAAAAAAAQAAAAAAAAADk1hbmRhdGVSZXZva2VkAAAAAAAFAAAAAAAAAA5CdWRnZXRFeGNlZWRlZAAAAAAABgAAAAAAAAASTWVyY2hhbnRPdXRPZlNjb3BlAAAAAAAHAAAAAAAAAAtCYWRTZXF1ZW5jZQAAAAAIAAAAAAAAAA1JbnZhbGlkQW1vdW50AAAAAAAACQAAAAAAAAAGUGF1c2VkAAAAAAAKAAAAAAAAABNVcGdyYWRlTm90U2NoZWR1bGVkAAAAAAsAAAAAAAAAD1VwZ3JhZGVOb3RSZWFkeQAAAAAMAAAAAAAAABdVcGdyYWRlQWxyZWFkeVNjaGVkdWxlZAAAAAANAAAAAAAAABRVcGdyYWRlUmVxdWlyZXNQYXVzZQAAAA4=",
       "AAAAAgAAAAAAAAAAAAAABlN0YXR1cwAAAAAAAwAAAAAAAAAAAAAABkFjdGl2ZQAAAAAAAAAAAAAAAAAHUmV2b2tlZAAAAAAAAAAAAAAAAAlFeGhhdXN0ZWQAAAA=",
-      "AAAAAQAAAAAAAAAAAAAAB01hbmRhdGUAAAAADQAAADdUaGUgT05MWSBwcmluY2lwYWwgcGVybWl0dGVkIHRvIGNhbGwgYGV4ZWN1dGVfcGF5bWVudGAuAAAAAAVhZ2VudAAAAAAAABMAAAArU0VQLTQxIC8gU0FDIGNvbnRyYWN0IGlkIChVU0RDIG9uIHRlc3RuZXQpLgAAAAAFYXNzZXQAAAAAAAATAAAAQUxlZGdlciBjbG9zZSB0aW1lc3RhbXAgKHNlY29uZHMpIGFmdGVyIHdoaWNoIHRoZSBtYW5kYXRlIGlzIGRlYWQuAAAAAAAABmV4cGlyeQAAAAAABgAAACdUb3RhbCBidWRnZXQgYXV0aG9yaXplZCBieSB0aGUgbWFuZGF0ZS4AAAAACm1heF9hbW91bnQAAAAAAAsAAABETVZQOiBzaW5nbGUgYWxsb3dlZCBwYXllZSAoc2NvcGUpLiBUMTogYFZlYzxBZGRyZXNzPmAgb3Igc2NvcGUtaGFzaC4AAAAIbWVyY2hhbnQAAAATAAAAOWBOb25lYCA9PSBzdGFuZGFsb25lOiBleGFjdGx5IHRoZSBwcmUtY29tcG9zaXRlIGJlaGF2aW9yLgAAAAAAAAdwb29sX2lkAAAAA+gAAAPuAAAAIAAAAAAAAAAKcG9vbF9zdGF0ZQAAAAAH0AAAAAlQb29sU3RhdGUAAAAAAAAoVGhlIGRlbWFuZCBjdXJ2ZTsgZW1wdHkgd2hlbiBzdGFuZGFsb25lLgAAAA5wcmljZV9zY2hlZHVsZQAAAAAD6gAAB9AAAAANU2NoZWR1bGVQb2ludAAAAAAAAD9Nb25vdG9uaWMgcGF5bWVudCBjb3VudGVyIChtYW5kYXRlLWxldmVsIGF1ZGl0IC8gcmVwbGF5IGd1YXJkKS4AAAAAA3NlcQAAAAAEAAAAO0N1bXVsYXRpdmUgY29uc3VtZWQ7IGludmFyaWFudDogYDAgPD0gc3BlbnQgPD0gbWF4X2Ftb3VudGAuAAAAAAVzcGVudAAAAAAAAAsAAAAAAAAABnN0YXR1cwAAAAAH0AAAAAZTdGF0dXMAAAAAAD1TaWduZXIgb2YgdGhlIEFQMiBJbnRlbnRNYW5kYXRlOyBncmFudHMgdGhlIFNFUC00MSBhbGxvd2FuY2UuAAAAAAAABHVzZXIAAAATAAAASUhhc2ggYmluZGluZyB0byB0aGUgb2ZmLWNoYWluIEFQMiBJbnRlbnRNYW5kYXRlIFZDOyBhbHNvIHRoZSBzdG9yYWdlIGtleS4AAAAAAAAHdmNfaGFzaAAAAAPuAAAAIA==",
-      "AAAAAgAAAMNQb29sIGxpbmthZ2UgbGlmZWN5Y2xlLCBvcnRob2dvbmFsIHRvIGBTdGF0dXNgLiBgVW5saW5rZWRgIGFuZCBgUmVsZWFzZWRgCmNoaWxkcmVuIG1heSBzcGVuZCBvbiB0aGUgc29sbyBwYXRoICh0aGVpciBvd24gbGltaXRzIHN0aWxsIGFwcGx5KTsKYENvbW1pdHRlZGAgYW5kIGBDYXB0dXJlZGAgbWF5IG5vdCAoYE1hbmRhdGVQb29sZWRgKS4AAAAAAAAAAAlQb29sU3RhdGUAAAAAAAAEAAAAAAAAAAAAAAAIVW5saW5rZWQAAAAAAAAAAAAAAAlDb21taXR0ZWQAAAAAAAAAAAAAAAAAAAhDYXB0dXJlZAAAAAAAAAAAAAAACFJlbGVhc2Vk",
-      "AAAAAQAAAAAAAAAAAAAADVNjaGVkdWxlUG9pbnQAAAAAAAACAAAAPlN0cmljdGx5IGRlc2NlbmRpbmcgYWNyb3NzIHRoZSBzY2hlZHVsZTsgZWFjaCBpbiAoMCwgTUFYX1FUWV0uAAAAAAAHbWF4X3F0eQAAAAAKAAAARFN0cmljdGx5IGFzY2VuZGluZyBhY3Jvc3MgdGhlIHNjaGVkdWxlOyBlYWNoIGluICgwLCBNQVhfVU5JVF9QUklDRV0uAAAACnVuaXRfcHJpY2UAAAAAAAs=",
-      "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAAAwAAAAEAAAAAAAAAB01hbmRhdGUAAAAAAQAAA+4AAAAgAAAAAQAAAAAAAAAEUG9vbAAAAAEAAAPuAAAAIAAAAAEAAAAAAAAAC1Bvb2xNZW1iZXJzAAAAAAEAAAPuAAAAIA==",
-      "AAAAAQAAANNUaGUgcm93IGBwb29sLnJzYCBidWlsZHMgcGVyIGNvbW1pdHRlZCBjaGlsZCBhbmQgZmVlZHMgdG8gYGNsZWFyaW5nOjpjbGVhcmAuCkZlZWRpbmcgcGxhaW4gdmFsdWVzIChub3Qgc3RvcmFnZSBoYW5kbGVzKSBpcyB3aGF0IGtlZXBzIHRoZSBjbGVhcmluZwpmdW5jdGlvbiBwdXJlIGFuZCBtYWtlcyBzaW11bGF0ZSA9PSBjYXB0dXJlIGEgcHJvdmFibGUgZXF1YWxpdHkuAAAAAAAAAAAJQ2hpbGRWaWV3AAAAAAAABAAAAEJEZWNpZGVkIG9uY2UsIGJlZm9yZSBhbnkgcHJpY2UgZXhpc3RzIOKAlCBzZWUgcG9vbC5ycyBlbGlnaWJpbGl0eS4AAAAAAAhlbGlnaWJsZQAAAAEAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAAhzY2hlZHVsZQAAA+oAAAfQAAAADVNjaGVkdWxlUG9pbnQAAAAAAAAAAAAACndvcnN0X2Nhc2UAAAAAAAs=",
-      "AAAAAQAAAAAAAAAAAAAACkFsbG9jYXRpb24AAAAAAAIAAAAAAAAACm1hbmRhdGVfaWQAAAAAA+4AAAAgAAAAAAAAAANxdHkAAAAACg==",
-      "AAAAAgAAAAAAAAAAAAAAClBvb2xTdGF0dXMAAAAAAAMAAAAAAAAAAAAAAARPcGVuAAAAAAAAAAAAAAAHQ2xlYXJlZAAAAAAAAAAAAAAAAAdBYm9ydGVkAA==",
-      "AAAAAgAAAAAAAAAAAAAADENsZWFyaW5nS2luZAAAAAMAAAAAAAAAAAAAAA5UaHJlc2hvbGRGbG9vcgAAAAAAAAAAAEZSZXNlcnZlZCBmb3IgU3RhZ2UgMjsgYHJlZ2lzdGVyX3Bvb2xgIHJlamVjdHMgd2l0aCBgS2luZE5vdFN1cHBvcnRlZGAuAAAAAAAMU3BlbmRDZWlsaW5nAAAAAAAAAEZSZXNlcnZlZCBmb3IgU3RhZ2UgMjsgYHJlZ2lzdGVyX3Bvb2xgIHJlamVjdHMgd2l0aCBgS2luZE5vdFN1cHBvcnRlZGAuAAAAAAAPQ2FwYWNpdHlDZWlsaW5nAA==",
-      "AAAAAQAAAAAAAAAAAAAADENsZWFyaW5nUG9vbAAAAAsAAAAAAAAABWFzc2V0AAAAAAAAEwAAAEdVbml4IHNlY29uZHMuIENhcHR1cmUgaXMgYSBkZWFkbGluZSBhdWN0aW9uOiBuZXZlciBiZWZvcmUgdGhpcyBpbnN0YW50LgAAAAARY2xlYXJpbmdfZGVhZGxpbmUAAAAAAAAGAAAAvEZlZSByYXRlIGNhcHR1cmVkIGF0IGByZWdpc3Rlcl9wb29sYDsgY2FwdHVyZSBuZXZlciByZWFkcyBhIGxpdmUgcmF0ZS4KQWx3YXlzIDAgaW4gdGhpcyBkZXBsb3kgKHRoZSBmZWUga25vYiBzaGlwcyBpbiBpdHMgb3duIHBhc3MpOyB0aGUgZmllbGQKZXhpc3RzIHNvIHRoYXQgcGFzcyBpcyBub3QgYW5vdGhlciBBQkkgYnJlYWsuAAAADmZlZV9icHNfcGlubmVkAAAAAAAEAAAAAAAAAARraW5kAAAH0AAAAAxDbGVhcmluZ0tpbmQAAAA9TGl2ZSBDb21taXR0ZWQgbWVtYmVycyB3aGlsZSBPcGVuOyBmcm96ZW4gYXQgdGVybWluYWwgc3RhdHVzLgAAAAAAAAxtZW1iZXJfY291bnQAAAAEAAAAAAAAAAhtZXJjaGFudAAAABMAAABCRmxvb3Igb24gZWFjaCBjb21taXR0aW5nIGNoaWxkJ3Mgd29yc3RfY2FzZSAoYW50aS1kdXN0IHNxdWF0dGluZykuAAAAAAAPbWluX2NoaWxkX3ZhbHVlAAAAAAoAAACDU2lnbnMgYHJlZ2lzdGVyX3Bvb2xgOyBob2xkcyBOTyBsYXRlciBwb3dlciDigJQgY2xlYXJpbmcgaXMgcGVybWlzc2lvbmxlc3MKYW5kIGRldGVybWluaXN0aWMsIHdoaWNoIGlzIHRoZSB3aG9sZSBuby1za2ltIGd1YXJhbnRlZS4AAAAACm9yaWdpbmF0b3IAAAAAABMAAAAAAAAABnN0YXR1cwAAAAAH0AAAAApQb29sU3RhdHVzAAAAAABGVmVuZG9yIG1pbmltdW0gdW5pdHM7IHRoZSBwb29sIGZpcmVzIG9ubHkgaWYgYWdncmVnYXRlIHF0eSByZWFjaGVzIGl0LgAAAAAADXRocmVzaG9sZF9xdHkAAAAAAAAKAAAAQFZlbmRvciBtaW5pbXVtIG9yZGVyIHZhbHVlLCBjb21wYXJlZCBORVQgb2YgZmVlIHRvIHRoZSBtZXJjaGFudC4AAAAPdGhyZXNob2xkX3ZhbHVlAAAAAAo=",
-      "AAAAAQAAAAAAAAAAAAAADENsZWFyT3V0Y29tZQAAAAcAAAAfbWFuZGF0ZV9pZCBvcmRlciwgcXR5ID4gMCBvbmx5LgAAAAALYWxsb2NhdGlvbnMAAAAD6gAAB9AAAAAKQWxsb2NhdGlvbgAAAAAALVRoZSBzaW5nbGUgdW5pZm9ybSBwcmljZSBwKjsgMCB3aGVuIGAhZmlyZXNgLgAAAAAAAA5jbGVhcmluZ19wcmljZQAAAAAACwAAAAAAAAAFZmlyZXMAAAAAAAABAAAAAAAAAAtncm9zc192YWx1ZQAAAAALAAAARGBncm9zc192YWx1ZSAtIHRvdGFsX2ZlZWA7IHRoZSBudW1iZXIgY29tcGFyZWQgdG8gYHRocmVzaG9sZF92YWx1ZWAuAAAACW5ldF92YWx1ZQAAAAAAAAsAAAAAAAAACXRvdGFsX2ZlZQAAAAAAAAsAAAAAAAAACXRvdGFsX3F0eQAAAAAAAAo="
+      "AAAAAQAAAAAAAAAAAAAAB01hbmRhdGUAAAAACgAAADdUaGUgT05MWSBwcmluY2lwYWwgcGVybWl0dGVkIHRvIGNhbGwgYGV4ZWN1dGVfcGF5bWVudGAuAAAAAAVhZ2VudAAAAAAAABMAAAArU0VQLTQxIC8gU0FDIGNvbnRyYWN0IGlkIChVU0RDIG9uIHRlc3RuZXQpLgAAAAAFYXNzZXQAAAAAAAATAAAAQUxlZGdlciBjbG9zZSB0aW1lc3RhbXAgKHNlY29uZHMpIGFmdGVyIHdoaWNoIHRoZSBtYW5kYXRlIGlzIGRlYWQuAAAAAAAABmV4cGlyeQAAAAAABgAAACdUb3RhbCBidWRnZXQgYXV0aG9yaXplZCBieSB0aGUgbWFuZGF0ZS4AAAAACm1heF9hbW91bnQAAAAAAAsAAABETVZQOiBzaW5nbGUgYWxsb3dlZCBwYXllZSAoc2NvcGUpLiBUMTogYFZlYzxBZGRyZXNzPmAgb3Igc2NvcGUtaGFzaC4AAAAIbWVyY2hhbnQAAAATAAAAP01vbm90b25pYyBwYXltZW50IGNvdW50ZXIgKG1hbmRhdGUtbGV2ZWwgdHJhY2UgLyByZXBsYXkgZ3VhcmQpLgAAAAADc2VxAAAAAAQAAAA7Q3VtdWxhdGl2ZSBjb25zdW1lZDsgaW52YXJpYW50OiBgMCA8PSBzcGVudCA8PSBtYXhfYW1vdW50YC4AAAAABXNwZW50AAAAAAAACwAAAAAAAAAGc3RhdHVzAAAAAAfQAAAABlN0YXR1cwAAAAAAPVNpZ25lciBvZiB0aGUgQVAyIEludGVudE1hbmRhdGU7IGdyYW50cyB0aGUgU0VQLTQxIGFsbG93YW5jZS4AAAAAAAAEdXNlcgAAABMAAABJSGFzaCBiaW5kaW5nIHRvIHRoZSBvZmYtY2hhaW4gQVAyIEludGVudE1hbmRhdGUgVkM7IGFsc28gdGhlIHN0b3JhZ2Uga2V5LgAAAAAAAAd2Y19oYXNoAAAAA+4AAAAg",
+      "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABAAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAGUGF1c2VkAAAAAAAAAAAAAAAAAA5QZW5kaW5nVXBncmFkZQAAAAAAAQAAAAAAAAAHTWFuZGF0ZQAAAAABAAAD7gAAACA="
     ]), options);
     this.options = options;
   }
   fromJSON = {
-    get_pool: this.txFromJSON,
-    clear_pool: this.txFromJSON,
-    evict_child: this.txFromJSON,
+    pause: this.txFromJSON,
+    unpause: this.txFromJSON,
+    get_admin: this.txFromJSON,
+    is_paused: this.txFromJSON,
+    set_admin: this.txFromJSON,
     get_mandate: this.txFromJSON,
-    commit_child: this.txFromJSON,
-    register_pool: this.txFromJSON,
+    cancel_upgrade: this.txFromJSON,
     revoke_mandate: this.txFromJSON,
-    simulate_clear: this.txFromJSON,
     execute_payment: this.txFromJSON,
-    get_pool_members: this.txFromJSON,
+    execute_upgrade: this.txFromJSON,
     register_mandate: this.txFromJSON,
-    validate_mandate: this.txFromJSON
+    schedule_upgrade: this.txFromJSON,
+    validate_mandate: this.txFromJSON,
+    get_upgrade_delay: this.txFromJSON,
+    get_pending_upgrade: this.txFromJSON
   };
 };
 
@@ -3712,14 +3261,14 @@ __export(token_exports, {
 import { Address, Contract, TransactionBuilder, nativeToScVal, scValToNative, rpc as rpc2 } from "@stellar/stellar-sdk";
 var INCLUSION_FEE = "100000";
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function settle(server, hash2) {
-  let res = await server.getTransaction(hash2);
+async function settle(server, hash3) {
+  let res = await server.getTransaction(hash3);
   for (let i = 0; res.status === "NOT_FOUND" && i < 30; i += 1) {
     await sleep(1e3);
-    res = await server.getTransaction(hash2);
+    res = await server.getTransaction(hash3);
   }
   if (res.status !== "SUCCESS") {
-    throw new Error(`transaction ${hash2} did not succeed: ${res.status}`);
+    throw new Error(`transaction ${hash3} did not succeed: ${res.status}`);
   }
 }
 async function approve(net, tokenId, owner, spender, amount, expirationLedger) {
@@ -3888,48 +3437,332 @@ async function runSetup(opts = {}) {
 
 // packages/sdk/dist/index.js
 import { Buffer as Buffer4 } from "buffer";
-import { Keypair as Keypair3, hash } from "@stellar/stellar-sdk";
+import { Keypair as Keypair4, hash as hash2, rpc as rpc4 } from "@stellar/stellar-sdk";
 
 // packages/sdk/dist/x402.js
 import { Buffer as Buffer3 } from "buffer";
+import { Keypair as Keypair3, hash } from "@stellar/stellar-sdk";
 var X_PAYMENT_HEADER = "x-payment";
-async function parse402(res) {
+var REAPP_PAYMENT_CAPABILITIES_HEADER = "reapp-payment-capabilities";
+var BOUND_PAYMENT_CAPABILITY = "reapp-bound-v2";
+var BOUND_PAYMENT_SCHEME = "reapp-soroban-bound";
+var CHALLENGE_DOMAIN = Buffer3.from("REAPP\0X402\0CHALLENGE\0V2\0", "utf8");
+var PROOF_DOMAIN = Buffer3.from("REAPP\0X402\0BOUND-PROOF\0V2\0", "utf8");
+var HEX_32 = /^[0-9a-f]{64}$/;
+function exactKeys(value, expected, label) {
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (actual.length !== wanted.length || actual.some((key, index) => key !== wanted[index])) {
+    throw new Error(`x402: ${label} contains missing or unknown fields`);
+  }
+}
+function object(value, label) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`x402: ${label} must be a JSON object`);
+  }
+  return value;
+}
+function text(value, label) {
+  if (typeof value !== "string" || value.length === 0 || value.trim() !== value) {
+    throw new Error(`x402: ${label} must be a non-empty exact string`);
+  }
+  return value;
+}
+function canonicalPaymentOrigin(value, label = "challenge audience") {
+  const origin = text(value, label);
+  let parsed;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    throw new Error(`x402: ${label} must be an absolute HTTP(S) origin`);
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:" || parsed.origin !== origin || parsed.username !== "" || parsed.password !== "" || parsed.pathname !== "/" || parsed.search !== "" || parsed.hash !== "") {
+    throw new Error(`x402: ${label} must be an exact HTTP(S) origin without path, query, credentials, or fragment`);
+  }
+  return origin;
+}
+function safeInteger(value, label) {
+  if (!Number.isSafeInteger(value))
+    throw new Error(`x402: ${label} must be a safe integer`);
+  return value;
+}
+function canonicalBase64(value, decodedLength, label) {
+  const encoded = text(value, label);
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
+    throw new Error(`x402: ${label} must be canonical base64`);
+  }
+  const decoded = Buffer3.from(encoded, "base64");
+  if (decoded.length !== decodedLength || decoded.toString("base64") !== encoded) {
+    throw new Error(`x402: ${label} has the wrong decoded length or encoding`);
+  }
+  return encoded;
+}
+function canonicalBase64Url32(value, label) {
+  const encoded = text(value, label);
+  if (!/^[A-Za-z0-9_-]{43}$/.test(encoded)) {
+    throw new Error(`x402: ${label} must be canonical unpadded base64url`);
+  }
+  const decoded = Buffer3.from(encoded, "base64url");
+  if (decoded.length !== 32 || decoded.toString("base64url") !== encoded) {
+    throw new Error(`x402: ${label} must encode exactly 32 bytes`);
+  }
+  return encoded;
+}
+function parseBoundPaymentChallenge(value) {
+  const challenge = object(value, "bound challenge");
+  exactKeys(challenge, [
+    "proofVersion",
+    "challengeId",
+    "audience",
+    "scheme",
+    "method",
+    "resource",
+    "bodySha256",
+    "network",
+    "networkId",
+    "registryId",
+    "merchant",
+    "asset",
+    "amountStroops",
+    "decimals",
+    "issuedAt",
+    "expiresAt",
+    "authorization"
+  ], "bound challenge");
+  if (challenge.proofVersion !== 2)
+    throw new Error("x402: unsupported bound challenge version");
+  const challengeId = canonicalBase64Url32(challenge.challengeId, "challengeId");
+  const method = text(challenge.method, "challenge method");
+  if (method !== method.toUpperCase())
+    throw new Error("x402: challenge method must be uppercase");
+  const bodySha256 = challenge.bodySha256 === null ? null : text(challenge.bodySha256, "challenge bodySha256");
+  if (bodySha256 !== null && !HEX_32.test(bodySha256)) {
+    throw new Error("x402: bodySha256 must be null or 32-byte lowercase hex");
+  }
+  const networkId = text(challenge.networkId, "networkId");
+  if (!HEX_32.test(networkId))
+    throw new Error("x402: networkId must be 32-byte lowercase hex");
+  const amountStroops = text(challenge.amountStroops, "amountStroops");
+  if (!/^[1-9]\d*$/.test(amountStroops))
+    throw new Error("x402: amountStroops must be a positive canonical integer");
+  const decimals = safeInteger(challenge.decimals, "challenge decimals");
+  if (decimals < 0 || decimals > 38)
+    throw new Error("x402: challenge decimals are out of range");
+  const issuedAt = safeInteger(challenge.issuedAt, "challenge issuedAt");
+  const expiresAt = safeInteger(challenge.expiresAt, "challenge expiresAt");
+  if (issuedAt <= 0 || expiresAt <= issuedAt)
+    throw new Error("x402: challenge time window is invalid");
+  const authorization = object(challenge.authorization, "challenge authorization");
+  exactKeys(authorization, ["algorithm", "mac"], "challenge authorization");
+  if (authorization.algorithm !== "hmac-sha256")
+    throw new Error("x402: unsupported challenge authorization");
+  return {
+    proofVersion: 2,
+    challengeId,
+    audience: canonicalPaymentOrigin(challenge.audience),
+    scheme: text(challenge.scheme, "challenge scheme"),
+    method,
+    resource: text(challenge.resource, "challenge resource"),
+    bodySha256,
+    network: text(challenge.network, "challenge network"),
+    networkId,
+    registryId: text(challenge.registryId, "challenge registryId"),
+    merchant: text(challenge.merchant, "challenge merchant"),
+    asset: text(challenge.asset, "challenge asset"),
+    amountStroops,
+    decimals,
+    issuedAt,
+    expiresAt,
+    authorization: {
+      algorithm: "hmac-sha256",
+      mac: canonicalBase64(authorization.mac, 32, "challenge mac")
+    }
+  };
+}
+function boundChallengeAuthorizationBytes(challenge) {
+  const canonical = JSON.stringify({
+    proofVersion: challenge.proofVersion,
+    challengeId: challenge.challengeId,
+    audience: challenge.audience,
+    scheme: challenge.scheme,
+    method: challenge.method,
+    resource: challenge.resource,
+    bodySha256: challenge.bodySha256,
+    network: challenge.network,
+    networkId: challenge.networkId,
+    registryId: challenge.registryId,
+    merchant: challenge.merchant,
+    asset: challenge.asset,
+    amountStroops: challenge.amountStroops,
+    decimals: challenge.decimals,
+    issuedAt: challenge.issuedAt,
+    expiresAt: challenge.expiresAt
+  });
+  return Buffer3.concat([CHALLENGE_DOMAIN, Buffer3.from(canonical, "utf8")]);
+}
+function hashBoundPaymentChallenge(challenge) {
+  return hash(boundChallengeAuthorizationBytes(challenge)).toString("hex");
+}
+function boundProofDigest(input) {
+  const txHash = input.txHash.toLowerCase();
+  const mandateId = input.mandateId.toLowerCase();
+  if (!HEX_32.test(txHash))
+    throw new Error("x402: transaction hash must be 32-byte lowercase hex");
+  if (!HEX_32.test(mandateId))
+    throw new Error("x402: mandate id must be 32-byte lowercase hex");
+  const challengeHash = hashBoundPaymentChallenge(input.challenge);
+  const canonical = JSON.stringify({
+    proofVersion: 2,
+    scheme: input.challenge.scheme,
+    network: input.challenge.network,
+    networkId: input.challenge.networkId,
+    registryId: input.challenge.registryId,
+    challengeId: input.challenge.challengeId,
+    challengeHash,
+    txHash,
+    mandateId
+  });
+  return hash(Buffer3.concat([PROOF_DOMAIN, Buffer3.from(canonical, "utf8")]));
+}
+function createBoundPaymentProof(input) {
+  const challenge = parseBoundPaymentChallenge(input.challenge);
+  Object.freeze(challenge.authorization);
+  Object.freeze(challenge);
+  const txHash = input.txHash.toLowerCase();
+  const mandateId = input.mandateId.toLowerCase();
+  const signature = input.signer.sign(boundProofDigest({ challenge, txHash, mandateId })).toString("base64");
+  const authorization = Object.freeze({
+    algorithm: "stellar-ed25519-sha256",
+    signature
+  });
+  return Object.freeze({
+    proofVersion: 2,
+    scheme: challenge.scheme,
+    network: challenge.network,
+    txHash,
+    mandateId,
+    challenge,
+    authorization
+  });
+}
+async function parse402(response) {
   let body;
   try {
-    body = await res.clone().json();
+    body = await response.clone().json();
   } catch {
     throw new Error("x402: the 402 response body was not valid JSON");
   }
   const accepts = body?.accepts;
-  const a = Array.isArray(accepts) ? accepts[0] : void 0;
-  if (!a)
+  if (!Array.isArray(accepts) || accepts.length === 0) {
     throw new Error("x402: the 402 response carried no `accepts` payment requirement");
-  const amount = String(a.maxAmountRequired ?? a.amount ?? "");
-  const payTo = String(a.payTo ?? "");
+  }
+  const accepted = object(accepts[0], "payment requirement");
+  const amount = String(accepted.maxAmountRequired ?? accepted.amount ?? "");
+  const payTo = String(accepted.payTo ?? "");
   if (!amount)
     throw new Error("x402: the payment requirement is missing an amount");
   if (!payTo)
     throw new Error("x402: the payment requirement is missing `payTo` (the merchant)");
-  const extra = a.extra ?? {};
+  const extra = object(accepted.extra ?? {}, "payment requirement extra");
+  if ("reappProofVersion" in extra && extra.reappProofVersion !== 2) {
+    throw new Error("x402: unsupported REAPP payment proof version");
+  }
+  const proofVersion = extra.reappProofVersion === 2 ? 2 : 1;
+  const challenge = proofVersion === 2 ? parseBoundPaymentChallenge(extra.challenge) : void 0;
   return {
-    scheme: String(a.scheme ?? "reapp-soroban"),
-    network: String(a.network ?? "stellar-testnet"),
+    scheme: String(accepted.scheme ?? "reapp-soroban"),
+    network: String(accepted.network ?? "stellar-testnet"),
     amount,
-    asset: String(a.asset ?? ""),
+    asset: String(accepted.asset ?? ""),
     payTo,
-    resource: String(a.resource ?? ""),
-    contract: extra.contract ? String(extra.contract) : void 0
+    resource: String(accepted.resource ?? ""),
+    contract: extra.contract ? String(extra.contract) : void 0,
+    ...proofVersion === 2 ? { proofVersion: 2, challenge } : {}
   };
 }
-function encodePaymentProof(p) {
-  return Buffer3.from(JSON.stringify(p), "utf8").toString("base64");
+function encodePaymentProof(proof) {
+  return Buffer3.from(JSON.stringify(proof), "utf8").toString("base64");
+}
+function isBoundPaymentProof(proof) {
+  return "proofVersion" in proof && proof.proofVersion === 2;
 }
 
 // packages/sdk/dist/index.js
+function createSettlementReceiptId(receipt) {
+  return hash2(Buffer4.from(JSON.stringify([
+    "reapp-settlement-receipt-v2",
+    receipt.proofVersion,
+    receipt.url,
+    receipt.method,
+    receipt.txHash,
+    receipt.mandateId,
+    receipt.amount,
+    receipt.submittedAt,
+    receipt.validUntil,
+    encodePaymentProof(receipt.proof)
+  ]), "utf8")).toString("hex");
+}
+var deliveredReceipts = /* @__PURE__ */ new WeakMap();
+var DeliveryPendingError = class extends Error {
+  receipt;
+  constructor(receipt, cause) {
+    super(`payment transaction ${receipt.txHash} was prepared and broadcast may have been attempted, but settlement or delivery is pending; reconcile and retry the same receipt and do not pay again`, { cause });
+    this.name = "DeliveryPendingError";
+    this.receipt = receipt;
+  }
+};
+var SettlementUncertainError = class extends Error {
+  settlement;
+  constructor(settlement2, cause) {
+    super(`payment transaction ${settlement2.txHash} was prepared and broadcast was attempted, but its final result is uncertain; reconcile this hash before any new payment`, { cause });
+    this.name = "SettlementUncertainError";
+    this.settlement = settlement2;
+  }
+};
+var PaymentRejectedError = class extends Error {
+  mandateId;
+  constructor(mandateId, cause) {
+    super(`payment rejected by contract for mandate ${mandateId}: ${cause instanceof Error ? cause.message : String(cause)}`, { cause });
+    this.name = "PaymentRejectedError";
+    this.mandateId = mandateId;
+  }
+};
 var DEFAULT_DECIMALS = 7;
 var PAYMENT_TIMEOUT_SECONDS = 60;
 var I128_MAX = 2n ** 127n - 1n;
 var MAX_EXPIRY = Number.MAX_SAFE_INTEGER;
+var U64_MAX = 2n ** 64n - 1n;
+var activeMandatePaymentClaims = /* @__PURE__ */ new Map();
+var FINALIZED_CONTRACT_ERROR_CODES = /* @__PURE__ */ new Set([
+  1,
+  2,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31
+]);
 function toStroops(human, decimals = DEFAULT_DECIMALS) {
   const s = String(human).trim();
   if (!/^\d+(\.\d+)?$/.test(s)) {
@@ -3948,35 +3781,367 @@ function toStroops(human, decimals = DEFAULT_DECIMALS) {
   }
   return stroops;
 }
-var asKeypair = (s) => typeof s === "string" ? Keypair3.fromSecret(s) : s;
+var asKeypair = (s) => typeof s === "string" ? Keypair4.fromSecret(s) : s;
+function normalizeExpectedSequence(value) {
+  let normalized;
+  if (typeof value === "bigint")
+    normalized = value;
+  else if (typeof value === "number") {
+    if (!Number.isSafeInteger(value))
+      throw new Error("expected payment sequence must be a safe non-negative integer");
+    normalized = BigInt(value);
+  } else {
+    if (!/^\d+$/.test(value))
+      throw new Error("expected payment sequence must be canonical unsigned decimal");
+    normalized = BigInt(value);
+  }
+  if (normalized < 0n || normalized > U64_MAX)
+    throw new Error("expected payment sequence is outside the contract u64 range");
+  return normalized;
+}
 var Agent = class {
   net;
   mandate;
   agentKeypair;
-  constructor(net, mandate2, agentKeypair) {
+  proofPolicy;
+  receiptStore;
+  pendingSettlement;
+  paymentClaimOwner = /* @__PURE__ */ Symbol("reapp-payment-claim");
+  paymentClaimKey;
+  constructor(net, mandate2, agentKeypair, proofPolicy = "legacy-compatible", receiptStore) {
     this.net = net;
     this.mandate = mandate2;
     this.agentKeypair = agentKeypair;
+    this.proofPolicy = proofPolicy;
+    this.receiptStore = receiptStore;
+  }
+  claimPaymentOperation() {
+    if (this.paymentClaimKey)
+      throw new Error("another payment operation is already active on this agent");
+    const key = `${this.net.networkPassphrase}
+${this.net.mandateRegistryId}
+${this.mandate.id}`;
+    if (activeMandatePaymentClaims.has(key)) {
+      throw new Error("another payment operation for this mandate is already active");
+    }
+    activeMandatePaymentClaims.set(key, this.paymentClaimOwner);
+    this.paymentClaimKey = key;
+  }
+  releasePaymentOperation() {
+    const key = this.paymentClaimKey;
+    if (!key)
+      return;
+    if (activeMandatePaymentClaims.get(key) === this.paymentClaimOwner) {
+      activeMandatePaymentClaims.delete(key);
+    }
+    this.paymentClaimKey = void 0;
+  }
+  async hydratePendingReceipt() {
+    if (this.pendingSettlement || !this.receiptStore)
+      return void 0;
+    const receipts = await this.receiptStore.listPending();
+    const receipt = [...receipts].filter((candidate) => candidate.mandateId === this.mandate.id).sort((a, b) => a.receiptId.localeCompare(b.receiptId))[0];
+    if (!receipt)
+      return void 0;
+    const expectedId = createSettlementReceiptId({
+      proofVersion: receipt.proofVersion,
+      url: receipt.url,
+      method: receipt.method,
+      txHash: receipt.txHash,
+      mandateId: receipt.mandateId,
+      amount: receipt.amount,
+      submittedAt: receipt.submittedAt,
+      validUntil: receipt.validUntil,
+      proof: receipt.proof
+    });
+    if (receipt.receiptId !== expectedId || receipt.txHash !== receipt.proof.txHash || receipt.mandateId !== receipt.proof.mandateId || !Number.isSafeInteger(receipt.submittedAt) || !Number.isSafeInteger(receipt.validUntil) || receipt.submittedAt <= 0 || receipt.validUntil <= receipt.submittedAt) {
+      throw new Error("settlement receipt store returned invalid recovery evidence");
+    }
+    if (!this.paymentClaimKey)
+      this.claimPaymentOperation();
+    this.pendingSettlement = Object.freeze({
+      txHash: receipt.txHash,
+      mandateId: receipt.mandateId,
+      amount: receipt.amount,
+      expectedSeq: "unknown",
+      submittedAt: receipt.submittedAt,
+      validUntil: receipt.validUntil,
+      receiptId: receipt.receiptId
+    });
+    return receipt;
   }
   /** Execute a mandate-validated payment of `amount` (human, e.g. "1.00").
    *  Reads the current sequence, then calls the contract's `execute_payment`
    *  (agent-signed). Throws if the contract rejects it. Returns the tx hash. */
-  async pay(amount) {
-    const signer = keypairSigner(this.agentKeypair, this.net.networkPassphrase);
-    const client = registryClient(this.net, signer);
-    const current = (await client.get_mandate({ mandate_id: this.mandate.idBuffer })).result.unwrap();
-    const at = await client.execute_payment({
-      mandate_id: this.mandate.idBuffer,
-      amount: toStroops(amount, this.mandate.decimals),
-      expected_seq: current.seq
-    }, { timeoutInSeconds: PAYMENT_TIMEOUT_SECONDS });
-    const sent = await at.signAndSend();
-    try {
-      sent.result.unwrap();
-    } catch (e) {
-      throw new Error(`payment rejected by contract for mandate ${this.mandate.id}: ${e instanceof Error ? e.message : String(e)}`);
+  async pay(amount, lifecycle) {
+    if (!lifecycle || typeof lifecycle.onPrepared !== "function") {
+      throw new Error("pay requires an onPrepared durable settlement journal before any network call");
     }
-    return sent.sendTransactionResponse?.hash ?? "";
+    this.claimPaymentOperation();
+    let retainClaim = false;
+    try {
+      const outstandingReceipt = await this.hydratePendingReceipt();
+      if (outstandingReceipt) {
+        retainClaim = true;
+        throw new DeliveryPendingError(outstandingReceipt, new Error("an unresolved receipt from a prior process must be reconciled or delivered first"));
+      }
+      if (this.pendingSettlement) {
+        retainClaim = true;
+        throw new SettlementUncertainError(this.pendingSettlement, new Error("a prior prepared payment has not been reconciled or delivered"));
+      }
+      const signer = keypairSigner(this.agentKeypair, this.net.networkPassphrase);
+      const client = registryClient(this.net, signer);
+      const current = (await client.get_mandate({ mandate_id: this.mandate.idBuffer })).result.unwrap();
+      const expectedSeq = lifecycle.expectedSeq === void 0 ? current.seq : normalizeExpectedSequence(lifecycle.expectedSeq);
+      if (current.seq !== expectedSeq) {
+        throw new Error(`payment operation expected mandate sequence ${expectedSeq}, but current sequence is ${current.seq}; refusing to create another transaction`);
+      }
+      const at = await client.execute_payment({
+        mandate_id: this.mandate.idBuffer,
+        amount: toStroops(amount, this.mandate.decimals),
+        expected_seq: expectedSeq
+      }, { timeoutInSeconds: PAYMENT_TIMEOUT_SECONDS });
+      await at.sign();
+      const signed = at.signed;
+      const txHash = signed?.hash().toString("hex").toLowerCase();
+      const validUntil = Number(signed?.timeBounds?.maxTime);
+      if (!txHash || !/^[0-9a-f]{64}$/.test(txHash) || !Number.isSafeInteger(validUntil) || validUntil <= 0) {
+        this.pendingSettlement = void 0;
+        throw new Error("payment signing did not produce a canonical hash and finite validity window");
+      }
+      this.pendingSettlement = Object.freeze({
+        txHash,
+        mandateId: this.mandate.id,
+        amount,
+        expectedSeq: expectedSeq.toString(),
+        submittedAt: Math.floor(Date.now() / 1e3),
+        validUntil
+      });
+      try {
+        const receiptId = await lifecycle.onPrepared(this.pendingSettlement);
+        if (receiptId)
+          this.pendingSettlement = Object.freeze({ ...this.pendingSettlement, receiptId });
+      } catch (cause) {
+        this.pendingSettlement = void 0;
+        throw cause;
+      }
+      let sent;
+      try {
+        sent = await at.send({
+          onSubmitted: (response) => {
+            const submittedHash2 = response?.hash?.toLowerCase();
+            if (submittedHash2 !== txHash) {
+              throw new Error("payment RPC returned a different transaction hash than the signed envelope");
+            }
+            const receiptId = lifecycle.onSubmitted?.(submittedHash2);
+            if (receiptId)
+              this.pendingSettlement = Object.freeze({ ...this.pendingSettlement, receiptId });
+          }
+        });
+      } catch (cause) {
+        retainClaim = true;
+        throw new SettlementUncertainError(this.pendingSettlement, cause);
+      }
+      try {
+        sent.result.unwrap();
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        const code = Number((message.match(/Error\(Contract,\s*#(\d+)\)/) ?? [])[1]);
+        if (Number.isInteger(code) && FINALIZED_CONTRACT_ERROR_CODES.has(code)) {
+          this.pendingSettlement = void 0;
+          throw new PaymentRejectedError(this.mandate.id, cause);
+        }
+        retainClaim = true;
+        throw new SettlementUncertainError(this.pendingSettlement, cause);
+      }
+      const submittedHash = sent.sendTransactionResponse?.hash?.toLowerCase();
+      if (submittedHash && submittedHash !== txHash) {
+        retainClaim = true;
+        throw new SettlementUncertainError(this.pendingSettlement, new Error("payment RPC returned a different hash than the signed transaction"));
+      }
+      if (lifecycle.holdUntilDelivery) {
+        retainClaim = true;
+      } else {
+        this.pendingSettlement = void 0;
+      }
+      return txHash;
+    } finally {
+      if (!retainClaim)
+        this.releasePaymentOperation();
+    }
+  }
+  getPendingSettlement() {
+    return this.pendingSettlement;
+  }
+  /** Query RPC for a previously prepared/submitted transaction without creating
+   *  a new one. Pass a durable journal record after process restart. */
+  async reconcilePendingSettlement(restored) {
+    if (restored) {
+      if (restored.mandateId !== this.mandate.id || !/^[0-9a-f]{64}$/.test(restored.txHash) || !/^(?:unknown|\d+)$/.test(restored.expectedSeq) || !Number.isSafeInteger(restored.submittedAt) || !Number.isSafeInteger(restored.validUntil) || restored.submittedAt <= 0 || restored.validUntil <= restored.submittedAt || restored.receiptId !== void 0 && !/^[0-9a-f]{64}$/.test(restored.receiptId)) {
+        throw new Error("pending settlement journal record is invalid or belongs to another mandate");
+      }
+      if (toStroops(restored.amount, this.mandate.decimals) <= 0n) {
+        throw new Error("pending settlement journal amount must be positive");
+      }
+      if (this.pendingSettlement && this.pendingSettlement.txHash !== restored.txHash) {
+        throw new Error("a different pending settlement is already locked on this agent");
+      }
+      this.pendingSettlement = Object.freeze({ ...restored });
+    }
+    if (!this.paymentClaimKey)
+      this.claimPaymentOperation();
+    try {
+      await this.hydratePendingReceipt();
+    } catch (error) {
+      if (!this.pendingSettlement)
+        this.releasePaymentOperation();
+      throw error;
+    }
+    const settlement2 = this.pendingSettlement;
+    if (!settlement2) {
+      this.releasePaymentOperation();
+      return { kind: "none" };
+    }
+    const server = new rpc4.Server(this.net.rpcUrl, { allowHttp: this.net.rpcUrl.startsWith("http://") });
+    const response = await server.getTransaction(settlement2.txHash);
+    if (response.status === rpc4.Api.GetTransactionStatus.NOT_FOUND) {
+      if (settlement2.submittedAt > 0 && settlement2.validUntil > 0 && response.latestLedgerCloseTime > settlement2.validUntil && response.oldestLedgerCloseTime <= settlement2.submittedAt) {
+        this.pendingSettlement = void 0;
+        if (settlement2.receiptId)
+          await this.receiptStore?.clearPending(settlement2.receiptId);
+        this.releasePaymentOperation();
+        return { kind: "expired", settlement: settlement2 };
+      }
+      return { kind: "pending", settlement: settlement2 };
+    }
+    if (response.status === rpc4.Api.GetTransactionStatus.FAILED) {
+      this.pendingSettlement = void 0;
+      if (settlement2.receiptId)
+        await this.receiptStore?.clearPending(settlement2.receiptId);
+      this.releasePaymentOperation();
+      return { kind: "failed", settlement: settlement2 };
+    }
+    if (response.status === rpc4.Api.GetTransactionStatus.SUCCESS) {
+      if (!settlement2.receiptId) {
+        this.pendingSettlement = void 0;
+        this.releasePaymentOperation();
+      }
+      return { kind: "succeeded", settlement: settlement2, deliveryPending: Boolean(settlement2.receiptId) };
+    }
+    return { kind: "pending", settlement: settlement2 };
+  }
+  /**
+   * Retry delivery with an already-settled proof. This method never calls
+   * `pay`, never signs, and never creates another on-chain transaction.
+   */
+  async retryDelivery(receipt, init) {
+    if (!this.receiptStore)
+      throw new Error("a SettlementReceiptStore is required to retry delivery safely");
+    if (receipt.mandateId !== this.mandate.id || receipt.proof.mandateId !== this.mandate.id) {
+      throw new Error("x402: settlement receipt belongs to a different mandate");
+    }
+    if (receipt.txHash !== receipt.proof.txHash) {
+      throw new Error("x402: settlement receipt fields do not match its proof");
+    }
+    if (!Number.isSafeInteger(receipt.submittedAt) || !Number.isSafeInteger(receipt.validUntil) || receipt.submittedAt <= 0 || receipt.validUntil <= receipt.submittedAt) {
+      throw new Error("x402: settlement receipt has an invalid transaction validity window");
+    }
+    const proof = receipt.proof;
+    const bound = isBoundPaymentProof(proof);
+    if (receipt.proofVersion === 2 !== bound) {
+      throw new Error("x402: settlement receipt proof version is inconsistent");
+    }
+    const expectedReceiptId = createSettlementReceiptId({
+      proofVersion: receipt.proofVersion,
+      url: receipt.url,
+      method: receipt.method,
+      txHash: receipt.txHash,
+      mandateId: receipt.mandateId,
+      amount: receipt.amount,
+      submittedAt: receipt.submittedAt,
+      validUntil: receipt.validUntil,
+      proof
+    });
+    if (receipt.receiptId !== expectedReceiptId) {
+      throw new Error("x402: settlement receipt integrity check failed");
+    }
+    if (!isBoundPaymentProof(proof) && receipt.amount !== proof.amount) {
+      throw new Error("x402: settlement receipt amount does not match its proof");
+    }
+    const method = (init?.method ?? receipt.method).toUpperCase();
+    if (method !== receipt.method.toUpperCase()) {
+      throw new Error("x402: delivery retry method does not match its settlement receipt");
+    }
+    if (bound) {
+      const target = new URL(receipt.url);
+      const resource = `${target.pathname}${target.search}`;
+      if (proof.challenge.method !== method || proof.challenge.resource !== resource || proof.challenge.audience !== target.origin) {
+        throw new Error("x402: bound receipt does not match its delivery target");
+      }
+    }
+    if (!this.paymentClaimKey)
+      this.claimPaymentOperation();
+    const headers = new Headers(init?.headers);
+    headers.set(X_PAYMENT_HEADER, encodePaymentProof(proof));
+    if (receipt.proofVersion === 2) {
+      headers.set(REAPP_PAYMENT_CAPABILITIES_HEADER, BOUND_PAYMENT_CAPABILITY);
+    }
+    let delivered;
+    try {
+      delivered = await fetch(receipt.url, {
+        ...init,
+        method,
+        // Settlement proofs are bearer material. Never forward one across a
+        // redirect; the caller may explicitly start a new request to a new URL.
+        redirect: "manual",
+        headers
+      });
+      if (!delivered.ok) {
+        throw new Error(`merchant returned HTTP ${delivered.status} after settlement`);
+      }
+      await delivered.clone().arrayBuffer();
+      deliveredReceipts.set(delivered, receipt);
+      return delivered;
+    } catch (cause) {
+      throw cause instanceof DeliveryPendingError ? cause : new DeliveryPendingError(receipt, cause);
+    }
+  }
+  /**
+   * Application-level delivery commit. Call only after the complete response
+   * has been validated and any business result is durably recorded. Until this
+   * succeeds, the retained receipt keeps every new payment fail-closed.
+   */
+  async acknowledgeDelivery(receipt) {
+    if (!this.receiptStore)
+      throw new Error("a SettlementReceiptStore is required to acknowledge delivery");
+    if (receipt.mandateId !== this.mandate.id || receipt.proof.mandateId !== this.mandate.id) {
+      throw new Error("x402: cannot acknowledge a receipt for another mandate");
+    }
+    if (receipt.txHash !== receipt.proof.txHash || !Number.isSafeInteger(receipt.submittedAt) || !Number.isSafeInteger(receipt.validUntil) || receipt.submittedAt <= 0 || receipt.validUntil <= receipt.submittedAt) {
+      throw new Error("x402: cannot acknowledge invalid settlement evidence");
+    }
+    const expectedId = createSettlementReceiptId({
+      proofVersion: receipt.proofVersion,
+      url: receipt.url,
+      method: receipt.method,
+      txHash: receipt.txHash,
+      mandateId: receipt.mandateId,
+      amount: receipt.amount,
+      submittedAt: receipt.submittedAt,
+      validUntil: receipt.validUntil,
+      proof: receipt.proof
+    });
+    if (receipt.receiptId !== expectedId) {
+      throw new Error("x402: cannot acknowledge a receipt with an invalid integrity id");
+    }
+    try {
+      await this.receiptStore.clearPending(receipt.receiptId);
+    } catch (cause) {
+      throw new DeliveryPendingError(receipt, cause);
+    }
+    if (this.pendingSettlement?.txHash === receipt.txHash)
+      this.pendingSettlement = void 0;
+    this.releasePaymentOperation();
   }
   /**
    * x402 round-trip. GET `url`; if the server answers 402 Payment Required, read
@@ -3991,26 +4156,138 @@ var Agent = class {
    * before serving the resource.
    */
   async fetch(url, init) {
-    const first = await fetch(url, init);
+    const outstandingReceipt = await this.hydratePendingReceipt();
+    if (outstandingReceipt) {
+      throw new DeliveryPendingError(outstandingReceipt, new Error("recover the durable receipt from the prior process before starting another fetch"));
+    }
+    if (this.pendingSettlement) {
+      throw new SettlementUncertainError(this.pendingSettlement, new Error("reconcile or recover the prior payment before starting another fetch"));
+    }
+    const firstHeaders = new Headers(init?.headers);
+    firstHeaders.set(REAPP_PAYMENT_CAPABILITIES_HEADER, BOUND_PAYMENT_CAPABILITY);
+    const first = await fetch(url, {
+      ...init,
+      // Refuse automatic redirects before payment so a challenge cannot move
+      // the payment flow onto a different origin behind the SDK's back.
+      redirect: "manual",
+      headers: firstHeaders
+    });
+    if (first.status === 426) {
+      throw new Error("x402: merchant requires a payment proof capability this SDK cannot negotiate");
+    }
     if (first.status !== 402)
       return first;
     const required = await parse402(first);
+    const receiptStore = this.receiptStore;
+    if (!receiptStore) {
+      throw new Error("x402: a SettlementReceiptStore is required before submitting a paid request");
+    }
     if (required.payTo !== this.mandate.merchant) {
       throw new Error(`x402: the 402 names merchant ${required.payTo}, not this mandate's merchant ${this.mandate.merchant}`);
     }
     if (required.asset && required.asset !== this.mandate.asset) {
       throw new Error(`x402: the 402 names a different asset than this mandate's`);
     }
-    const txHash = await this.pay(required.amount);
-    const headers = new Headers(init?.headers);
-    headers.set(X_PAYMENT_HEADER, encodePaymentProof({
-      scheme: required.scheme,
-      network: required.network,
-      txHash,
-      mandateId: this.mandate.id,
-      amount: required.amount
-    }));
-    return fetch(url, { ...init, method: init?.method ?? "GET", headers });
+    if (this.proofPolicy === "bound-v2-only" && (!required.challenge || required.proofVersion !== 2)) {
+      throw new Error("x402: bound-v2-only agent refused a legacy payment challenge before paying");
+    }
+    if (required.challenge) {
+      const method = (init?.method ?? "GET").toUpperCase();
+      const target = new URL(url);
+      const resource = `${target.pathname}${target.search}`;
+      const now = Math.floor(Date.now() / 1e3);
+      const expectedNetworkId = hash2(Buffer4.from(this.net.networkPassphrase, "utf8")).toString("hex");
+      if (required.scheme !== BOUND_PAYMENT_SCHEME || required.challenge.scheme !== BOUND_PAYMENT_SCHEME) {
+        throw new Error("x402: bound challenge uses an unsupported payment scheme");
+      }
+      if (method !== "GET") {
+        throw new Error("x402: bound-v2 currently permits only GET requests");
+      }
+      if (required.challenge.audience !== target.origin || required.challenge.method !== method || required.challenge.resource !== resource || required.resource !== resource || required.challenge.bodySha256 !== null) {
+        throw new Error("x402: bound challenge does not match this exact request");
+      }
+      if (required.challenge.registryId !== this.net.mandateRegistryId || required.contract !== this.net.mandateRegistryId || required.challenge.networkId !== expectedNetworkId) {
+        throw new Error("x402: bound challenge names a different MandateRegistry");
+      }
+      if (required.challenge.merchant !== this.mandate.merchant || required.challenge.asset !== this.mandate.asset || required.challenge.network !== required.network || required.challenge.amountStroops !== toStroops(required.amount, required.challenge.decimals).toString() || required.challenge.decimals !== this.mandate.decimals) {
+        throw new Error("x402: bound challenge does not match this mandate or network");
+      }
+      if (required.challenge.expiresAt <= now || required.challenge.issuedAt > now + 60) {
+        throw new Error("x402: bound challenge is expired or not yet valid");
+      }
+    }
+    let receipt;
+    const makeReceipt = (txHash2, timing = {
+      submittedAt: Math.floor(Date.now() / 1e3),
+      validUntil: Math.floor(Date.now() / 1e3) + PAYMENT_TIMEOUT_SECONDS
+    }) => {
+      const proof = Object.freeze(required.challenge ? createBoundPaymentProof({
+        challenge: required.challenge,
+        txHash: txHash2,
+        mandateId: this.mandate.id,
+        signer: this.agentKeypair
+      }) : {
+        scheme: required.scheme,
+        network: required.network,
+        txHash: txHash2,
+        mandateId: this.mandate.id,
+        amount: required.amount
+      });
+      const receiptWithoutId = Object.freeze({
+        proofVersion: isBoundPaymentProof(proof) ? 2 : 1,
+        url,
+        method: (init?.method ?? "GET").toUpperCase(),
+        txHash: txHash2,
+        mandateId: this.mandate.id,
+        amount: required.amount,
+        submittedAt: timing.submittedAt,
+        validUntil: timing.validUntil,
+        proof
+      });
+      return Object.freeze({
+        receiptId: createSettlementReceiptId(receiptWithoutId),
+        ...receiptWithoutId
+      });
+    };
+    let txHash;
+    try {
+      txHash = await this.pay(required.amount, {
+        holdUntilDelivery: true,
+        onPrepared: async (prepared) => {
+          receipt = makeReceipt(prepared.txHash, prepared);
+          await receiptStore.savePending(receipt);
+          return receipt.receiptId;
+        }
+      });
+    } catch (cause) {
+      if (cause instanceof SettlementUncertainError) {
+        this.pendingSettlement ??= cause.settlement;
+        receipt ??= makeReceipt(cause.settlement.txHash, cause.settlement);
+        throw new DeliveryPendingError(receipt, cause);
+      }
+      if (receipt) {
+        await receiptStore.clearPending(receipt.receiptId).catch(() => void 0);
+      }
+      throw cause;
+    }
+    receipt ??= makeReceipt(txHash);
+    if (!this.pendingSettlement) {
+      this.pendingSettlement = Object.freeze({
+        txHash,
+        mandateId: this.mandate.id,
+        amount: required.amount,
+        expectedSeq: "confirmed",
+        submittedAt: receipt.submittedAt,
+        validUntil: receipt.validUntil,
+        receiptId: receipt.receiptId
+      });
+      try {
+        await receiptStore.savePending(receipt);
+      } catch (cause) {
+        throw new DeliveryPendingError(receipt, cause);
+      }
+    }
+    return this.retryDelivery(receipt, init);
   }
 };
 var reapp = {
@@ -4033,7 +4310,7 @@ var reapp = {
       expiry: input.expiry,
       nonce
     });
-    const idBuffer = hash(Buffer4.from(canonical, "utf8"));
+    const idBuffer = hash2(Buffer4.from(canonical, "utf8"));
     return {
       id: idBuffer.toString("hex"),
       idBuffer,
@@ -4057,11 +4334,7 @@ var reapp = {
       asset: mandate2.asset,
       max_amount: mandate2.maxAmount,
       expiry: BigInt(mandate2.expiry),
-      vc_hash: mandate2.idBuffer,
-      // Standalone mandate: no clearing-pool linkage (composite mandates are
-      // registered with a pool id + price schedule via the pool surface).
-      pool_id: void 0,
-      price_schedule: []
+      vc_hash: mandate2.idBuffer
     });
     const sent = await at.signAndSend();
     sent.result.unwrap();
@@ -4082,7 +4355,7 @@ var reapp = {
   },
   /** Bind an agent to a registered mandate. */
   agent(opts, net = TESTNET) {
-    return new Agent(net, opts.mandate, asKeypair(opts.signer));
+    return new Agent(net, opts.mandate, asKeypair(opts.signer), opts.proofPolicy, opts.receiptStore);
   }
 };
 
@@ -4122,7 +4395,7 @@ async function runMandateCreate(opts = {}) {
   const config = loadConfig();
   const net = networkConfig(config);
   const creds = loadCredentials();
-  const txUrl = (hash2) => `${config.explorer}/tx/${hash2}`;
+  const txUrl = (hash3) => `${config.explorer}/tx/${hash3}`;
   const budget = opts.budget ?? config.budget;
   const expirySecs = opts.expiry ? Number(opts.expiry) : 3600;
   if (!Number.isFinite(expirySecs) || expirySecs <= 0) {
@@ -4157,6 +4430,210 @@ async function runMandateCreate(opts = {}) {
   log.info("next", { run: "reapp pay" });
 }
 
+// packages/cli/src/settlement-store.ts
+import { randomUUID } from "node:crypto";
+import {
+  chmod,
+  lstat,
+  mkdir,
+  open,
+  readFile,
+  rename,
+  rm
+} from "node:fs/promises";
+import { join as join3 } from "node:path";
+var DIRECTORY = "pending-settlement";
+var STATE = "state.json";
+function settlementDirectory() {
+  return join3(reappHome(), DIRECTORY);
+}
+function statePath() {
+  return join3(settlementDirectory(), STATE);
+}
+function exactKeys2(value, expected) {
+  const actual = Object.keys(value).sort();
+  const sorted = [...expected].sort();
+  return actual.length === sorted.length && actual.every((key, index) => key === sorted[index]);
+}
+function validatePending(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("pending settlement record is not an object");
+  }
+  const pending = value;
+  const keys = ["txHash", "mandateId", "amount", "expectedSeq", "submittedAt", "validUntil"];
+  if (pending.receiptId !== void 0) keys.push("receiptId");
+  if (!exactKeys2(pending, keys) || typeof pending.txHash !== "string" || !/^[0-9a-f]{64}$/.test(pending.txHash) || typeof pending.mandateId !== "string" || !/^[0-9a-f]{64}$/.test(pending.mandateId) || typeof pending.amount !== "string" || !/^\d+(?:\.\d+)?$/.test(pending.amount) || typeof pending.expectedSeq !== "string" || !/^\d+$/.test(pending.expectedSeq) || !Number.isSafeInteger(pending.submittedAt) || !Number.isSafeInteger(pending.validUntil) || pending.submittedAt <= 0 || pending.validUntil <= pending.submittedAt || pending.receiptId !== void 0 && !/^[0-9a-f]{64}$/.test(pending.receiptId)) {
+    throw new Error("pending settlement record schema is invalid");
+  }
+  return Object.freeze({ ...pending });
+}
+function validateRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("settlement journal is not an object");
+  }
+  const record = value;
+  const expectedKeys = record.state === "completed" ? ["version", "state", "source", "network", "contractId", "pending", "completedAt"] : ["version", "state", "source", "network", "contractId", "pending"];
+  if (!exactKeys2(record, expectedKeys) || record.version !== 2 || record.state !== "pending" && record.state !== "completed" || record.source !== "pay" && record.source !== "demo" || record.network !== "testnet" || typeof record.contractId !== "string" || !/^C[A-Z2-7]{55}$/.test(record.contractId)) {
+    throw new Error("settlement journal schema is invalid");
+  }
+  const pending = validatePending(record.pending);
+  if (record.state === "completed") {
+    if (!Number.isSafeInteger(record.completedAt) || record.completedAt < pending.submittedAt) {
+      throw new Error("completed settlement journal schema is invalid");
+    }
+    return Object.freeze({ ...record, pending });
+  }
+  return Object.freeze({ ...record, pending });
+}
+async function assertDirectoryIsPrivate(path) {
+  const info = await lstat(path);
+  if (!info.isDirectory() || info.isSymbolicLink()) {
+    throw new Error("settlement journal path is not a private directory");
+  }
+  if ((info.mode & 63) !== 0) {
+    throw new Error("settlement journal directory permissions are not private");
+  }
+}
+async function assertNoPendingSettlement() {
+  try {
+    await lstat(settlementDirectory());
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  throw new Error("a payment is unresolved or unacknowledged; run `reapp settlement reconcile` before another payment");
+}
+async function writeState(record) {
+  const directory = settlementDirectory();
+  const temporary = join3(directory, `${randomUUID()}.tmp`);
+  let handle;
+  try {
+    handle = await open(temporary, "wx", 384);
+    await handle.writeFile(`${JSON.stringify(record, null, 2)}
+`, "utf8");
+    await handle.sync();
+    await handle.close();
+    handle = void 0;
+    await rename(temporary, statePath());
+    await chmod(statePath(), 384);
+    const directoryHandle = await open(directory, "r");
+    try {
+      await directoryHandle.sync();
+    } finally {
+      await directoryHandle.close();
+    }
+  } finally {
+    await handle?.close().catch(() => void 0);
+    await rm(temporary, { force: true }).catch(() => void 0);
+  }
+}
+async function claimPendingSettlement(source, contractId, pending) {
+  const home = reappHome();
+  await mkdir(home, { recursive: true, mode: 448 });
+  await chmod(home, 448);
+  const directory = settlementDirectory();
+  try {
+    await mkdir(directory, { mode: 448 });
+  } catch (error) {
+    if (error.code === "EEXIST") {
+      throw new Error("another prepared payment is unresolved; run `reapp settlement reconcile`");
+    }
+    throw error;
+  }
+  try {
+    const record = validateRecord({
+      version: 2,
+      state: "pending",
+      source,
+      network: "testnet",
+      contractId,
+      pending
+    });
+    await writeState(record);
+  } catch (error) {
+    await rm(directory, { recursive: true, force: true });
+    throw error;
+  }
+}
+async function loadPendingSettlement() {
+  const directory = settlementDirectory();
+  try {
+    await assertDirectoryIsPrivate(directory);
+  } catch (error) {
+    if (error.code === "ENOENT") return { kind: "none" };
+    throw error;
+  }
+  let raw;
+  try {
+    raw = await readFile(statePath(), "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return { kind: "empty" };
+    throw error;
+  }
+  const info = await lstat(statePath());
+  if (!info.isFile() || info.isSymbolicLink() || (info.mode & 63) !== 0) {
+    throw new Error("settlement journal file is not a private regular file");
+  }
+  const record = validateRecord(JSON.parse(raw));
+  return record.state === "completed" ? { kind: "completed", record } : { kind: "pending", record };
+}
+async function clearPendingSettlement(expectedTxHash) {
+  const loaded = await loadPendingSettlement();
+  if (loaded.kind === "none") return;
+  if (loaded.kind === "completed") {
+    throw new Error("refusing to clear a completed payment before explicit acknowledgment");
+  }
+  if (loaded.kind === "pending" && expectedTxHash !== void 0 && loaded.record.pending.txHash !== expectedTxHash) {
+    throw new Error("refusing to clear a different pending settlement hash");
+  }
+  if (loaded.kind === "empty" && expectedTxHash !== void 0) {
+    throw new Error("refusing hash-specific clear of an empty pre-broadcast claim");
+  }
+  await rm(settlementDirectory(), { recursive: true, force: true });
+}
+async function markSettlementCompleted(expectedTxHash) {
+  if (!/^[0-9a-f]{64}$/.test(expectedTxHash)) {
+    throw new Error("completed settlement hash must be canonical 64-character lowercase hex");
+  }
+  const loaded = await loadPendingSettlement();
+  if (loaded.kind === "none" || loaded.kind === "empty") {
+    throw new Error("cannot complete a settlement without its durable prepared record");
+  }
+  if (loaded.record.pending.txHash !== expectedTxHash) {
+    throw new Error("refusing to complete a different settlement hash");
+  }
+  if (loaded.kind === "completed") return;
+  const completed = validateRecord({
+    ...loaded.record,
+    state: "completed",
+    completedAt: Math.max(Math.floor(Date.now() / 1e3), loaded.record.pending.submittedAt)
+  });
+  await writeState(completed);
+}
+async function acknowledgeCompletedSettlement(expectedTxHash) {
+  if (!/^[0-9a-f]{64}$/.test(expectedTxHash)) {
+    throw new Error("acknowledgment hash must be canonical 64-character lowercase hex");
+  }
+  const loaded = await loadPendingSettlement();
+  if (loaded.kind !== "completed") {
+    throw new Error("no completed payment is awaiting acknowledgment");
+  }
+  if (loaded.record.pending.txHash !== expectedTxHash) {
+    throw new Error("refusing to acknowledge a different completed settlement hash");
+  }
+  await rm(settlementDirectory(), { recursive: true, force: true });
+}
+function classifyMissingSettlement(pending, evidence) {
+  if (evidence.latestLedgerCloseTime <= pending.validUntil) return "pending";
+  if (evidence.oldestLedgerCloseTime > pending.submittedAt) return "history-pruned";
+  return "expired";
+}
+
+// packages/cli/src/payment-failure.ts
+function isFinalPaymentRejection(error) {
+  return error instanceof PaymentRejectedError;
+}
+
 // packages/cli/src/commands/pay.ts
 var short3 = (s) => s ? `${s.slice(0, 6)}\u2026${s.slice(-4)}` : "";
 function rejectionSummary(reason) {
@@ -4179,6 +4656,15 @@ function rejectionSummary(reason) {
   }
 }
 async function runPay(amountArg) {
+  try {
+    await assertNoPendingSettlement();
+  } catch (error) {
+    log.err("payment blocked by unresolved journal state", {
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    process.exitCode = 1;
+    return;
+  }
   if (!configExists()) {
     log.warn("no reapp.config.json here \u2014 run `reapp init` first");
     return;
@@ -4195,26 +4681,73 @@ async function runPay(amountArg) {
   const net = networkConfig(config);
   const creds = loadCredentials();
   const stored = loadMandate();
-  const txUrl = (hash2) => `${config.explorer}/tx/${hash2}`;
+  const txUrl = (hash4) => `${config.explorer}/tx/${hash4}`;
   const amount = amountArg ?? config.unlockPrice;
   const mandate2 = reapp.createIntentMandate(stored.inputs);
   log.step("execute_payment (agent-signed)", { amount: `${amount} XLM`, mandate: short3(mandate2.id) });
+  let preparedHash;
+  let hash3;
   try {
-    const hash2 = await reapp.agent({ mandate: mandate2, signer: creds.agentSecret }, net).pay(amount);
-    log.chain("payment settled on-chain", { tx: short3(hash2) });
-    console.log(
-      "\n" + c.bold("Payment") + "\n" + c.gray("  amount  ") + c.white(`${amount} XLM`) + "\n" + c.gray("  tx      ") + c.dim(txUrl(hash2)) + "\n"
-    );
+    hash3 = await reapp.agent({ mandate: mandate2, signer: creds.agentSecret }, net).pay(amount, {
+      onPrepared: async (pending) => {
+        await claimPendingSettlement("pay", net.mandateRegistryId, pending);
+        preparedHash = pending.txHash;
+      }
+    });
   } catch (err) {
+    if (err instanceof SettlementUncertainError) {
+      log.err("payment result is uncertain; durable journal retained", { tx: short3(err.settlement.txHash) });
+      log.info("run `reapp settlement reconcile`; do not run pay again");
+      console.log(c.dim(`  ${txUrl(err.settlement.txHash)}`));
+      process.exitCode = 1;
+      return;
+    }
     const reason = err instanceof Error ? err.message : String(err);
-    log.err("payment rejected by the contract", { reason: rejectionSummary(reason) });
-    log.info("budget, expiry, and replay are enforced on-chain \u2014 the CLI cannot override them");
+    if (isFinalPaymentRejection(err)) {
+      if (preparedHash) {
+        try {
+          await clearPendingSettlement(preparedHash);
+        } catch (clearError) {
+          log.err("final rejection was observed but its durable journal could not be cleared", {
+            reason: clearError instanceof Error ? clearError.message : String(clearError)
+          });
+          process.exitCode = 1;
+          return;
+        }
+      }
+      log.err("payment rejected by the contract", { reason: rejectionSummary(reason) });
+      log.info("budget, expiry, and replay are enforced on-chain \u2014 the CLI cannot override them");
+    } else if (preparedHash) {
+      log.err("payment result is uncertain; durable journal retained", { tx: short3(preparedHash) });
+      log.info("run `reapp settlement reconcile`; do not run pay again");
+    } else {
+      log.err("payment failed before a transaction hash was durably prepared", {
+        reason: reason.split("\n")[0]
+      });
+    }
     process.exitCode = 1;
+    return;
   }
+  try {
+    await markSettlementCompleted(hash3);
+  } catch (error) {
+    log.err("payment succeeded but completion could not be durably recorded", {
+      tx: short3(hash3),
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    log.info("run `reapp settlement reconcile`; do not run pay again");
+    process.exitCode = 1;
+    return;
+  }
+  log.chain("payment settled on-chain; durable acknowledgment is required", { tx: short3(hash3) });
+  console.log(
+    "\n" + c.bold("Payment") + "\n" + c.gray("  amount  ") + c.white(`${amount} XLM`) + "\n" + c.gray("  tx      ") + c.dim(txUrl(hash3)) + "\n"
+  );
+  log.info(`after you durably accept this result, run \`reapp settlement acknowledge ${hash3}\``);
 }
 
 // packages/cli/src/commands/demo.ts
-import { Keypair as Keypair4, rpc as rpc4 } from "@stellar/stellar-sdk";
+import { Keypair as Keypair5, rpc as rpc5 } from "@stellar/stellar-sdk";
 var SOURCES = [
   { name: "Market Data API", icon: "\u{1F4C8}" },
   { name: "Academic Papers", icon: "\u{1F4DA}" },
@@ -4227,7 +4760,7 @@ var BUDGET = "3.00";
 var short4 = (s) => s ? `${s.slice(0, 6)}\u2026${s.slice(-4)}` : "";
 var sleep3 = (ms) => new Promise((r) => setTimeout(r, ms));
 async function fund2(pub) {
-  const server = new rpc4.Server(TESTNET.rpcUrl);
+  const server = new rpc5.Server(TESTNET.rpcUrl);
   for (let round = 0; round < 4; round += 1) {
     await fetch(`https://friendbot.stellar.org/?addr=${pub}`).catch(() => void 0);
     for (let i = 0; i < 8; i += 1) {
@@ -4250,12 +4783,42 @@ async function waitForSeq(client, idBuffer, target, tries = 20) {
     }
     await sleep3(1e3);
   }
+  throw new Error(`mandate sequence did not reach ${target} before the testnet read deadline`);
 }
-async function attemptPurchase(mandate2, agentSecret) {
+async function attemptPurchase(agent) {
+  let preparedHash;
   try {
-    const hash2 = await reapp.agent({ mandate: mandate2, signer: agentSecret }).pay(SOURCE_PRICE);
-    return { kind: "ok", hash: hash2 };
+    const hash3 = await agent.pay(SOURCE_PRICE, {
+      onPrepared: async (pending) => {
+        await claimPendingSettlement("demo", TESTNET.mandateRegistryId, pending);
+        preparedHash = pending.txHash;
+      }
+    });
+    await markSettlementCompleted(hash3);
+    return { kind: "ok", hash: hash3 };
   } catch (e) {
+    if (e instanceof SettlementUncertainError) {
+      return {
+        kind: "uncertain",
+        msg: `transaction ${e.settlement.txHash} is unresolved; run reapp settlement reconcile`
+      };
+    }
+    if (isFinalPaymentRejection(e) && preparedHash) {
+      try {
+        await clearPendingSettlement(preparedHash);
+      } catch (clearError) {
+        return {
+          kind: "uncertain",
+          msg: `journal clear failed: ${clearError instanceof Error ? clearError.message : String(clearError)}`
+        };
+      }
+    }
+    if (preparedHash && !isFinalPaymentRejection(e)) {
+      return {
+        kind: "uncertain",
+        msg: `transaction ${preparedHash} has an unknown post-prepare result; run reapp settlement reconcile`
+      };
+    }
     const msg = e instanceof Error ? e.message : String(e);
     const code = (msg.match(/Error\(Contract,\s*#(\d+)\)/) ?? [])[1];
     if (code === "6") return { kind: "blocked" };
@@ -4269,11 +4832,21 @@ async function runDemo(target = "research-agent") {
     log.info("available demos", { run: "reapp demo research-agent" });
     return;
   }
+  try {
+    await assertNoPendingSettlement();
+  } catch (error) {
+    log.err("demo blocked by unresolved payment journal", {
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    log.info("run `reapp settlement reconcile` before starting another demo");
+    process.exitCode = 1;
+    return;
+  }
   console.log("\n" + banner() + "\n");
   log.info("research agent demo \u2014 the agent pays on-chain per source; the contract caps the budget");
-  const user = Keypair4.random();
-  const agent = Keypair4.random();
-  const merchant = Keypair4.random();
+  const user = Keypair5.random();
+  const agent = Keypair5.random();
+  const merchant = Keypair5.random();
   log.step("funding 3 ephemeral testnet accounts via friendbot");
   await Promise.all([fund2(user.publicKey()), fund2(agent.publicKey()), fund2(merchant.publicKey())]);
   log.chain("accounts funded", {
@@ -4281,6 +4854,7 @@ async function runDemo(target = "research-agent") {
     agent: short4(agent.publicKey()),
     merchant: short4(merchant.publicKey())
   });
+  const merchantBefore = await token_exports.balance(TESTNET, TESTNET.nativeSac, merchant.publicKey());
   const inputs = {
     user: user.publicKey(),
     agent: agent.publicKey(),
@@ -4295,20 +4869,24 @@ async function runDemo(target = "research-agent") {
   await reapp.approveBudget(mandate2, { signer: user.secret() });
   log.chain("mandate registered + allowance approved for contract", { budget: `${BUDGET} XLM`, id: short4(mandate2.id) });
   const rclient = registryClient(TESTNET, keypairSigner(agent, TESTNET.networkPassphrase));
+  const paymentAgent = reapp.agent({ mandate: mandate2, signer: agent });
   let purchased = 0;
   let seq = 0;
+  let budgetBlocked = false;
   outer: for (const s of SOURCES) {
     log.step(`agent buys ${s.icon} ${s.name}`, { price: `${SOURCE_PRICE} XLM` });
     for (let attempt = 0; attempt < 4; attempt += 1) {
-      const r = await attemptPurchase(mandate2, agent.secret());
+      const r = await attemptPurchase(paymentAgent);
       if (r.kind === "ok") {
-        purchased += 1;
         seq += 1;
-        log.ok("purchased on-chain", { tx: short4(r.hash) });
         await waitForSeq(rclient, mandate2.idBuffer, seq);
+        purchased += 1;
+        log.ok("purchased on-chain", { tx: short4(r.hash) });
+        await acknowledgeCompletedSettlement(r.hash);
         break;
       }
       if (r.kind === "blocked") {
+        budgetBlocked = true;
         log.warn(`contract blocked the purchase \u2014 ${BUDGET} XLM budget exhausted`);
         break outer;
       }
@@ -4316,23 +4894,121 @@ async function runDemo(target = "research-agent") {
         await waitForSeq(rclient, mandate2.idBuffer, seq);
         continue;
       }
+      if (r.kind === "uncertain") {
+        throw new Error(`${r.msg}. Do not restart the demo until reconciliation completes.`);
+      }
       log.err("purchase failed", { reason: r.msg });
       break outer;
     }
   }
+  const finalMandate = (await rclient.get_mandate({ mandate_id: mandate2.idBuffer })).result.unwrap();
+  const merchantAfter = await token_exports.balance(TESTNET, TESTNET.nativeSac, merchant.publicKey());
+  const transferred = merchantAfter - merchantBefore;
+  const passed = purchased === 3 && budgetBlocked && finalMandate.spent === 30000000n && Number(finalMandate.seq) === 3 && transferred === 30000000n;
   console.log(
-    "\n" + c.bold("Result") + "\n" + c.gray("  purchased  ") + c.white(`${purchased} sources`) + c.gray("  for ") + c.white(`${purchased}.00 XLM`) + c.gray(" settled on-chain") + "\n" + c.gray("  enforced   ") + c.white(`${BUDGET} XLM`) + c.gray(" budget cap \u2014 the contract rejected further purchases") + "\n" + c.gray("  the agent answers from what it could afford; a compromised agent or SDK cannot exceed the mandate.") + "\n"
+    "\n" + c.bold("Result") + "\n" + c.gray("  purchased  ") + c.white(`${purchased} sources`) + c.gray("  for ") + c.white(`${purchased}.00 XLM`) + c.gray(" settled on-chain") + "\n" + c.gray("  enforced   ") + c.white(`${BUDGET} XLM`) + c.gray(` budget cap \u2014 ${budgetBlocked ? "the contract rejected purchase four" : "expected rejection was not observed"}`) + "\n" + c.gray("  verified   ") + c.white(`${Number(finalMandate.seq)} payments`) + c.gray(` \xB7 ${(Number(transferred) / 1e7).toFixed(2)} XLM merchant delta`) + "\n" + c.gray("  the agent answers from what it could afford; a compromised agent or SDK cannot exceed the mandate.") + "\n"
   );
+  if (!passed) {
+    throw new Error(
+      `demo evidence mismatch: purchased=${purchased}, blocked=${budgetBlocked}, seq=${Number(finalMandate.seq)}, spent=${finalMandate.spent}, transferred=${transferred}`
+    );
+  }
 }
+
+// packages/cli/src/commands/reconcile.ts
+import { rpc as rpc6 } from "@stellar/stellar-sdk";
+var short5 = (value) => `${value.slice(0, 8)}\u2026${value.slice(-6)}`;
+var explorer = (hash3) => `https://stellar.expert/explorer/testnet/tx/${hash3}`;
+async function runSettlementReconcile() {
+  const loaded = await loadPendingSettlement();
+  if (loaded.kind === "none") {
+    log.info("no prepared payment is pending");
+    return;
+  }
+  if (loaded.kind === "empty") {
+    await clearPendingSettlement();
+    log.ok("cleared an interrupted pre-broadcast claim; no transaction hash was ever made durable");
+    return;
+  }
+  if (loaded.kind === "completed") {
+    const hash3 = loaded.record.pending.txHash;
+    log.chain("prepared payment succeeded and remains durably locked", { tx: short5(hash3) });
+    console.log(c.dim(`  ${explorer(hash3)}`));
+    log.info(`after you durably accept this result, run \`reapp settlement acknowledge ${hash3}\``);
+    return;
+  }
+  const { pending, source, contractId } = loaded.record;
+  log.step("reconciling exact prepared transaction", {
+    tx: short5(pending.txHash),
+    source,
+    contract: `${contractId.slice(0, 6)}\u2026${contractId.slice(-4)}`
+  });
+  const server = new rpc6.Server(TESTNET.rpcUrl);
+  let response;
+  try {
+    response = await server.getTransaction(pending.txHash);
+  } catch (error) {
+    log.err("RPC reconciliation failed; pending state retained", {
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    process.exitCode = 1;
+    return;
+  }
+  if (response.status === rpc6.Api.GetTransactionStatus.SUCCESS) {
+    await markSettlementCompleted(pending.txHash);
+    log.chain("prepared payment succeeded; durable acknowledgment is required", { tx: short5(pending.txHash) });
+    console.log(c.dim(`  ${explorer(pending.txHash)}`));
+    log.info(`after you durably accept this result, run \`reapp settlement acknowledge ${pending.txHash}\``);
+    return;
+  }
+  if (response.status === rpc6.Api.GetTransactionStatus.FAILED) {
+    await clearPendingSettlement(pending.txHash);
+    log.warn("prepared payment finalized as failed; journal cleared");
+    console.log(c.dim(`  ${explorer(pending.txHash)}`));
+    return;
+  }
+  const decision = classifyMissingSettlement(pending, response);
+  if (decision === "expired") {
+    await clearPendingSettlement(pending.txHash);
+    log.ok("transaction validity window expired with complete retained RPC history; no payment landed");
+    return;
+  }
+  if (decision === "history-pruned") {
+    log.err("RPC history no longer covers the full transaction window; journal retained for manual evidence review");
+  } else {
+    log.warn("transaction is still within its validity/history window; journal retained");
+  }
+  process.exitCode = 1;
+}
+async function runSettlementAcknowledge(txHash) {
+  try {
+    await acknowledgeCompletedSettlement(txHash);
+  } catch (error) {
+    log.err("completed payment was not acknowledged", {
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    process.exitCode = 1;
+    return;
+  }
+  log.ok("completed payment acknowledged; a new payment may now be prepared", {
+    tx: short5(txHash)
+  });
+}
+
+// packages/cli/src/version.ts
+var CLI_VERSION = "0.1.4";
 
 // packages/cli/src/index.ts
 var program2 = new Command();
-program2.name("reapp").description("Agent payments on Stellar, enforced on-chain by the REAPP MandateRegistry.").version("0.1.0");
+program2.name("reapp").description("Agent payments on Stellar, enforced on-chain by the REAPP MandateRegistry.").version(CLI_VERSION);
 program2.command("init").description("scaffold a project in the current directory (writes reapp.config.json)").option("-f, --force", "overwrite an existing reapp.config.json").action((opts) => runInit(opts));
 program2.command("setup").description("generate testnet burner keys and fund them via friendbot").option("-f, --force", "regenerate fresh keys, overwriting existing credentials").action((opts) => runSetup(opts));
 var mandate = program2.command("mandate").description("manage AP2 mandates");
 mandate.command("create").description("register an AP2 mandate on-chain and approve the SEP-41 allowance").option("-b, --budget <xlm>", "mandate cap in XLM (default: from reapp.config.json)").option("-e, --expiry <seconds>", "seconds until the mandate expires", "3600").option("-f, --force", "replace an existing stored mandate").action((opts) => runMandateCreate(opts));
 program2.command("pay").description("make an agent-signed payment against the active mandate (budget enforced on-chain)").argument("[amount]", "XLM amount to pay (default: unlockPrice from reapp.config.json)").action((amount) => runPay(amount));
+var settlement = program2.command("settlement").description("inspect crash-safe payment state");
+settlement.command("reconcile").description("query the exact prepared transaction hash before allowing another payment").action(() => runSettlementReconcile());
+settlement.command("acknowledge").description("acknowledge one exact durably recorded successful payment").argument("<tx-hash>", "the exact 64-character lowercase transaction hash").action((txHash) => runSettlementAcknowledge(txHash));
 program2.command("demo").description("run a self-contained on-chain demo (ephemeral accounts, no setup needed)").argument("[target]", "which demo to run", "research-agent").action((target) => runDemo(target));
 program2.parseAsync(process.argv).catch((err) => {
   console.error(err instanceof Error ? err.message : err);

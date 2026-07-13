@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import "@xterm/xterm/css/xterm.css";
 
-const CONTRACT = "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX";
+const CONTRACT = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
 const QUICK = [
   { label: "demo research-agent", cmd: "demo research-agent" },
@@ -12,6 +12,7 @@ const QUICK = [
   { label: "setup", cmd: "setup" },
   { label: "mandate create", cmd: "mandate create" },
   { label: "pay", cmd: "pay" },
+  { label: "settlement reconcile", cmd: "settlement reconcile" },
 ];
 
 export default function T2DemoPage() {
@@ -44,7 +45,7 @@ export default function T2DemoPage() {
       fit.fit();
       termRef.current = term;
       fitRef.current = fit;
-      term.writeln("\x1b[2mreapp-protocol-cli · installed command: reapp · pick a command below or type one, then Run.\x1b[0m");
+      term.writeln("\x1b[2mreapp-protocol-cli@0.1.4 · installed command: reapp · pick a command below or type one, then Run.\x1b[0m");
       term.writeln("\x1b[2mState (config, keys, mandate) persists across commands in this session.\x1b[0m\r\n");
       setReady(true);
       const onResize = () => fit.fit();
@@ -74,7 +75,7 @@ export default function T2DemoPage() {
         body: JSON.stringify({ args, sessionId: sessionRef.current }),
       });
       if (res.status === 400) {
-        term.write("\x1b[31munknown command — try: demo research-agent · init · setup · mandate create · pay\x1b[0m\r\n");
+        term.write("\x1b[31munknown command — try: demo research-agent · init · setup · mandate create · pay · settlement reconcile/acknowledge\x1b[0m\r\n");
         return;
       }
       if (!res.body) throw new Error("no stream");
@@ -103,6 +104,7 @@ export default function T2DemoPage() {
         This runs the real <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp-protocol-cli</code> package on the server through its{" "}
         <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">reapp</code> command against Stellar testnet and streams its output here. Try <span className="text-emerald-200">demo research-agent</span>: it funds ephemeral accounts, registers a
         3 XLM mandate, and the agent buys research sources on-chain until the contract caps the budget. No LLM key required.
+        A successful manual <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">pay</code> remains durably locked until you type the printed exact-hash <code className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[13px] text-emerald-100">settlement acknowledge &lt;tx-hash&gt;</code> command.
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">

@@ -5,8 +5,8 @@
  * `stellar contract bindings typescript` from the deployed wasm in the
  * reapp-protocol repo; regenerate there and re-copy whenever the contract ABI
  * changes. The contract id below is a SEPARATE testnet deployment from the
- * original contract the published SDK pins; the earlier demos are untouched
- * by it. Server-side only (see next.config.mjs serverExternalPackages).
+ * simple contract used by the SDK. Server-side only (see next.config.mjs
+ * serverExternalPackages).
  */
 import { Buffer } from "buffer";
 import { Address } from "@stellar/stellar-sdk";
@@ -46,7 +46,7 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX",
+    contractId: "CCYRF7FKYGSNWX5I7WLYXZ6LNUNVCSPE4BOTQFVWVTABOHAP52DYHEYW",
   },
 } as const;
 
@@ -118,7 +118,7 @@ pool_id: Option<Buffer>;
  */
 price_schedule: Array<SchedulePoint>;
   /**
- * Monotonic payment counter (mandate-level gatecheck / replay guard).
+   * Monotonic payment counter (mandate-level gate check / replay guard).
  */
 seq: u32;
   /**
@@ -267,7 +267,7 @@ export interface Client {
 
   /**
    * Construct and simulate a get_mandate transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Read-only accessor for the stored mandate (gatecheck / preflight).
+   * Read-only accessor for the stored mandate (gate check / preflight).
    */
   get_mandate: ({mandate_id}: {mandate_id: Buffer}, options?: MethodOptions) => Promise<AssembledTransaction<Result<Mandate>>>
 

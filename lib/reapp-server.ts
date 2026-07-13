@@ -7,6 +7,7 @@ import { reapp, type CreateIntentMandateInput } from "@reapp-sdk/core";
 import { TESTNET, token } from "@reapp-sdk/stellar";
 import { EXPLORER_BASE } from "./explorer";
 import { log } from "./log";
+import { journaledPay } from "./payment-journal";
 
 export const EXPLORER = EXPLORER_BASE;
 export const UNLOCK_PRICE = "1.00"; // XLM per content unlock
@@ -80,11 +81,16 @@ export async function setup(args: {
 
 /** Agent pays the unlock price. Returns the tx hash, or throws if the contract
  *  rejects it (overspend, revoked, expired), which is the whole point. */
-export async function pay(args: { inputs: MandateInputs; agentSecret: string; amount?: string }) {
+export async function pay(args: { inputs: MandateInputs; agentSecret: string; amount?: string; expectedSeq: number }) {
   const amount = args.amount ?? UNLOCK_PRICE;
   const mandate = reapp.createIntentMandate(args.inputs); // same nonce, same id
   log.step("execute_payment (agent-signed)", { amount: `${amount} XLM`, mandate: short(mandate.id) });
-  const hash = await reapp.agent({ mandate, signer: args.agentSecret }).pay(amount);
+  const hash = await journaledPay(
+    reapp.agent({ mandate, signer: args.agentSecret }),
+    amount,
+    `server:${mandate.id}:${args.expectedSeq}`,
+    args.expectedSeq,
+  );
   log.chain("payment settled on-chain", { tx: short(hash) });
   return { hash };
 }

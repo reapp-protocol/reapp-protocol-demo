@@ -3,7 +3,7 @@
  * data sources it needs to answer a question.
  *
  * The agent is given a single `purchase_source` tool. Every call settles a REAL
- * Stellar payment through the published @reapp-sdk/core (MandateRegistry.execute_
+ * Stellar payment through @reapp-sdk/core (MandateRegistry.execute_
  * payment). The mandate budget is enforced ON-CHAIN: once the agent has spent its
  * budget, the contract rejects further purchases and the agent must synthesise an
  * answer from what it could afford. The contract enforces the budget on-chain;
@@ -20,6 +20,7 @@
 import { reapp, type CreateIntentMandateInput } from "@reapp-sdk/core";
 import { AllProvidersExhausted, buildFailoverLlm, type FailoverLlm, type LlmMessage, type LlmTool } from "./llm";
 import { log } from "./log";
+import { journaledPay } from "./payment-journal";
 
 /** Price per source, in XLM. The mandate budget (see reapp-server.BUDGET = "3.00")
  *  covers three of these — the contract blocks the fourth. */
@@ -190,7 +191,12 @@ export async function* runResearch({ question, inputs, agentSecret }: RunArgs): 
       yield { type: "purchase_attempt", source: src.id, label: src.name, icon: src.icon, reason };
       try {
         const mandate = reapp.createIntentMandate(inputs); // same nonce, same on-chain id
-        const hash = await reapp.agent({ mandate, signer: agentSecret }).pay(SOURCE_PRICE);
+        const hash = await journaledPay(
+          reapp.agent({ mandate, signer: agentSecret }),
+          SOURCE_PRICE,
+          `research:${mandate.id}:${spent}`,
+          spent,
+        );
         spent += 1;
         yield { type: "purchase_ok", source: src.id, label: src.name, hash };
         log.step("fetching findings from source", { source: src.name });

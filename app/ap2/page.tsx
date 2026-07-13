@@ -220,7 +220,7 @@ export default function Ap2Page() {
               <h2 className="mt-2 text-xl font-bold text-white">AP2 validation console</h2>
             </div>
             <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 font-mono text-[11px] text-emerald-200">
-              0.2.0
+              0.2.1
             </div>
           </div>
 
@@ -430,7 +430,7 @@ export default function Ap2Page() {
           <p className="mt-3 text-xs leading-relaxed text-emerald-100/50">Valid mandates, tampering, scope, amount, expiry, replay, and concurrency.</p>
         </div>
         <a
-          href="https://www.npmjs.com/package/@reapp-sdk/ap2/v/0.2.0"
+          href="https://www.npmjs.com/package/@reapp-sdk/ap2/v/0.2.1"
           target="_blank"
           rel="noreferrer"
           className="glass sheen relative rounded-xl p-4 transition hover:border-emerald-300/25"
@@ -439,7 +439,7 @@ export default function Ap2Page() {
             <div className="font-mono text-sm text-emerald-100">@reapp-sdk/ap2</div>
             <ExternalLink className="h-4 w-4 text-emerald-300/60" aria-hidden />
           </div>
-          <div className="mt-1 text-xs uppercase tracking-[0.14em] text-emerald-300/55">public npm package · 0.2.0</div>
+          <div className="mt-1 text-xs uppercase tracking-[0.14em] text-emerald-300/55">public npm package · 0.2.1</div>
           <p className="mt-3 text-xs leading-relaxed text-emerald-100/50">Installable, typed, documented, and verified from a clean project.</p>
         </a>
         <a

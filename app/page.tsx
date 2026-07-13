@@ -6,49 +6,64 @@ import { Package, Play, Terminal } from "lucide-react";
 
 const CONTRACT_ID = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
-const INSTALL = `npm install @reapp-sdk/core@0.2.2 @reapp-sdk/stellar@0.2.1 \\
-  @reapp-sdk/ap2@0.1.0 @reapp-sdk/express-middleware@0.1.0 \\
+const INSTALL = `npm install @reapp-sdk/core@0.3.0 @reapp-sdk/stellar@0.2.1 \\
+  @reapp-sdk/ap2@0.2.1 @reapp-sdk/express-middleware@0.2.0 \\
   @stellar/stellar-sdk express
-npm install --global reapp-protocol-cli@0.1.1`;
+npm install --global reapp-protocol-cli@0.1.4`;
 
 const CLEAN_CLONE = `git clone https://github.com/reapp-protocol/reapp-protocol.git
 cd reapp-protocol
 npm ci
 npm run agents:testnet`;
 
-const CONSUMER = `import { reapp } from "@reapp-sdk/core";
+const CONSUMER = `import { getSettlementReceipt, reapp } from "@reapp-sdk/core";
 
-const agent = reapp.agent({ mandate, signer: agentSecret });
+const agent = reapp.agent({
+  mandate,
+  signer: agentSecret,
+  proofPolicy: "bound-v2-only",
+  receiptStore,
+});
 const response = await agent.fetch(\`\${serverUrl}/source/\${id}\`);
-const resource = await response.json();`;
+const receipt = getSettlementReceipt(response);
+const resource = await response.json();
+await persistAcceptedResult(resource, receipt);
+await agent.acknowledgeDelivery(receipt);`;
 
 const FULFILLMENT = `import express from "express";
 import {
-  InMemoryRedemptionStore,
-  createReappPaymentMiddleware,
-  getVerifiedPayment,
+  InMemoryBoundRedemptionStore,
+  createBoundReappPaidJsonRoute,
 } from "@reapp-sdk/express-middleware";
 
 const app = express();
-const requirePayment = createReappPaymentMiddleware({
+// Demo only. Use a durable, shared BoundRedemptionStore in production.
+const redemptionStore = new InMemoryBoundRedemptionStore();
+const paidSource = createBoundReappPaidJsonRoute({
   merchant: process.env.REAPP_MERCHANT_ADDRESS!,
   sourceAccount: process.env.REAPP_READ_SOURCE_ADDRESS!,
+  audience: "https://api.example",
+  challengeSecret: process.env.REAPP_CHALLENGE_SECRET!,
+  redemptionStore,
   amount: "1.00",
   resource: (request) => request.originalUrl,
-  redemptionStore: new InMemoryRedemptionStore(), // one-process demo
-});
+}, async ({ request, payment }) => ({
+  body: {
+    ok: true,
+    resource: request.params.id,
+    settledTx: payment.txHash,
+    data: "protected value",
+  },
+}));
 
-app.get("/source/:id", requirePayment, (_request, response) => {
-  const payment = getVerifiedPayment(response);
-  response.json({ settledTx: payment?.txHash, data: "protected value" });
-});`;
+app.get("/source/:id", paidSource);`;
 
 const PACKAGES: [string, string][] = [
-  ["@reapp-sdk/core 0.2.2", "Mandates, contract-enforced payments, and agent.fetch()"],
+  ["@reapp-sdk/core 0.3.0", "Mandates, contract-enforced payments, and bound-v2 agent.fetch()"],
   ["@reapp-sdk/stellar 0.2.1", "Typed contract client, testnet config, signers, and token helpers"],
-  ["@reapp-sdk/ap2 0.1.0", "Version-pinned AP2 IntentMandate bridge"],
-  ["@reapp-sdk/express-middleware 0.1.0", "Express 4/5 settlement verification and one-time redemption"],
-  ["reapp-protocol-cli 0.1.1", "Terminal setup, mandate, payment, and demo commands"],
+  ["@reapp-sdk/ap2 0.2.1", "Signed, version-pinned AP2 IntentMandate validation"],
+  ["@reapp-sdk/express-middleware 0.2.0", "Exact-request proof verification and safe same-resource recovery"],
+  ["reapp-protocol-cli 0.1.4", "Terminal setup, mandate, payment, reconciliation, and demo commands"],
 ];
 
 const RESULT: [string, string][] = [
@@ -71,7 +86,7 @@ export default function Docs() {
       <motion.div {...fade()}>
         <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          @reapp-sdk/core 0.2.2 · DOCS
+          @reapp-sdk/core 0.3.0 · DOCS
         </div>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">
           Agent payments,{" "}
@@ -86,9 +101,9 @@ export default function Docs() {
             <Play className="h-4 w-4" aria-hidden />
             Run the Express flow
           </Link>
-          <a href="https://www.npmjs.com/package/@reapp-sdk/core/v/0.2.2" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
+          <a href="https://www.npmjs.com/package/@reapp-sdk/core" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
             <Package className="h-4 w-4" aria-hidden />
-            @reapp-sdk/core 0.2.2
+            @reapp-sdk/core 0.3.0
           </a>
         </div>
       </motion.div>
@@ -115,7 +130,7 @@ export default function Docs() {
       </motion.section>
 
       <motion.section {...fade(0.08)} className="mt-9">
-        <H>Install the published packages</H>
+        <H>Install the current toolkit</H>
         <Code>{INSTALL}</Code>
       </motion.section>
 
@@ -132,8 +147,8 @@ export default function Docs() {
         <H>Consumer: pay with agent.fetch()</H>
         <Code>{CONSUMER}</Code>
         <p className="mt-3 text-sm text-emerald-100/60">
-          A 402 response describes the requirement. The SDK checks it against the mandate, settles through{" "}
-          <code>MandateRegistry.execute_payment</code>, then retries with the payment proof.
+          A 402 response carries an exact-request challenge. The SDK checks it against the mandate, settles through{" "}
+          <code>MandateRegistry.execute_payment</code>, then signs the challenge and transaction with the mandate agent.
         </p>
       </motion.section>
 
@@ -141,9 +156,11 @@ export default function Docs() {
         <H>Express: verify before serving</H>
         <Code>{FULFILLMENT}</Code>
         <p className="mt-3 text-sm text-emerald-100/60">
-          The middleware verifies the configured network, successful transaction, MandateRegistry event, matching
-          SEP-41 transfer, and one-time redemption before the route handler runs. Use a shared durable redemption store
-          across workers in production.
+          The paid JSON route verifies challenge authentication, the exact origin and GET resource, the configured
+          network, successful transaction, MandateRegistry event, matching SEP-41 transfer, and the chain-derived agent
+          signature before the route handler runs. The redemption store prevents one transaction from authorizing a
+          fresh challenge; the same signed proof may recover only the same idempotent resource. Use a durable shared
+          store in production.
         </p>
       </motion.section>
 
@@ -164,7 +181,7 @@ export default function Docs() {
       </motion.section>
 
       <motion.section {...fade(0.23)} className="mt-8">
-        <H>Current public packages</H>
+        <H>Current release targets</H>
         <div className="overflow-hidden rounded-xl border border-white/10">
           {PACKAGES.map(([name, purpose], i) => (
             <div key={name} className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${i % 2 ? "bg-white/[0.02]" : ""}`}>

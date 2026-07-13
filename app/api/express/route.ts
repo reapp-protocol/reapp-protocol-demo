@@ -2,6 +2,7 @@ import {
   activeExpressDemoSessions,
   challengeExpressDemoSession,
   createExpressDemoSession,
+  isDemoResourceId,
   normalizeExpressDemoError,
   purchaseExpressDemoSession,
   resetExpressDemoSession,
@@ -24,7 +25,14 @@ let activeCreates = 0;
 
 type ActionBody =
   | { action: "create" }
-  | { action: "challenge" | "purchase" | "reset" | "status"; sessionId: string };
+  | { action: "challenge" | "reset" | "status"; sessionId: string }
+  | {
+      action: "purchase";
+      sessionId: string;
+      operationId: string;
+      expectedAttempt: number;
+      expectedResource: "market" | "academic" | "news" | "patents";
+    };
 
 function requestIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",", 1)[0]?.trim();
@@ -85,8 +93,27 @@ function parseBody(value: unknown): ActionBody | undefined {
   const body = value as Record<string, unknown>;
   if (body.action === "create") return { action: "create" };
   if (
+    body.action === "purchase"
+    && typeof body.sessionId === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.sessionId)
+    && typeof body.operationId === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.operationId)
+    && Number.isInteger(body.expectedAttempt)
+    && Number(body.expectedAttempt) >= 1
+    && Number(body.expectedAttempt) <= 4
+    && typeof body.expectedResource === "string"
+    && isDemoResourceId(body.expectedResource)
+  ) {
+    return {
+      action: "purchase",
+      sessionId: body.sessionId,
+      operationId: body.operationId,
+      expectedAttempt: Number(body.expectedAttempt),
+      expectedResource: body.expectedResource,
+    };
+  }
+  if (
     (body.action === "challenge"
-      || body.action === "purchase"
       || body.action === "reset"
       || body.action === "status")
     && typeof body.sessionId === "string"
@@ -184,7 +211,14 @@ export async function POST(request: Request): Promise<Response> {
       return json(await challengeExpressDemoSession(body.sessionId, owner, request.signal));
     }
     if (body.action === "purchase") {
-      return json(await purchaseExpressDemoSession(body.sessionId, owner, request.signal));
+      return json(await purchaseExpressDemoSession(
+        body.sessionId,
+        owner,
+        request.signal,
+        body.operationId,
+        body.expectedAttempt,
+        body.expectedResource,
+      ));
     }
     if (body.action === "status") {
       return json(await statusExpressDemoSession(body.sessionId, owner, request.signal));

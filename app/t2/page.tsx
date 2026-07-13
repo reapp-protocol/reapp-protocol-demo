@@ -11,10 +11,10 @@ export const metadata = createPageMetadata({
 export default function T2Page() {
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">
-      <h1 className="text-2xl font-semibold text-white">Developer toolkit · preview</h1>
+      <h1 className="text-2xl font-semibold text-white">Developer toolkit · testnet</h1>
       <p className="mt-2 leading-relaxed text-emerald-50/80">
-        Work in progress, kept separate from the main demos while it stabilizes. Everything new is collected here, on
-        the live testnet contracts.
+        The CLI, SDK, reference agents, AP2 validation, and contract-enforced demos are collected here against the current
+        live testnet contracts.
       </p>
 
       <div className="mt-6 grid gap-4">

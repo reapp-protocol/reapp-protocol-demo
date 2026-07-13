@@ -26,14 +26,6 @@ export async function register() {
   } catch {
     /* ignore */
   }
-  try {
-    const r = await import("./lib/reapp-server");
-    price = r.UNLOCK_PRICE;
-    budget = r.BUDGET;
-  } catch {
-    /* ignore */
-  }
-
   const short = (v: string) => (v.length > 14 ? `${v.slice(0, 6)}…${v.slice(-4)}` : v);
   const domain = process.env.RAILWAY_PUBLIC_DOMAIN ?? `localhost:${process.env.PORT ?? 3000}`;
   const ai = process.env.ANTHROPIC_API_KEY ? "enabled" : "disabled (no LLM API key)";

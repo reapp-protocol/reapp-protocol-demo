@@ -23,15 +23,80 @@ import {
 import { contractUrl, txUrl } from "@/lib/explorer";
 
 const SETUP = `npm run agents:testnet`;
-const INSTALL_CONSUMER = `npm install @reapp-sdk/core @stellar/stellar-sdk`;
+const INSTALL_CONSUMER = `npm install @reapp-sdk/core@0.3.0 @stellar/stellar-sdk`;
 
-const consumerExample = (endpointBase = "https://your-endpoint.example/api/express/session/source", merchant = "G...MERCHANT") => `import { reapp } from "@reapp-sdk/core";
+const consumerExample = (endpointBase = "https://your-endpoint.example/api/express/session/source", merchant = "G...MERCHANT") => `import { DeliveryPendingError, getSettlementReceipt, reapp } from "@reapp-sdk/core";
 import { Keypair } from "@stellar/stellar-sdk";
+import { randomUUID } from "node:crypto";
+import { chmod, mkdir, open, readFile, rename, rm } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 const endpointBase = "${endpointBase.replace(/\/$/, "")}";
 const merchant = "${merchant}";
+// Add .reapp/ to .gitignore. It contains sensitive payment-proof recovery state.
+const receiptFile = resolve(".reapp/pending-receipts.json");
+const resultFile = resolve(".reapp/accepted-results.json");
+let pendingReceipts = {};
+let acceptedResults = {};
+try {
+  pendingReceipts = JSON.parse(await readFile(receiptFile, "utf8"));
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+try {
+  acceptedResults = JSON.parse(await readFile(resultFile, "utf8"));
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+if (Object.keys(pendingReceipts).length > 0 || Object.keys(acceptedResults).length > 0) {
+  throw new Error("Prior payment evidence exists. Refusing to create new keys or pay again; recover the exact retained state first.");
+}
+
 const user = Keypair.random();
 const agentKey = Keypair.random();
+let writeQueue = Promise.resolve();
+async function writeDurableJson(filePath, value) {
+  const snapshot = JSON.stringify(value, null, 2) + "\\n";
+  const operation = writeQueue.then(async () => {
+    const directory = dirname(filePath);
+    await mkdir(directory, { recursive: true, mode: 0o700 });
+    await chmod(directory, 0o700);
+    const temporary = filePath + "." + process.pid + "." + randomUUID() + ".tmp";
+    let handle;
+    try {
+      handle = await open(temporary, "wx", 0o600);
+      await handle.writeFile(snapshot, "utf8");
+      await handle.sync();
+      await handle.close();
+      handle = undefined;
+      await rename(temporary, filePath);
+      await chmod(filePath, 0o600);
+      const directoryHandle = await open(directory, "r");
+      try { await directoryHandle.sync(); } finally { await directoryHandle.close(); }
+    } finally {
+      await handle?.close().catch(() => undefined);
+      await rm(temporary, { force: true }).catch(() => undefined);
+    }
+  });
+  writeQueue = operation.catch(() => undefined);
+  await operation;
+}
+async function persistReceipts() {
+  await writeDurableJson(receiptFile, pendingReceipts);
+}
+const receiptStore = {
+  async savePending(receipt) {
+    pendingReceipts[receipt.receiptId] = receipt;
+    await persistReceipts();
+  },
+  async clearPending(receiptId) {
+    delete pendingReceipts[receiptId];
+    await persistReceipts();
+  },
+  async listPending() {
+    return Object.values(pendingReceipts);
+  },
+};
 
 async function fund(keypair) {
   const response = await fetch(
@@ -56,28 +121,54 @@ const registerTx = await reapp.registerMandate(mandate, { signer: user });
 const approveTx = await reapp.approveBudget(mandate, { signer: user });
 console.log("mandate ready", { registerTx, approveTx });
 
-const agent = reapp.agent({ mandate, signer: agentKey });
+const agent = reapp.agent({
+  mandate,
+  signer: agentKey,
+  proofPolicy: "bound-v2-only",
+  receiptStore,
+});
 const resources = ["market", "academic", "news", "patents"];
 const delivered = [];
 let rejected = 0;
 
 for (const [index, resource] of resources.entries()) {
   try {
-    const response = await agent.fetch(endpointBase + "/" + resource);
+    let response;
+    try {
+      response = await agent.fetch(endpointBase + "/" + resource);
+    } catch (error) {
+      if (!(error instanceof DeliveryPendingError)) throw error;
+      console.log("broadcast may have been attempted; retrying the exact receipt", error.receipt.txHash);
+      response = await agent.retryDelivery(error.receipt);
+    }
     const body = await response.json();
     if (index === 3) throw new Error("The fourth request unexpectedly succeeded");
     if (
       response.status !== 200
+      || body.ok !== true
       || typeof body.settledTx !== "string"
       || typeof body.data !== "string"
     ) {
       throw new Error(resource + " returned an invalid protected response");
     }
+    const receipt = getSettlementReceipt(response);
+    if (
+      !receipt
+      || receipt.proofVersion !== 2
+      || body.settledTx.toLowerCase() !== receipt.txHash.toLowerCase()
+    ) throw new Error("Missing or mismatched bound-v2 receipt");
+    acceptedResults[resource] = {
+      url: endpointBase + "/" + resource,
+      txHash: body.settledTx,
+      data: body.data,
+    };
+    await writeDurableJson(resultFile, acceptedResults);
+    await agent.acknowledgeDelivery(receipt);
     delivered.push(body.settledTx);
     console.log("delivered", { resource, status: response.status, settledTx: body.settledTx });
   } catch (error) {
-    if (index !== 3) throw error;
     const message = error instanceof Error ? error.message : String(error);
+    if (index !== 3 || !/(?:Contract,\\s*#6|BudgetExceeded)/.test(message)) throw error;
     const report = await fetch(endpointBase + "/" + resource, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -102,27 +193,38 @@ console.log("REAPP TESTNET FLOW PASSED", {
 });`;
 
 const FULFILLMENT = `import {
-  createReappPaymentMiddleware,
-  getVerifiedPayment,
+  InMemoryBoundRedemptionStore,
+  createBoundReappPaidJsonRoute,
 } from "@reapp-sdk/express-middleware";
 
-const requirePayment = createReappPaymentMiddleware({
+const challengeSecret = process.env.REAPP_CHALLENGE_SECRET;
+if (!challengeSecret) throw new Error("REAPP_CHALLENGE_SECRET is required");
+
+// Demo only. Use a durable, shared BoundRedemptionStore in production.
+const redemptionStore = new InMemoryBoundRedemptionStore();
+const paidSource = createBoundReappPaidJsonRoute({
   merchant,
   sourceAccount: merchant,
+  audience: "https://api.example", // exact public origin, never Host-derived
+  challengeSecret,
+  redemptionStore,
   amount: "1.00",
   resource: (request) => request.originalUrl,
-  redemptionStore,
-});
+}, async ({ request, payment }) => ({
+  body: {
+    ok: true,
+    resource: request.params.id,
+    settledTx: payment.txHash,
+    data: "protected value",
+  },
+}));
 
-app.get("/source/:id", requirePayment, (_request, response) => {
-  const payment = getVerifiedPayment(response);
-  response.json({ settledTx: payment?.txHash, data: "protected value" });
-});`;
+app.get("/source/:id", paidSource);`;
 
 const FLOW: [string, string][] = [
-  ["HTTP 402", "The API returns the exact payment requirement"],
+  ["HTTP 402", "The API authenticates an exact-origin GET challenge"],
   ["Contract", "execute_payment re-checks and consumes the mandate"],
-  ["Proof", "Express verifies chain evidence and redeems it once"],
+  ["Proof", "The chain-derived mandate agent signs that request and transaction"],
   ["HTTP 200", "Only a verified payment unlocks the resource"],
 ];
 
@@ -194,6 +296,7 @@ type ChallengeResult = {
 type PurchaseResult = {
   ok: true;
   action: "purchase";
+  operationId: string;
   outcome: "delivered" | "blocked";
   resource: ResourceSummary;
   txHash?: string;
@@ -339,13 +442,13 @@ function eventLabel(event: Record<string, unknown>): Omit<TrailEvent, "id"> | nu
     case "request":
       return { type, label: `GET ${resourcePath(resource)}`, detail: text(event.label) || `attempt ${text(event.attempt)}`, tone: "info" };
     case "challenge_402":
-      return { type, label: "402 Payment Required", detail: `${amount || "1.00"} XLM · raw requirement returned`, tone: "warn" };
+      return { type, label: "402 Payment Required", detail: `${amount || "1.00"} XLM · authenticated exact-request challenge`, tone: "warn" };
     case "payment_submit":
       return { type, label: "agent.fetch() submitted execute_payment", detail: `${amount || "1.00"} XLM through MandateRegistry`, tone: "info" };
     case "payment_tx":
       return { type, label: "Contract settlement confirmed", detail: resourcePath(resource), hash, tone: "ok" };
     case "proof_verified":
-      return { type, label: "Express independently verified the proof", detail: event.ledger ? `ledger ${text(event.ledger)}` : undefined, hash, tone: "ok" };
+      return { type, label: "Express verified chain evidence + agent signature", detail: event.ledger ? `ledger ${text(event.ledger)}` : undefined, hash, tone: "ok" };
     case "delivery_200":
       return { type, label: "200 OK · protected JSON delivered", detail: text(event.label), hash, tone: "ok" };
     case "budget":
@@ -390,6 +493,12 @@ export default function ExpressPage() {
   const eventId = useRef(0);
   const trailEnd = useRef<HTMLDivElement | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const purchaseOperation = useRef<{
+    sessionId: string;
+    operationId: string;
+    expectedAttempt: number;
+    expectedResource: string;
+  } | null>(null);
 
   const busy = activeAction !== null;
   const challenged = stage === "challenged";
@@ -577,14 +686,24 @@ export default function ExpressPage() {
     setError("");
     setRateLimit("");
     setCopied("");
+    purchaseOperation.current = null;
     eventId.current = 0;
   }
 
-  async function post(action: "create" | "challenge" | "purchase" | "reset", currentSession?: string): Promise<SuccessResult> {
+  async function post(
+    action: "create" | "challenge" | "purchase" | "reset",
+    currentSession?: string,
+    purchase?: { operationId: string; expectedAttempt: number; expectedResource: string },
+  ): Promise<SuccessResult> {
+    const body = action === "purchase" && currentSession && purchase
+      ? { action, sessionId: currentSession, ...purchase }
+      : currentSession
+        ? { action, sessionId: currentSession }
+        : { action };
     const response = await fetch("/api/express", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(currentSession ? { action, sessionId: currentSession } : { action }),
+      body: JSON.stringify(body),
       signal: controller.current?.signal,
     });
     const payload = (await response.json().catch(() => null)) as SuccessResult | FailureResult | null;
@@ -707,8 +826,32 @@ export default function ExpressPage() {
     setPhase(2);
     setBlockedAtContract(false);
     try {
-      const result = await post("purchase", sessionId);
+      const expectedResource = resourceId(nextResource);
+      const expectedAttempt = typeof nextResource === "string" ? served + 1 : nextResource?.attempt;
+      if (!expectedResource || !Number.isInteger(expectedAttempt)) {
+        throw new WorkbenchError("The expected purchase resource is unavailable.", "invalid_request");
+      }
+      let operation = purchaseOperation.current;
+      if (
+        !operation
+        || operation.sessionId !== sessionId
+        || operation.expectedAttempt !== expectedAttempt
+        || operation.expectedResource !== expectedResource
+      ) {
+        operation = {
+          sessionId,
+          operationId: crypto.randomUUID(),
+          expectedAttempt: expectedAttempt as number,
+          expectedResource,
+        };
+        purchaseOperation.current = operation;
+      }
+      const result = await post("purchase", sessionId, operation);
       if (result.action !== "purchase") throw new WorkbenchError("Purchase returned the wrong response shape.", "failed");
+      if (result.operationId !== operation.operationId) {
+        throw new WorkbenchError("Purchase response operation id did not match the request.", "failed");
+      }
+      purchaseOperation.current = null;
       appendEvents(result.events);
       setBudgetState(result.budget);
       setNextResource(result.nextResource);
@@ -805,7 +948,7 @@ export default function ExpressPage() {
           See the <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">402 become a 200</span>.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-emerald-100/70 sm:text-lg">
-          Create an ephemeral fulfillment endpoint, take it into your own VS Code project, or inspect the same 402 flow with the hosted controls. Every delivered resource is paid on testnet; the fourth purchase is rejected by the contract.
+          Create an ephemeral fulfillment endpoint, take it into your own VS Code project, or inspect the same bound-v2 402 flow with the hosted controls. Every delivered resource has an exact-request agent signature and a verified testnet payment; the fourth purchase is rejected by the contract.
         </p>
         <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
           <motion.button
@@ -1028,7 +1171,7 @@ export default function ExpressPage() {
               </pre>
               <div className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-emerald-100/50">
                 {codeTab === "consumer"
-                  ? "Run this in your own project. Your local signers remain local; every paid retry still routes through execute_payment."
+                  ? "Run this one-shot example in a clean project. It fails closed if prior receipt/result evidence exists; recover that exact state before creating another payment context."
                   : "The protected handler runs only after verification and atomic redemption."}
               </div>
             </section>
@@ -1077,7 +1220,7 @@ export default function ExpressPage() {
           <H>Consumer agent</H>
           <Code>{consumerCode}</Code>
           <p className="mt-3 text-sm leading-relaxed text-emerald-100/60">
-            Use this in your own VS Code project, where your user and agent keys stay under your control. The consumer never transfers tokens directly or treats cached budget state as authority; the contract decides whether every spend is allowed.
+            Use this one-shot example in a clean VS Code project, where your user and agent keys stay under your control. It fails closed on retained evidence instead of silently creating new keys; the repository reference agent demonstrates full same-identity restart recovery. The consumer never transfers tokens directly or treats cached budget state as authority; the contract decides whether every spend is allowed.
           </p>
         </motion.section>
 
@@ -1085,7 +1228,7 @@ export default function ExpressPage() {
           <H>Fulfillment agent</H>
           <Code>{FULFILLMENT}</Code>
           <p className="mt-3 text-sm leading-relaxed text-emerald-100/60">
-            The middleware checks the network, transaction freshness, exact MandateRegistry event, matching SEP-41 transfer, and atomic one-time redemption before Express serves anything.
+            The paid JSON route authenticates the challenge, binds the exact origin and GET resource, checks transaction freshness, the MandateRegistry event and matching SEP-41 transfer, then verifies the chain-derived mandate agent signature. One proof atomically claims one callback execution and stores exact JSON bytes; completed recovery replays those bytes without rerunning work. The interactive demo uses a workspace-scoped memory store; production requires a durable shared claim/result store.
           </p>
         </motion.section>
 
@@ -1109,8 +1252,8 @@ export default function ExpressPage() {
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-emerald-100">Keep the safe boundary</h2>
               <ul className="mt-3 space-y-2 text-sm leading-relaxed text-emerald-100/65">
-                <li>Never trust the amount, merchant, or mandate claimed in an HTTP header.</li>
-                <li>Never serve before independent verification and consume-once redemption.</li>
+                <li>Never trust the amount, merchant, agent, or mandate claimed in an HTTP header.</li>
+                <li>Never serve before independent chain verification and exact-request signature verification.</li>
                 <li>Never replace execute_payment with a direct token transfer or cached application check.</li>
               </ul>
             </div>
@@ -1119,7 +1262,7 @@ export default function ExpressPage() {
 
         <motion.div {...fade(0.32)} className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <a href="https://www.npmjs.com/package/@reapp-sdk/express-middleware" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#06241a] hover:bg-emerald-300">
-            <Package className="h-4 w-4" aria-hidden /> Express middleware on npm
+            <Package className="h-4 w-4" aria-hidden /> Express middleware package
           </a>
           <Link href="/cli" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 hover:border-emerald-400/40">
             <Terminal className="h-4 w-4" aria-hidden /> Open the CLI

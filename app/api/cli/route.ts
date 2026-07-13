@@ -11,7 +11,7 @@ const BUNDLE = join(process.cwd(), "vendor", "reapp-cli.mjs");
 
 // Only the reapp-protocol-cli subcommands. spawn uses an arg array (no shell), and
 // every token must be a plain identifier/flag — no shell metacharacters.
-const ALLOWED_FIRST = new Set(["init", "setup", "mandate", "pay", "demo", "--help", "--version"]);
+const ALLOWED_FIRST = new Set(["init", "setup", "mandate", "pay", "settlement", "demo", "--help", "--version"]);
 const TOKEN = /^[A-Za-z0-9._:/-]+$/;
 
 function sanitize(args: unknown): string[] | null {

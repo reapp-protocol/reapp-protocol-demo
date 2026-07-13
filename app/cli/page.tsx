@@ -16,19 +16,21 @@ import {
 import "@xterm/xterm/css/xterm.css";
 
 const PACKAGE = "reapp-protocol-cli";
-const VERSION = "0.1.1";
+const VERSION = "0.1.4";
 const COMMAND = "reapp";
-const CONTRACT = "CBALARHTO5D7JLWHZ5KST4QNIRC64JI5H3DQDHMIUBSRLLOVS6FCWOQX";
+const CONTRACT = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
-const INSTALL = `npx reapp-protocol-cli demo research-agent
+const INSTALL = `npx reapp-protocol-cli@0.1.4 demo research-agent
 
-npm install -g reapp-protocol-cli
+npm install -g reapp-protocol-cli@0.1.4
 reapp --help`;
 
 const PROJECT_FLOW = `reapp init
 reapp setup
 reapp mandate create
 reapp pay
+reapp settlement reconcile
+reapp settlement acknowledge <TX_HASH>
 reapp pay 10.00`;
 
 const QUICK = [
@@ -37,13 +39,16 @@ const QUICK = [
   { label: "setup", cmd: "setup" },
   { label: "mandate create", cmd: "mandate create" },
   { label: "pay", cmd: "pay" },
+  { label: "settlement reconcile", cmd: "settlement reconcile" },
 ];
 
 const COMMANDS = [
   { name: "init", desc: "Writes a committable reapp.config.json with the live testnet contract id.", Icon: Package },
   { name: "setup", desc: "Creates user, agent, and merchant testnet accounts, then funds them.", Icon: CheckCircle2 },
-  { name: "mandate create", desc: "Registers an AP2 mandate and approves the allowance to the contract.", Icon: ShieldCheck },
+  { name: "mandate create", desc: "Registers a scoped mandate and approves the allowance to the contract.", Icon: ShieldCheck },
   { name: "pay", desc: "Makes an agent-signed payment through MandateRegistry.execute_payment.", Icon: Terminal },
+  { name: "settlement reconcile", desc: "Checks the exact prepared transaction hash before another payment is allowed.", Icon: ShieldCheck },
+  { name: "settlement acknowledge <tx-hash>", desc: "Explicitly accepts one exact durable success before another payment is allowed.", Icon: CheckCircle2 },
   { name: "demo research-agent", desc: "Runs the complete budget-capped research-agent flow from a cold start.", Icon: Play },
 ];
 
@@ -119,7 +124,7 @@ export default function CliPage() {
         body: JSON.stringify({ args, sessionId: sessionRef.current }),
       });
       if (res.status === 400) {
-        term.write("\x1b[31munknown command — try: demo research-agent · init · setup · mandate create · pay\x1b[0m\r\n");
+        term.write("\x1b[31munknown command — try: demo research-agent · init · setup · mandate create · pay · settlement reconcile/acknowledge\x1b[0m\r\n");
         return;
       }
       if (!res.body) throw new Error("no stream");

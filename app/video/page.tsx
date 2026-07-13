@@ -70,7 +70,7 @@ export default function Page() {
     if (!wallet || !inputs) return;
     setBusy(`Agent paying ${PRICE} XLM to unlock “${v.title}”…`); setErr("");
     try {
-      const r = await api("pay", { inputs, agentSecret: wallet.agentSecret });
+      const r = await api("pay", { inputs, agentSecret: wallet.agentSecret, expectedSeq: spent });
       if (r.error) {
         setBlocked((b) => ({ ...b, [v.id]: r.error }));
         log({ label: `execute_payment BLOCKED · ${v.title} · ${reason(r.error)}`, status: "blocked" });
@@ -110,7 +110,7 @@ export default function Page() {
           className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90"
         >
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          STELLAR TESTNET · @reapp-sdk/core 0.2.0
+          STELLAR TESTNET · @reapp-sdk/core 0.3.0
         </motion.div>
         <motion.h1
           variants={{ hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } }}
