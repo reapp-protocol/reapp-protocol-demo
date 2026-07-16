@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "policyId": "reapp-hackathon-starter-dependencies-v1",
+  "packageManager": "npm",
+  "installCommand": "npm ci",
+  "nodeEngine": ">=20",
+  "dependencies": {
+    "@reapp-sdk/ap2": "0.2.1",
+    "@reapp-sdk/core": "0.3.0",
+    "@reapp-sdk/express-middleware": "0.2.1",
+    "@reapp-sdk/stellar": "0.2.1",
+    "@stellar/stellar-sdk": "14.6.1",
+    "express": "5.2.1"
+  },
+  "rules": {
+    "exactVersions": true,
+    "lockfileRequired": true,
+    "workspacesAllowed": false,
+    "localPathDependenciesAllowed": false,
+    "symlinksAllowed": false
+  }
+}
