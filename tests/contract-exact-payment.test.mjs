@@ -12,6 +12,11 @@ import {
   canonicalMandateSnapshot,
   createBoundTestnetConsumer,
   isBudgetRejection,
+  isExpiryRejection,
+  isRevocationRejection,
+  expectVerifiedBudgetRejection,
+  expectVerifiedExpiryRejection,
+  expectVerifiedRevocationRejection,
   purchaseVerifiedBoundJson,
   recoverBoundJson,
   verifyExactBound402,
@@ -107,13 +112,19 @@ function memoryReceiptStore() {
   };
 }
 
-function fakeConsumer(store, { responseStatus = 200, settlementOverrides = {} } = {}) {
+function fakeConsumer(store, {
+  responseStatus = 200,
+  settlementOverrides = {},
+  paymentError,
+  paymentErrorBeforePrepared,
+} = {}) {
   const calls = { pay: 0, retry: 0, acknowledge: 0 };
   return {
     calls,
     async pay(amount, lifecycle) {
       calls.pay += 1;
       assert.equal(amount, PRICE);
+      if (paymentErrorBeforePrepared) throw paymentErrorBeforePrepared;
       const now = Math.floor(Date.now() / 1_000);
       const settlement = {
         txHash: "a".repeat(64),
@@ -127,6 +138,7 @@ function fakeConsumer(store, { responseStatus = 200, settlementOverrides = {} } 
       const receiptId = await lifecycle.onPrepared(settlement);
       assert.match(receiptId, /^[0-9a-f]{64}$/);
       assert.equal(lifecycle.onSubmitted?.(settlement.txHash), receiptId);
+      if (paymentError) throw paymentError;
       return settlement.txHash;
     },
     async retryDelivery(receipt) {
@@ -359,6 +371,97 @@ test("only exact contract error 6 counts as budget evidence", () => {
     ),
     false,
   );
+});
+
+test("expiry and revocation helpers require their exact finalized contract errors", async () => {
+  const mandateId = "b".repeat(64);
+  const expiryError = new PaymentRejectedError(
+    mandateId,
+    new Error("HostError: Error(Contract, #4)"),
+  );
+  const revocationError = new PaymentRejectedError(
+    mandateId,
+    new Error("HostError: Error(Contract, #5)"),
+  );
+  assert.equal(isExpiryRejection(expiryError, mandateId), true);
+  assert.equal(isExpiryRejection(revocationError, mandateId), false);
+  assert.equal(isRevocationRejection(revocationError, mandateId), true);
+  assert.equal(isRevocationRejection(expiryError, mandateId), false);
+  assert.equal(
+    isExpiryRejection(
+      new PaymentRejectedError("c".repeat(64), new Error("Error(Contract, #4)")),
+      mandateId,
+    ),
+    false,
+  );
+
+  const signer = Keypair.random();
+  const merchant = Keypair.random().publicKey();
+  const mandate = testMandate(signer, merchant);
+  for (const [kind, error, invoke] of [
+    ["contract-expiry-rejection", expiryError, expectVerifiedExpiryRejection],
+    ["contract-revocation-rejection", revocationError, expectVerifiedRevocationRejection],
+  ]) {
+    const store = memoryReceiptStore();
+    const quote = await verifiedQuote(merchant);
+    const bound = bindFakeConsumer(store, mandate, signer, { paymentError: error });
+    const evidence = await invoke({
+      consumer: bound.consumer,
+      mandate,
+      url: URL,
+      quote,
+    });
+    assert.equal(evidence.kind, kind);
+    assert.equal(evidence.mandateId, mandate.id);
+    assert.equal(evidence.contractCode, kind === "contract-expiry-rejection" ? 4 : 5);
+    assert.deepEqual(bound.calls, { pay: 1, retry: 0, acknowledge: 0 });
+    assert.equal((await store.listPending()).length, 0);
+  }
+});
+
+test("expected negative paths accept only exact pre-broadcast simulation rejections", async () => {
+  const signer = Keypair.random();
+  const merchant = Keypair.random().publicKey();
+  const mandate = testMandate(signer, merchant);
+  const exactSimulation = new Error(
+    'Transaction simulation failed: "HostError: Error(Contract, #6)\nDiagnostic: Error(Contract, #6)"',
+  );
+  const store = memoryReceiptStore();
+  const bound = bindFakeConsumer(store, mandate, signer, {
+    paymentErrorBeforePrepared: exactSimulation,
+  });
+  const evidence = await expectVerifiedBudgetRejection({
+    consumer: bound.consumer,
+    mandate,
+    url: URL,
+    quote: await verifiedQuote(merchant),
+  });
+  assert.equal(evidence.kind, "contract-budget-rejection");
+  assert.equal(evidence.contractCode, 6);
+  assert.equal(evidence.mandateId, mandate.id);
+  assert.deepEqual(bound.calls, { pay: 1, retry: 0, acknowledge: 0 });
+  assert.equal((await store.listPending()).length, 0);
+
+  for (const unsafe of [
+    new Error("HostError: Error(Contract, #6)"),
+    new Error('Transaction simulation failed: "HostError: Error(Contract, #5)"'),
+    new Error('Transaction simulation failed: "HostError: Error(Contract, #6) then Error(Contract, #5)"'),
+  ]) {
+    const rejectedStore = memoryReceiptStore();
+    const rejectedBound = bindFakeConsumer(rejectedStore, mandate, signer, {
+      paymentErrorBeforePrepared: unsafe,
+    });
+    await assert.rejects(
+      expectVerifiedBudgetRejection({
+        consumer: rejectedBound.consumer,
+        mandate,
+        url: URL,
+        quote: await verifiedQuote(merchant),
+      }),
+      (error) => error === unsafe,
+    );
+    assert.equal((await rejectedStore.listPending()).length, 0);
+  }
 });
 
 test("resolved terminal bytes are durably committed before receipt acknowledgment", async () => {

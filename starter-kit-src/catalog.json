@@ -80,13 +80,13 @@
       "difficulty": "Beginner",
       "summary": "A research agent buys ranked market, academic, and news sources, then stops when its mandate cannot fund a fourth source.",
       "paidResource": "GET /source/:sourceId",
-      "businessLogic": "Rank sources by relevance, purchase them sequentially, merge provenance-tagged results, and preserve the locked status of anything the contract rejects.",
-      "features": ["agent-fetch", "cumulative-budget", "request-binding", "replay-defense", "explorer-evidence"],
+      "businessLogic": "Rank sources by relevance, purchase the three planned sources sequentially, retain per-source provenance and evidence, and record the rejected fourth source without creating a paid delivery.",
+      "features": ["verified-bound-purchase", "cumulative-budget", "request-binding", "independent-verification", "explorer-evidence"],
       "negativePath": {
         "id": "budget-exhausted",
-        "outcome": "The fourth purchase is rejected on-chain and an accepted proof cannot unlock another source."
+        "outcome": "The fourth purchase is rejected on-chain because its exact amount exceeds the mandate's remaining authority."
       },
-      "fixtures": "Four stable JSON sources with fixed identifiers, prices, relevance scores, and expected merged provenance.",
+      "fixtures": "Four stable JSON sources with fixed identifiers, prices, relevance scores, and per-source provenance.",
       "inspiration": ["coinbase-x402", "cloudflare-x402", "coinbase-agent-winners"]
     },
     {
@@ -95,15 +95,15 @@
       "title": "Page Snapshot Meter",
       "category": "Content infrastructure",
       "difficulty": "Intermediate",
-      "summary": "An agent buys a normalized page snapshot containing metadata, links, readability statistics, and a content hash.",
+      "summary": "An agent buys a normalized page snapshot containing metadata, links, word count, and a content hash.",
       "paidResource": "GET /snapshots/:pageId",
-      "businessLogic": "Sanitize fixture HTML, canonicalize its structure, extract reviewable metadata, and hash the normalized result for cache-safe delivery.",
-      "features": ["agent-fetch", "request-binding", "one-time-redemption", "explorer-evidence"],
+      "businessLogic": "Reject fixture HTML containing script, style, or iframe elements, extract text metadata, and hash the normalized result; this is not a general HTML sanitizer.",
+      "features": ["verified-bound-purchase", "request-binding", "response-integrity", "explorer-evidence"],
       "negativePath": {
         "id": "snapshot-resource-rebinding",
-        "outcome": "Payment for one page cannot unlock another page and malformed fixture HTML fails before settlement."
+        "outcome": "Payment for one page cannot unlock a different page because the proof is bound to the exact requested resource."
       },
-      "fixtures": "Bundled HTML pages and independently checked normalized snapshot JSON; the kit makes no browser-rendering claim.",
+      "fixtures": "Two bundled HTML fixture pages and one deterministic normalization check covering title, links, and word count; the live result computes a content hash, and the kit makes no browser-rendering claim.",
       "inspiration": ["cloudflare-x402", "cloudflare-http"]
     },
     {
@@ -112,15 +112,15 @@
       "title": "Existing API Tollgate",
       "category": "Infrastructure",
       "difficulty": "Beginner",
-      "summary": "Place REAPP in front of an existing read-only API without rewriting the protected backend.",
+      "summary": "Demonstrate an allowlisted fixture-gateway pattern for a read-only API boundary.",
       "paidResource": "GET /gateway/:service/:resourceId",
-      "businessLogic": "Map only allowlisted upstream routes, strip sensitive headers, enforce an upstream deadline, and attach response provenance without accepting arbitrary target URLs.",
+      "businessLogic": "Resolve only allowlisted bundled inventory and weather fixtures and return provenance with no forwarded headers; add real header filtering and timeouts before connecting a live backend.",
       "features": ["merchant-scope", "independent-verification", "request-binding", "explorer-evidence"],
       "negativePath": {
         "id": "upstream-not-allowlisted",
-        "outcome": "Unknown upstream routes fail before payment and another merchant's mandate cannot unlock the gateway."
+        "outcome": "An upstream route outside the explicit allowlist is rejected before a payment challenge is issued."
       },
-      "fixtures": "A local upstream service with stable inventory, weather, and account-status payloads and explicit route mappings.",
+      "fixtures": "Two bundled inventory and weather route fixtures with stable payloads and explicit route mappings; no live upstream is called.",
       "inspiration": ["cloudflare-gateway", "cloudflare-http"]
     },
     {
@@ -129,15 +129,15 @@
       "title": "Paid Tool Gateway",
       "category": "Agent tooling",
       "difficulty": "Intermediate",
-      "summary": "Publish free typed tool discovery while charging for selected tool results through a bounded HTTP integration.",
+      "summary": "Publish free schema-described tool discovery while charging for selected tool results through a bounded HTTP integration.",
       "paidResource": "GET /tools/:toolId/results/:fixtureId",
-      "businessLogic": "Separate free discovery from paid execution, validate declared input schemas, enforce a client price ceiling, and return typed result provenance.",
-      "features": ["price-inspection", "agent-fetch", "cumulative-budget", "request-binding"],
+      "businessLogic": "Publish free discovery metadata for two fixture tools, require a known fixture identifier, enforce the price ceiling in an offline consumer-policy check, and return result provenance from the fixed live purchase.",
+      "features": ["price-inspection", "verified-bound-purchase", "fixture-selection", "request-binding"],
       "negativePath": {
         "id": "tool-price-ceiling",
-        "outcome": "An unknown schema or a price above the consumer ceiling is rejected without attempting payment."
+        "outcome": "The offline consumer-policy check rejects a quoted tool price above its declared ceiling before any payment attempt."
       },
-      "fixtures": "Deterministic supply-risk, exchange-rate, and document-classification tools with typed inputs and outputs.",
+      "fixtures": "Two deterministic supply-risk and document-classification tools with declared fixtureId schemas and fixed outputs.",
       "inspiration": ["cloudflare-mcp", "cloudflare-agents", "x402-foundation"]
     },
     {
@@ -146,15 +146,15 @@
       "title": "Coding Agent Purchase Hook",
       "category": "Developer tooling",
       "difficulty": "Intermediate",
-      "summary": "A coding agent encounters a paid artifact, checks policy, settles once, retries once, and writes the result atomically.",
+      "summary": "The shared live consumer verifies the fixed price, settles once, retries the paid request once, and verifies the returned patch hash; an offline hook vector rejects a repeated 402 in the settled state.",
       "paidResource": "GET /artifacts/:issueId/patch",
-      "businessLogic": "Apply a host allowlist and price policy, permit one payment retry, verify the artifact hash, and write the accepted patch without partial files.",
-      "features": ["agent-fetch", "price-inspection", "durable-recovery", "explorer-evidence"],
+      "businessLogic": "Serve a patch only for the allowlisted fixture host, verify its hash after delivery, and return atomic-write metadata without writing files; the repeated-402 hook check is an offline state-transition vector.",
+      "features": ["verified-bound-purchase", "price-inspection", "durable-recovery", "explorer-evidence"],
       "negativePath": {
         "id": "repeated-payment-challenge",
-        "outcome": "A repeated 402 after settlement stops immediately and a duplicate invocation does not pay twice."
+        "outcome": "The offline hook transition rejects a repeated 402 in the settled state instead of initiating another payment."
       },
-      "fixtures": "Three issue identifiers with deterministic patch artifacts, expected hashes, and one intentionally invalid response.",
+      "fixtures": "Two issue identifiers with deterministic patch artifacts and computed SHA-256 values.",
       "inspiration": ["cloudflare-coding", "cloudflare-agents", "coinbase-code-winners"]
     },
     {
@@ -163,15 +163,15 @@
       "title": "Discoverable Service Bazaar",
       "category": "Discovery",
       "difficulty": "Advanced",
-      "summary": "An agent discovers services, scores declared schemas and prices, then pays the best compatible fixed merchant.",
+      "summary": "Offline vectors rank bundled service-listing fixtures; the live plan buys the fixed alpha merchant route.",
       "paidResource": "GET /services/:serviceId/results/:fixtureId",
-      "businessLogic": "Search a free catalog, check input-output compatibility, rank by deterministic quality signals, and treat discovery metadata as advisory rather than financial authority.",
+      "businessLogic": "Offline vectors rank listings by schema, price, quality, and latency; the live route accepts only the fixed merchant label and known fixture.",
       "features": ["price-inspection", "merchant-scope", "request-binding", "independent-verification"],
       "negativePath": {
         "id": "listing-merchant-mismatch",
-        "outcome": "A listing that advertises the wrong merchant cannot be unlocked even when it ranks first."
+        "outcome": "A wrong-merchant listing is excluded even though its declared price, quality, and latency signals would otherwise rank first."
       },
-      "fixtures": "Six signed catalog listings with stable schemas, prices, quality signals, merchant addresses, and outputs.",
+      "fixtures": "Three unsigned catalog fixtures with stable schemas, prices, quality signals, merchant labels, and outputs.",
       "inspiration": ["coinbase-bazaar", "x402-foundation"]
     },
     {
@@ -186,9 +186,9 @@
       "features": ["merchant-scope", "request-binding", "independent-verification", "explorer-evidence"],
       "negativePath": {
         "id": "untrusted-reputation-issuer",
-        "outcome": "Events from an untrusted issuer or outside the freshness window are excluded and wrong-merchant settlement fails."
+        "outcome": "Events signed by an issuer outside the configured trust set are excluded from the reputation calculation."
       },
-      "fixtures": "Run-relative signed events produced from a clearly identified local Ed25519 fixture issuer.",
+      "fixtures": "Four deterministic signed events with fixed ageSeconds values produced by clearly labeled trusted and untrusted local Ed25519 fixture signers.",
       "inspiration": ["stellar-developer-meetings", "stellar-agentic-results"]
     },
     {
@@ -199,13 +199,13 @@
       "difficulty": "Advanced",
       "summary": "A planner purchases research, verification, and synthesis artifacts as an explicit dependency graph.",
       "paidResource": "GET /workflow/:caseId/:stage",
-      "businessLogic": "Evaluate DAG dependencies, allocate stage budgets, propagate source provenance, and stop the workflow when verification fails.",
-      "features": ["agent-fetch", "cumulative-budget", "sequence-enforcement", "explorer-evidence"],
+      "businessLogic": "Offline vectors validate DAG dependencies, stage order, and failure blocking; the live plan purchases the clean-case stages in fixed order.",
+      "features": ["verified-bound-purchase", "dependency-validation", "sequence-validation", "explorer-evidence"],
       "negativePath": {
         "id": "failed-stage-blocks-synthesis",
-        "outcome": "Failed verification prevents synthesis and insufficient remaining budget blocks the next stage on-chain."
+        "outcome": "A failed verification stage prevents synthesis from running."
       },
-      "fixtures": "Three deterministic case graphs with specialist outputs and one intentional verification failure.",
+      "fixtures": "Two deterministic case graphs with staged artifact identifiers and one intentional verification failure.",
       "inspiration": ["stellar-developer-meetings", "coinbase-agent-winners"]
     },
     {
@@ -216,13 +216,13 @@
       "difficulty": "Intermediate",
       "summary": "Buy a bounded cryptographic workload and verify the returned digest independently on the consumer side.",
       "paidResource": "GET /compute/sha256-chain/:tier/:seedId",
-      "businessLogic": "Apply fixed work tiers and CPU ceilings, execute a deterministic hash chain, and require the consumer to recompute the expected digest.",
-      "features": ["price-inspection", "cumulative-budget", "request-binding", "independent-verification"],
+      "businessLogic": "Apply fixed work tiers and iteration ceilings, execute a deterministic hash chain, and require the consumer to recompute the expected digest.",
+      "features": ["price-inspection", "resource-ceiling", "request-binding", "independent-verification"],
       "negativePath": {
-        "id": "compute-tier-over-budget",
-        "outcome": "A tier outside the mandate fails while unknown seeds and work above the server ceiling never execute."
+        "id": "compute-tier-over-ceiling",
+        "outcome": "The deterministic hash function rejects an iteration count above 512 before hashing begins."
       },
-      "fixtures": "Fixed seeds and work tiers with independently calculated digest vectors and runtime ceilings.",
+      "fixtures": "Two fixed seeds, two work tiers, one checked deterministic digest prefix, and a maximum iteration count.",
       "inspiration": ["coinbase-agent-winners", "coinbase-x402"]
     },
     {
@@ -231,15 +231,15 @@
       "title": "Private Test Runner",
       "category": "Developer tooling",
       "difficulty": "Intermediate",
-      "summary": "A coding agent buys a hidden-test report for a known patch without receiving the private test source.",
+      "summary": "A coding agent buys a deterministic hidden-test-result fixture for a known patch identifier.",
       "paidResource": "GET /checks/:patchId/report",
-      "businessLogic": "Select an allowlisted patch, run it against server-only tests, redact sensitive output, and hash the final pass-or-fail report.",
-      "features": ["agent-fetch", "request-binding", "one-time-redemption", "explorer-evidence"],
+      "businessLogic": "Select one of two allowlisted patch identifiers, return its precomputed outcome fixture, omit private test sources, and hash the final pass-or-fail report; this starter does not execute user code.",
+      "features": ["verified-bound-purchase", "request-binding", "report-integrity", "explorer-evidence"],
       "negativePath": {
         "id": "patch-path-traversal",
-        "outcome": "Path traversal and unknown patch identifiers are rejected while a known bad patch returns a paid failing report."
+        "outcome": "A patch identifier containing traversal syntax is rejected before fixture lookup."
       },
-      "fixtures": "A small sample repository, three fixed patches, and fulfillment-only tests with stable report hashes.",
+      "fixtures": "Two precomputed patch-outcome fixtures with stable report hashes and no private test source.",
       "inspiration": ["coinbase-agent-winners", "coinbase-code-winners"]
     },
     {
@@ -248,15 +248,15 @@
       "title": "Build Notary",
       "category": "Software supply chain",
       "difficulty": "Advanced",
-      "summary": "Buy a signed statement binding an artifact hash to its dependency inventory and reproducible build metadata.",
+      "summary": "Buy a signed fixture statement binding an artifact hash to declared dependency and build-command metadata.",
       "paidResource": "GET /attestations/:artifactSha",
-      "businessLogic": "Verify the requested SHA-256, inventory a fixed lockfile, canonicalize the statement, sign it, and verify that signature offline.",
-      "features": ["request-binding", "independent-verification", "one-time-redemption", "explorer-evidence"],
+      "businessLogic": "Verify a fixture artifact SHA-256, canonicalize its declared dependency and build-command metadata, sign the statement, and verify that signature offline.",
+      "features": ["request-binding", "independent-verification", "signature-verification", "explorer-evidence"],
       "negativePath": {
         "id": "artifact-hash-mismatch",
-        "outcome": "A tampered artifact fails local signature or hash verification and one build's payment cannot fetch another statement."
+        "outcome": "A statement carrying an artifact hash different from the requested artifact fails local verification."
       },
-      "fixtures": "Two small artifacts, exact dependency inventories, and a clearly identified local fixture signer.",
+      "fixtures": "Two small artifact-content fixtures with declared dependency arrays, build-command strings, and a clearly identified local fixture signer.",
       "inspiration": ["coinbase-code-winners", "stellar-i3"]
     },
     {
@@ -265,13 +265,13 @@
       "title": "Model Route Bazaar",
       "category": "AI infrastructure",
       "difficulty": "Advanced",
-      "summary": "Compare provider quotes, choose the lowest-cost route satisfying quality and latency policy, and buy its result.",
+      "summary": "Offline vectors compare fixture quotes and select the lowest-cost eligible provider; the live plan buys that fixed selected provider result.",
       "paidResource": "GET /providers/:providerId/results/:promptId",
-      "businessLogic": "Check quote freshness, score price-quality-latency policy, verify the provider merchant, and preserve output provenance and fallback reasoning.",
-      "features": ["price-inspection", "merchant-scope", "cumulative-budget", "request-binding"],
+      "businessLogic": "Offline checks enforce quote freshness plus merchant, quality, and latency eligibility, then choose the lowest price; the live plan serves provenance-marked output from that fixed provider.",
+      "features": ["price-inspection", "merchant-scope", "quote-freshness", "request-binding"],
       "negativePath": {
         "id": "stale-provider-quote",
-        "outcome": "A stale quote or provider-merchant mismatch is rejected and a route above remaining budget is skipped."
+        "outcome": "A provider quote older than the configured freshness window is rejected before provider selection or payment."
       },
       "fixtures": "Clearly labeled fixture providers with stable quotes, scores, and precomputed outputs; no live-model claim.",
       "inspiration": ["coinbase-agent-winners", "coinbase-bazaar"]
@@ -282,15 +282,15 @@
       "title": "Rights Receipt",
       "category": "Creative commerce",
       "difficulty": "Beginner",
-      "summary": "Purchase an exact asset-license version and receive content plus a receipt binding terms, asset hash, and payment transaction.",
+      "summary": "Purchase an exact asset-license version and receive content plus a receipt containing content and terms hashes and the settlement transaction hash.",
       "paidResource": "GET /licenses/:assetId/:licenseVersion",
-      "businessLogic": "Address content by hash, select versioned plain-language license terms, construct a local receipt, and verify every binding before use.",
-      "features": ["request-binding", "one-time-redemption", "explorer-evidence", "independent-verification"],
+      "businessLogic": "Select text or data fixtures by asset ID and license version, hash the content and terms, record the settlement transaction hash, and verify the asset, version, content, and terms.",
+      "features": ["request-binding", "license-versioning", "explorer-evidence", "independent-verification"],
       "negativePath": {
         "id": "license-version-rebinding",
         "outcome": "Payment for another asset or license version cannot unlock the requested content."
       },
-      "fixtures": "Bundled text, image, and data assets with stable hashes and clearly labeled sample license terms.",
+      "fixtures": "Bundled text and CSV data assets with stable hashes and clearly labeled sample license terms.",
       "inspiration": ["coinbase-agent-winners", "stellar-better"]
     },
     {
@@ -299,15 +299,15 @@
       "title": "Data Owner Gateway",
       "category": "Data commerce",
       "difficulty": "Intermediate",
-      "summary": "A data owner operates the merchant endpoint and receives payment directly when an agent unlocks that owner's dataset.",
+      "summary": "The live fixture merchant serves one owner-alpha dataset endpoint and receives payment when the agent unlocks that dataset.",
       "paidResource": "GET /datasets/:ownerId/:datasetId",
-      "businessLogic": "Resolve an owner-specific fixed merchant, verify dataset freshness and permitted-use metadata, and return content provenance without claiming revenue splits.",
+      "businessLogic": "Resolve an owner-scoped dataset fixture, return its observed-at and permitted-use metadata, and verify the content hash without claiming revenue splits.",
       "features": ["merchant-scope", "request-binding", "independent-verification", "explorer-evidence"],
       "negativePath": {
         "id": "dataset-owner-mismatch",
-        "outcome": "A dataset mapped to another owner cannot be unlocked with the current merchant-scoped mandate."
+        "outcome": "A dataset mapped to another owner is rejected by the endpoint's owner mapping before a payment challenge."
       },
-      "fixtures": "Three owner-specific datasets with stable hashes, freshness timestamps, and use-policy metadata.",
+      "fixtures": "Two owner-specific dataset fixtures with stable hashes, observed-at timestamps, and permitted-use metadata.",
       "inspiration": ["cloudflare-gateway", "cloudflare-http", "stellar-better"]
     },
     {
@@ -318,13 +318,13 @@
       "difficulty": "Advanced",
       "summary": "An agent buys a signed review decision only after a case reaches a ready state and the mandate remains valid.",
       "paidResource": "GET /reviews/:caseId/decision",
-      "businessLogic": "Track pending and ready states, enforce an SLA timestamp, validate the reviewer signature, and durably accept exactly one decision.",
+      "businessLogic": "Serve two ready-state fixture decisions, validate a fixture HMAC signature, and demonstrate contract-mandate expiry before settlement.",
       "features": ["expiry", "durable-recovery", "request-binding", "independent-verification"],
       "negativePath": {
         "id": "authority-expires-in-queue",
-        "outcome": "Authority that expires while the case waits blocks settlement and stale or unsigned decisions fail local validation."
+        "outcome": "A distinct short-lived mandate expires before settlement against the ready delayed-case fixture, and the contract rejects payment."
       },
-      "fixtures": "A clearly labeled fixture reviewer writes deterministic signed decisions and one deliberately stale decision.",
+      "fixtures": "Two ready-state deterministic decisions signed by a clearly labeled fixture reviewer; one uses a queue duration beyond the example SLA.",
       "inspiration": ["cloudflare-agents", "stellar-developer-meetings"]
     },
     {
@@ -335,11 +335,11 @@
       "difficulty": "Intermediate",
       "summary": "Buy a shipment passport summarizing custody handoffs, temperature excursions, and sensor continuity.",
       "paidResource": "GET /shipments/:shipmentId/passport",
-      "businessLogic": "Calculate threshold duration, detect telemetry gaps, order custody transfers, and bind every finding to hashed evidence references.",
-      "features": ["expiry", "request-binding", "independent-verification", "explorer-evidence"],
+      "businessLogic": "Calculate threshold duration, detect telemetry gaps, order custody transfers, and bind the passport to one hash covering its telemetry and custody fixtures.",
+      "features": ["sensor-continuity", "request-binding", "independent-verification", "explorer-evidence"],
       "negativePath": {
         "id": "incomplete-sensor-evidence",
-        "outcome": "Expired authority blocks delivery and missing sensor intervals produce an explicit incomplete result rather than a false pass."
+        "outcome": "A missing sensor interval produces an explicit incomplete passport rather than an unsupported compliance pass."
       },
       "fixtures": "Deterministic telemetry and custody records for normal, breached, and incomplete shipments.",
       "inspiration": ["stellar-i3", "stellar-better"]
@@ -353,12 +353,12 @@
       "summary": "Buy the lowest-emission execution window that still meets a workload deadline and capacity requirement.",
       "paidResource": "GET /schedules/:jobId/window",
       "businessLogic": "Search bounded time windows, score carbon and capacity, enforce a deadline, and reject forecasts that are too old for scheduling.",
-      "features": ["expiry", "cumulative-budget", "request-binding", "independent-verification"],
+      "features": ["forecast-freshness", "capacity-validation", "request-binding", "independent-verification"],
       "negativePath": {
         "id": "forecast-expired",
-        "outcome": "A stale forecast or infeasible window returns an explicit business outcome and expired authority cannot buy refreshed data."
+        "outcome": "A forecast older than the scheduling freshness limit is rejected before a run window is selected."
       },
-      "fixtures": "Fixed hourly intensity, capacity, and workload records with independently checked optimal windows.",
+      "fixtures": "Fixed hourly intensity, capacity, and workload records with one independently checked optimal window.",
       "inspiration": ["stellar-i3", "stellar-better"]
     },
     {
@@ -367,15 +367,15 @@
       "title": "Fleet Corridor Authority",
       "category": "Operations",
       "difficulty": "Intermediate",
-      "summary": "A fleet agent buys successive route clearances until an operator revokes its mandate and the next segment fails closed.",
+      "summary": "A fleet agent buys two planned route clearances; then the mandate user revokes authority and the third planned settlement fails closed.",
       "paidResource": "GET /corridors/:routeId/segments/:segmentId",
-      "businessLogic": "Validate segment order and weather epoch, maintain route provenance, and require a fresh contract-authorized purchase for each clearance.",
-      "features": ["revocation", "sequence-enforcement", "request-binding", "explorer-evidence"],
+      "businessLogic": "Offline vectors validate segment order and weather epoch; the live plan purchases segments 1 and 2 before revocation blocks segment 3.",
+      "features": ["revocation", "sequence-validation", "request-binding", "explorer-evidence"],
       "negativePath": {
         "id": "operator-revocation",
         "outcome": "After two accepted segments the user revokes authority and the third settlement is rejected by the contract."
       },
-      "fixtures": "Three deterministic route segments with fixed weather epochs, constraints, and expected clearance decisions.",
+      "fixtures": "Three deterministic route segments with fixed order, endpoints, clearance decisions, and one route-level weather epoch.",
       "inspiration": ["stellar-developer-meetings", "stellar-i3"]
     },
     {
@@ -384,15 +384,15 @@
       "title": "Payment Receipt Firewall",
       "category": "Security",
       "difficulty": "Advanced",
-      "summary": "A hardened merchant demonstrates persistent replay admission, exact request binding, and safe recovery after restart.",
+      "summary": "A reference merchant demonstrates persistent replay admission, exact request binding, and safe recovery after restart.",
       "paidResource": "GET /vault/:resourceId",
       "businessLogic": "Persist used-proof claims, compare origin, method, and resource, record exact response bytes before delivery, and recover the same claim after restart.",
       "features": ["replay-defense", "durable-recovery", "request-binding", "independent-verification"],
       "negativePath": {
         "id": "durable-replay-after-restart",
-        "outcome": "Re-signing an old transaction for a new resource returns 409 and a process restart never reopens the proof."
+        "outcome": "After restart the exact same proof returns the byte-identical stored response without repeating verification or paid fulfillment."
       },
-      "fixtures": "Three stable vault resources while every payment proof remains live Stellar testnet evidence.",
+      "fixtures": "Two stable vault resources; the live demo purchases one and reuses its exact Stellar testnet proof after restart.",
       "inspiration": ["x402-foundation", "coinbase-code-winners"]
     },
     {
@@ -401,15 +401,15 @@
       "title": "Procurement Guard",
       "category": "Small-business automation",
       "difficulty": "Beginner",
-      "summary": "A purchasing agent compares approved vendor quote packs and buys only a plan permitted by budget, merchant scope, and deadline.",
+      "summary": "A purchasing agent evaluates approved vendor quote fixtures offline and buys one explicitly selected allowlisted quote pack.",
       "paidResource": "GET /vendors/:vendorId/quote-packs/:requestId",
-      "businessLogic": "Apply a vendor allowlist, optimize cost and lead time, reject stale quotes, and explain why the selected purchase plan satisfies policy.",
-      "features": ["merchant-scope", "cumulative-budget", "expiry", "explorer-evidence"],
+      "businessLogic": "Offline vectors rank approved fixture quotes by cost, lead time, and freshness; the live route serves one explicitly selected allowlisted quote pack.",
+      "features": ["merchant-scope", "vendor-allowlist", "quote-freshness", "explorer-evidence"],
       "negativePath": {
-        "id": "unauthorized-vendor-and-budget",
-        "outcome": "An unauthorized vendor remains blocked when cheaper and the final otherwise-valid pack is rejected after budget exhaustion."
+        "id": "unauthorized-vendor",
+        "outcome": "A cheaper vendor outside the configured allowlist remains ineligible and cannot be selected for purchase."
       },
-      "fixtures": "Stable vendor catalogs, delivery windows, request constraints, and independently checked optimal plans.",
+      "fixtures": "Three stable quote fixtures with vendor IDs, lead times, quote ages, item rows, and one checked approved-vendor selection.",
       "inspiration": ["coinbase-agent-winners", "stellar-better"]
     }
   ]

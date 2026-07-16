@@ -9,12 +9,15 @@ import {
   ChevronDown,
   Code2,
   Copy,
+  Download,
   ExternalLink,
   FileCode2,
   KeyRound,
+  Layers3,
   Loader2,
   Play,
   RotateCcw,
+  Search,
   Server,
   ShieldCheck,
   Terminal,
@@ -22,9 +25,15 @@ import {
   WalletCards,
 } from "lucide-react";
 import { contractUrl, txUrl } from "@/lib/explorer";
+import { HACKATHON_STARTER_CATALOG } from "@/lib/hackathon-starters.generated";
 
 const STORAGE_KEY = "reapp-hackathon-workspace-v1";
 const SETUP_COMMAND = "npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/hackathon . && npm ci";
+const STARTER_KITS = HACKATHON_STARTER_CATALOG.kits;
+const STARTER_CATEGORIES = ["All", ...Array.from(new Set(STARTER_KITS.map((kit) => kit.category)))];
+
+const starterCommand = (slug: string) =>
+  `npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/${slug} . && npm ci`;
 
 type ResourceSummary = { id: string; label: string; attempt: number };
 type Workspace = {
@@ -89,7 +98,7 @@ const LESSONS = [
     Icon: TimerReset,
     summary: "Expired authority fails before settlement. Change the starter expiry to run the failure path.",
     code: `expiry: Math.floor(Date.now() / 1000) + 3600
-// For the drill, use a short lifetime and wait before agent.fetch().`,
+// For the drill, use a short lifetime and wait before the purchase attempt.`,
   },
   {
     id: "replay",
@@ -117,27 +126,67 @@ console.log(receipt.txHash) // open on Stellar testnet explorer`,
   },
 ] as const;
 
-const CONSUMER_PREVIEW = `// src/consumer.mjs
-const agent = reapp.agent({
-  mandate,
-  signer: agentKey,
-  proofPolicy: "bound-v2-only",
-  receiptStore,
+const HOSTED_PREVIEW = `// src/hosted.mjs
+const consumer = createBoundTestnetConsumer({
+  mandate: mandateEvidence.mandate,
+  agent: actors.agent,
+  receiptStore: stores.receiptStore,
 });
+const url = \`\${checkedEndpoint}/\${resource}\`;
+const quote = await verifyExactBound402({
+  url, merchant: checkedMerchant, amount: "1.00",
+});
+const delivered = await purchaseVerifiedBoundJson({
+  consumer,
+  mandate: mandateEvidence.mandate,
+  url,
+  quote,
+  validateDelivery: ({ body, receipt }) =>
+    validateHostedDelivery({ body, receipt, resource }),
+  commitDelivery: async ({ body, value, receipt }) => {
+    const bodyEvidence = createJsonEvidenceEnvelope(
+      "hosted-delivery-body", body,
+    );
+    await stores.resultStore.commitDelivery(runId, {
+      type: "delivery_accepted",
+      receiptId: receipt.receiptId,
+      txHash: receipt.txHash,
+      bodySha256: bodyEvidence.sha256,
+      evidence: { resource: value.resource, label: value.label },
+    });
+  },
+});`;
 
-const response = await agent.fetch(endpoint + "/market");
-if (response.status !== 200) throw new Error("delivery failed");`;
+const CONSUMER_PREVIEW = `// src/consumer.mjs
+export const scenario = createScenario(
+  EXPECTED_SCENARIO_METADATA,
+);
+
+export async function runDemo({
+  stateRoot = resolve(".reapp"),
+  onEvent,
+} = {}) {
+  return runLocalTestnetDemo({
+    scenario,
+    stateRoot,
+    onEvent,
+  });
+}`;
 
 const FULFILLMENT_PREVIEW = `// src/fulfillment.mjs
-const paidSource = createBoundReappPaidJsonRoute({
-  merchant,
-  sourceAccount: merchant,
-  audience: publicOrigin,
-  amount: "1.00",
-  resource: (request) => request.originalUrl,
-}, async ({ payment }) => ({
-  body: { ok: true, settledTx: payment.txHash, data: "protected value" },
-}));`;
+return startFulfillmentServer({
+  host: "127.0.0.1",
+  port: checkedPort,
+  publicOrigin: origin,
+  merchant: checkedMerchant,
+  challengeSecret: secret,
+  routePattern: scenario.routePattern,
+  amount: scenario.amount,
+  preflight: scenario.preflight,
+  fulfill: scenario.fulfill,
+  configureFreeRoutes: scenario.configureFreeRoutes,
+  stateRoot,
+});`;
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 16 },
@@ -174,8 +223,10 @@ export default function HackathonPage() {
   const [resetting, setResetting] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
-  const [advancedTab, setAdvancedTab] = useState<"consumer" | "fulfillment">("consumer");
+  const [advancedTab, setAdvancedTab] = useState<"hosted" | "consumer" | "fulfillment">("hosted");
   const [openLesson, setOpenLesson] = useState<string>("mandate");
+  const [starterQuery, setStarterQuery] = useState("");
+  const [starterCategory, setStarterCategory] = useState("All");
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -239,7 +290,7 @@ export default function HackathonPage() {
   }, [persisted?.sessionId]);
 
   const runCommand = persisted
-    ? `npm run demo -- --endpoint="${persisted.workspace.endpointBase.replace(/\/$/, "")}" --merchant="${persisted.workspace.merchant}"`
+    ? `npm run hosted -- --endpoint="${persisted.workspace.endpointBase.replace(/\/$/, "")}" --merchant="${persisted.workspace.merchant}"`
     : "Create a testnet workspace to generate this command.";
 
   const delivered = events.filter((event) => event.type === "delivery_200");
@@ -257,6 +308,21 @@ export default function HackathonPage() {
       return [{ hash, resource: valueText(event.resource) || "resource" }];
     });
   }, [events]);
+  const visibleStarterKits = useMemo(() => {
+    const query = starterQuery.trim().toLowerCase();
+    return STARTER_KITS.filter((kit) => {
+      const matchesCategory = starterCategory === "All" || kit.category === starterCategory;
+      const searchable = [
+        kit.title,
+        kit.category,
+        kit.difficulty,
+        kit.summary,
+        kit.paidResource,
+        ...kit.features,
+      ].join(" ").toLowerCase();
+      return matchesCategory && (!query || searchable.includes(query));
+    });
+  }, [starterCategory, starterQuery]);
 
   async function copyValue(value: string, key: string) {
     try {
@@ -444,7 +510,7 @@ export default function HackathonPage() {
               <CommandBlock label="2 · Run against your workspace" value={runCommand} copyKey="run" copied={copied} onCopy={copyValue} disabled={!persisted} />
               <div className="rounded-xl border border-emerald-400/15 bg-[#020806] p-3 font-mono text-[11px] leading-relaxed text-emerald-100/65">
                 <div className="text-emerald-300">$ expected output</div>
-                <div className={sawChallenge ? "text-emerald-200" : "text-emerald-100/35"}>{sawChallenge ? "✓ 402 Payment Required" : "· waiting for local agent.fetch()"}</div>
+                <div className={sawChallenge ? "text-emerald-200" : "text-emerald-100/35"}>{sawChallenge ? "✓ 402 Payment Required" : "· waiting for the local consumer"}</div>
                 <div className={sawPayment ? "text-emerald-200" : "text-emerald-100/35"}>{sawPayment ? "✓ contract payment confirmed" : "· settlement pending"}</div>
                 <div className={delivered.length ? "text-emerald-200" : "text-emerald-100/35"}>{delivered.length ? `✓ ${delivered.length}/3 protected responses delivered` : "· protected response pending"}</div>
                 <div className={blocked ? "text-red-300" : "text-emerald-100/35"}>{blocked ? "✓ fourth purchase rejected by MandateRegistry" : "· contract limit check pending"}</div>
@@ -521,6 +587,116 @@ export default function HackathonPage() {
         </div>
       </motion.section>
 
+      <motion.section {...fade(0.14)} className="mt-12">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
+            <Layers3 className="h-4 w-4" aria-hidden /> 20 self-contained starters
+          </div>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-emerald-50 sm:text-4xl">Pick a serious project. Keep the payment boundary.</h2>
+          <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">Each testnet kit includes editable consumer and Express fulfillment source, deterministic fixtures, one focused rejection path, exact package versions, and an offline business-logic check.</p>
+        </div>
+
+        <div className="mt-7 overflow-hidden rounded-3xl border border-emerald-300/15 bg-[#06100d]/80">
+          <div className="border-b border-white/10 bg-white/[0.025] p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <label className="relative block min-w-0 flex-1 lg:max-w-md">
+                <span className="sr-only">Search starter kits</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-100/35" aria-hidden />
+                <input
+                  type="search"
+                  value={starterQuery}
+                  onChange={(event) => setStarterQuery(event.target.value)}
+                  placeholder="Search payments, compute, data, agents…"
+                  className="min-h-11 w-full rounded-xl border border-white/10 bg-black/30 py-2.5 pl-10 pr-3 text-sm text-emerald-100 outline-none placeholder:text-emerald-100/30 focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-300/15"
+                />
+              </label>
+              <div className="flex items-center justify-between gap-3 text-xs text-emerald-100/45 lg:justify-end">
+                <span><strong className="text-emerald-200">{visibleStarterKits.length}</strong> of {STARTER_KITS.length} starters</span>
+                <a href="/starters/v1/manifest.json" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-emerald-300/75 hover:text-emerald-200">
+                  Integrity manifest <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+              </div>
+            </div>
+            <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Starter categories">
+              {STARTER_CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setStarterCategory(category)}
+                  aria-pressed={starterCategory === category}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60 ${starterCategory === category ? "border-emerald-400/35 bg-emerald-400/15 text-emerald-200" : "border-white/10 bg-black/20 text-emerald-100/45 hover:border-emerald-400/25 hover:text-emerald-100/75"}`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {visibleStarterKits.length ? (
+            <div className="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-2">
+              {visibleStarterKits.map((kit) => {
+                const copyKey = `starter-${kit.slug}`;
+                return (
+                  <article key={kit.id} className="flex min-w-0 flex-col overflow-hidden rounded-2xl glass">
+                    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-400/10 font-mono text-xs font-black text-emerald-300">{String(STARTER_KITS.indexOf(kit) + 1).padStart(2, "0")}</span>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-bold leading-snug text-emerald-100">{kit.title}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-100/40">
+                            <span>{kit.category}</span><span aria-hidden>·</span><span>{kit.difficulty}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <code className="shrink-0 rounded-lg border border-emerald-400/15 bg-emerald-400/[0.06] px-2 py-1 text-[9px] text-emerald-300/70">GET only</code>
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="text-sm leading-relaxed text-emerald-100/60">{kit.summary}</p>
+                      <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-[10px] text-emerald-200/65">{kit.paidResource}</code>
+                      <div className="mt-3 rounded-xl border border-red-400/15 bg-red-400/[0.035] p-3">
+                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-red-300/60">Enforced boundary</div>
+                        <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-100/50">{kit.negativePath.outcome}</p>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {kit.features.slice(0, 5).map((feature) => (
+                          <span key={feature} className="rounded-full border border-white/10 bg-white/[0.025] px-2 py-1 text-[9px] font-medium text-emerald-100/40">{feature}</span>
+                        ))}
+                      </div>
+
+                      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => void copyValue(starterCommand(kit.slug), copyKey)}
+                          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-3 py-2 text-xs font-black text-[#06241a] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                        >
+                          {copied === copyKey ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
+                          <span className="truncate">{copied === copyKey ? "Copied" : "Copy setup"}</span>
+                        </button>
+                        <a href={`/starters/v1/${kit.slug}.zip`} download className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60" aria-label={`Download ${kit.title} archive`}>
+                          <Download className="h-4 w-4" aria-hidden />
+                        </a>
+                        <a href={`https://github.com/reapp-protocol/reapp-protocol-demo/tree/main/starters/${kit.slug}`} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60" aria-label={`Open ${kit.title} source`}>
+                          <ExternalLink className="h-4 w-4" aria-hidden />
+                        </a>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid min-h-56 place-items-center p-6 text-center">
+              <div>
+                <Search className="mx-auto h-6 w-6 text-emerald-100/25" aria-hidden />
+                <p className="mt-3 text-sm text-emerald-100/45">No starters match that search and category.</p>
+                <button type="button" onClick={() => { setStarterQuery(""); setStarterCategory("All"); }} className="mt-3 text-xs font-semibold text-emerald-300 hover:text-emerald-200">Clear filters</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.section>
+
       <motion.section {...fade(0.16)} className="mt-12">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
@@ -567,10 +743,10 @@ export default function HackathonPage() {
               <FileCode2 className="h-4 w-4 text-emerald-400" aria-hidden />
               <h2 className="text-sm font-bold text-emerald-100">Reveal the implementation</h2>
             </div>
-            <p className="mt-1 text-xs text-emerald-100/45">These files are generated into your project and are yours to modify.</p>
+            <p className="mt-1 text-xs text-emerald-100/45">Selected excerpts from the generated files in your project—no conceptual substitute code.</p>
           </div>
           <div className="flex rounded-lg border border-white/10 bg-black/25 p-0.5" role="tablist" aria-label="Starter source preview">
-            {(["consumer", "fulfillment"] as const).map((tab) => (
+            {(["hosted", "consumer", "fulfillment"] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -585,10 +761,10 @@ export default function HackathonPage() {
           </div>
         </div>
         <div className="grid min-w-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <pre className="min-h-[300px] overflow-auto whitespace-pre p-4 font-mono text-[11px] leading-relaxed text-emerald-100/80 sm:p-6 sm:text-xs"><code>{advancedTab === "consumer" ? CONSUMER_PREVIEW : FULFILLMENT_PREVIEW}</code></pre>
+          <pre className="min-h-[300px] overflow-auto whitespace-pre p-4 font-mono text-[11px] leading-relaxed text-emerald-100/80 sm:p-6 sm:text-xs"><code>{advancedTab === "hosted" ? HOSTED_PREVIEW : advancedTab === "consumer" ? CONSUMER_PREVIEW : FULFILLMENT_PREVIEW}</code></pre>
           <div className="border-t border-white/10 bg-black/20 p-5 lg:border-l lg:border-t-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><Code2 className="h-4 w-4 text-emerald-400" aria-hidden />Advanced mode</div>
-            <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">The default command uses hosted fulfillment. Open <code className="text-emerald-300">src/consumer.mjs</code> to change agent behavior or run <code className="text-emerald-300">npm run fulfillment</code> to start the editable Express server example.</p>
+            <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">The guided command runs <code className="text-emerald-300">src/hosted.mjs</code> against this page. Run <code className="text-emerald-300">npm run demo</code> for the complete local consumer-and-fulfillment flow, then edit either side directly.</p>
             <a href="https://github.com/reapp-protocol/reapp-protocol-demo/tree/main/starters/hackathon" target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/75 transition hover:border-emerald-400/40 hover:text-emerald-100">
               Open starter source <ExternalLink className="h-3.5 w-3.5" aria-hidden />
             </a>
@@ -631,7 +807,7 @@ function EventRow({ event }: { event: DemoEvent }) {
   const labels: Record<string, string> = {
     request: `GET /source/${valueText(event.resource)}`,
     challenge_402: "402 Payment Required",
-    payment_submit: "agent.fetch() submitted payment",
+    payment_submit: "Bound payment submitted",
     payment_tx: "Contract settlement confirmed",
     proof_verified: "Bound proof verified",
     delivery_200: "200 protected response delivered",

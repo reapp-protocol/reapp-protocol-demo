@@ -31,11 +31,11 @@ The fourth payment in a three-payment budget is not a UI simulation. The contrac
 
 ## Published packages
 
-- @reapp-sdk/core 0.2.2: mandate construction, registration, payment helpers, and agent.fetch().
+- @reapp-sdk/core 0.3.0: mandate construction, registration, payment helpers, and agent.fetch().
 - @reapp-sdk/stellar 0.2.1: typed contract client, Stellar testnet configuration, signers, token helpers, and explorer integration.
-- @reapp-sdk/ap2 0.1.0: AP2 IntentMandate and TransactionMandate translation with pinned canonicalization and validation behavior.
-- @reapp-sdk/express-middleware 0.1.0: HTTP payment challenge, settlement verification, protected-route integration, and one-time redemption controls for Express 4 and 5.
-- reapp-protocol-cli 0.1.1: terminal setup, mandate, payment, inspection, and demonstration commands.
+- @reapp-sdk/ap2 0.2.1: AP2 IntentMandate and TransactionMandate translation with pinned canonicalization and validation behavior.
+- @reapp-sdk/express-middleware 0.2.1: HTTP payment challenge, settlement verification, protected-route integration, and one-time redemption controls for Express 4 and 5.
+- reapp-protocol-cli 0.1.4: terminal setup, mandate, payment, inspection, and demonstration commands.
 
 Confirm versions at https://reapp.live/ and the npm registry before copying an installation command.
 
@@ -55,7 +55,7 @@ The Express flow demonstrates pay-per-use API fulfillment. A 402 response descri
 
 ### Hackathon starter — https://reapp.live/hackathon
 
-The Hackathon starter creates a disposable hosted fulfillment workspace and generates two commands for a clean VS Code folder. The local consumer owns its ephemeral signers, registers a scoped testnet mandate, calls the hosted endpoint through agent.fetch(), and streams the resulting 402, settlement, proof, delivery, budget, and rejection evidence back to the browser page. The generated project includes editable consumer and fulfillment source files plus guided examples for merchant scope, expiry, replay defense, recovery, and explorer evidence.
+The Hackathon starter creates a disposable hosted fulfillment workspace and generates two commands for a clean VS Code folder. The local consumer owns its ephemeral signers, registers a scoped testnet mandate, inspects the exact 402 challenge, submits the request-bound contract payment, and retries delivery with the stored receipt. It streams the resulting challenge, settlement, proof, delivery, budget, and rejection evidence back to the browser page. The generated project includes editable consumer and fulfillment source files plus guided examples for merchant scope, expiry, replay defense, recovery, and explorer evidence.
 
 ### AP2 — https://reapp.live/ap2
 

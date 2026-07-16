@@ -1,18 +1,4 @@
 {
-  "name": "reapp-hackathon-starter",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Beginner REAPP testnet starter for a contract-enforced x402 payment flow.",
-  "type": "module",
-  "engines": {
-    "node": ">=20"
-  },
-  "scripts": {
-    "demo": "node src/consumer.mjs",
-    "fulfillment": "node src/fulfillment.mjs",
-    "reset": "node src/reset.mjs",
-    "check": "node --check src/storage.mjs && node --check src/consumer.mjs && node --check src/fulfillment.mjs && node --check src/reset.mjs && node src/consumer.mjs --help && node src/fulfillment.mjs --help"
-  },
   "dependencies": {
     "@reapp-sdk/ap2": "0.2.1",
     "@reapp-sdk/core": "0.3.0",
@@ -20,5 +6,20 @@
     "@reapp-sdk/stellar": "0.2.1",
     "@stellar/stellar-sdk": "14.6.1",
     "express": "5.2.1"
-  }
+  },
+  "description": "Self-contained REAPP bound-v2 starter for Stellar testnet.",
+  "engines": {
+    "node": ">=20"
+  },
+  "name": "reapp-hackathon-starter",
+  "private": true,
+  "scripts": {
+    "check": "node src/check.mjs",
+    "demo": "node src/consumer.mjs",
+    "fulfillment": "node src/fulfillment.mjs",
+    "hosted": "node src/hosted.mjs",
+    "reset": "node src/reset.mjs"
+  },
+  "type": "module",
+  "version": "0.0.0"
 }

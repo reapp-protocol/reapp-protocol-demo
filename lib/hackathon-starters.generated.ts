@@ -13,17 +13,17 @@ export const HACKATHON_STARTER_CATALOG = {
   },
   "kits": [
     {
-      "businessLogic": "Rank sources by relevance, purchase them sequentially, merge provenance-tagged results, and preserve the locked status of anything the contract rejects.",
+      "businessLogic": "Rank sources by relevance, purchase the three planned sources sequentially, retain per-source provenance and evidence, and record the rejected fourth source without creating a paid delivery.",
       "category": "Data APIs",
       "difficulty": "Beginner",
       "features": [
-        "agent-fetch",
+        "verified-bound-purchase",
         "cumulative-budget",
         "request-binding",
-        "replay-defense",
+        "independent-verification",
         "explorer-evidence"
       ],
-      "fixtures": "Four stable JSON sources with fixed identifiers, prices, relevance scores, and expected merged provenance.",
+      "fixtures": "Four stable JSON sources with fixed identifiers, prices, relevance scores, and per-source provenance.",
       "id": "research-source-scout",
       "inspiration": [
         "coinbase-x402",
@@ -32,7 +32,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "budget-exhausted",
-        "outcome": "The fourth purchase is rejected on-chain and an accepted proof cannot unlock another source."
+        "outcome": "The fourth purchase is rejected on-chain because its exact amount exceeds the mandate's remaining authority."
       },
       "paidResource": "GET /source/:sourceId",
       "slug": "hackathon",
@@ -40,16 +40,16 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Research Source Scout"
     },
     {
-      "businessLogic": "Sanitize fixture HTML, canonicalize its structure, extract reviewable metadata, and hash the normalized result for cache-safe delivery.",
+      "businessLogic": "Reject fixture HTML containing script, style, or iframe elements, extract text metadata, and hash the normalized result; this is not a general HTML sanitizer.",
       "category": "Content infrastructure",
       "difficulty": "Intermediate",
       "features": [
-        "agent-fetch",
+        "verified-bound-purchase",
         "request-binding",
-        "one-time-redemption",
+        "response-integrity",
         "explorer-evidence"
       ],
-      "fixtures": "Bundled HTML pages and independently checked normalized snapshot JSON; the kit makes no browser-rendering claim.",
+      "fixtures": "Two bundled HTML fixture pages and one deterministic normalization check covering title, links, and word count; the live result computes a content hash, and the kit makes no browser-rendering claim.",
       "id": "page-snapshot-meter",
       "inspiration": [
         "cloudflare-x402",
@@ -57,15 +57,15 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "snapshot-resource-rebinding",
-        "outcome": "Payment for one page cannot unlock another page and malformed fixture HTML fails before settlement."
+        "outcome": "Payment for one page cannot unlock a different page because the proof is bound to the exact requested resource."
       },
       "paidResource": "GET /snapshots/:pageId",
       "slug": "page-snapshot-meter",
-      "summary": "An agent buys a normalized page snapshot containing metadata, links, readability statistics, and a content hash.",
+      "summary": "An agent buys a normalized page snapshot containing metadata, links, word count, and a content hash.",
       "title": "Page Snapshot Meter"
     },
     {
-      "businessLogic": "Map only allowlisted upstream routes, strip sensitive headers, enforce an upstream deadline, and attach response provenance without accepting arbitrary target URLs.",
+      "businessLogic": "Resolve only allowlisted bundled inventory and weather fixtures and return provenance with no forwarded headers; add real header filtering and timeouts before connecting a live backend.",
       "category": "Infrastructure",
       "difficulty": "Beginner",
       "features": [
@@ -74,7 +74,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "request-binding",
         "explorer-evidence"
       ],
-      "fixtures": "A local upstream service with stable inventory, weather, and account-status payloads and explicit route mappings.",
+      "fixtures": "Two bundled inventory and weather route fixtures with stable payloads and explicit route mappings; no live upstream is called.",
       "id": "api-tollgate",
       "inspiration": [
         "cloudflare-gateway",
@@ -82,24 +82,24 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "upstream-not-allowlisted",
-        "outcome": "Unknown upstream routes fail before payment and another merchant's mandate cannot unlock the gateway."
+        "outcome": "An upstream route outside the explicit allowlist is rejected before a payment challenge is issued."
       },
       "paidResource": "GET /gateway/:service/:resourceId",
       "slug": "api-tollgate",
-      "summary": "Place REAPP in front of an existing read-only API without rewriting the protected backend.",
+      "summary": "Demonstrate an allowlisted fixture-gateway pattern for a read-only API boundary.",
       "title": "Existing API Tollgate"
     },
     {
-      "businessLogic": "Separate free discovery from paid execution, validate declared input schemas, enforce a client price ceiling, and return typed result provenance.",
+      "businessLogic": "Publish free discovery metadata for two fixture tools, require a known fixture identifier, enforce the price ceiling in an offline consumer-policy check, and return result provenance from the fixed live purchase.",
       "category": "Agent tooling",
       "difficulty": "Intermediate",
       "features": [
         "price-inspection",
-        "agent-fetch",
-        "cumulative-budget",
+        "verified-bound-purchase",
+        "fixture-selection",
         "request-binding"
       ],
-      "fixtures": "Deterministic supply-risk, exchange-rate, and document-classification tools with typed inputs and outputs.",
+      "fixtures": "Two deterministic supply-risk and document-classification tools with declared fixtureId schemas and fixed outputs.",
       "id": "paid-tool-gateway",
       "inspiration": [
         "cloudflare-mcp",
@@ -108,24 +108,24 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "tool-price-ceiling",
-        "outcome": "An unknown schema or a price above the consumer ceiling is rejected without attempting payment."
+        "outcome": "The offline consumer-policy check rejects a quoted tool price above its declared ceiling before any payment attempt."
       },
       "paidResource": "GET /tools/:toolId/results/:fixtureId",
       "slug": "paid-tool-gateway",
-      "summary": "Publish free typed tool discovery while charging for selected tool results through a bounded HTTP integration.",
+      "summary": "Publish free schema-described tool discovery while charging for selected tool results through a bounded HTTP integration.",
       "title": "Paid Tool Gateway"
     },
     {
-      "businessLogic": "Apply a host allowlist and price policy, permit one payment retry, verify the artifact hash, and write the accepted patch without partial files.",
+      "businessLogic": "Serve a patch only for the allowlisted fixture host, verify its hash after delivery, and return atomic-write metadata without writing files; the repeated-402 hook check is an offline state-transition vector.",
       "category": "Developer tooling",
       "difficulty": "Intermediate",
       "features": [
-        "agent-fetch",
+        "verified-bound-purchase",
         "price-inspection",
         "durable-recovery",
         "explorer-evidence"
       ],
-      "fixtures": "Three issue identifiers with deterministic patch artifacts, expected hashes, and one intentionally invalid response.",
+      "fixtures": "Two issue identifiers with deterministic patch artifacts and computed SHA-256 values.",
       "id": "coding-agent-purchase-hook",
       "inspiration": [
         "cloudflare-coding",
@@ -134,15 +134,15 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "repeated-payment-challenge",
-        "outcome": "A repeated 402 after settlement stops immediately and a duplicate invocation does not pay twice."
+        "outcome": "The offline hook transition rejects a repeated 402 in the settled state instead of initiating another payment."
       },
       "paidResource": "GET /artifacts/:issueId/patch",
       "slug": "coding-agent-purchase-hook",
-      "summary": "A coding agent encounters a paid artifact, checks policy, settles once, retries once, and writes the result atomically.",
+      "summary": "The shared live consumer verifies the fixed price, settles once, retries the paid request once, and verifies the returned patch hash; an offline hook vector rejects a repeated 402 in the settled state.",
       "title": "Coding Agent Purchase Hook"
     },
     {
-      "businessLogic": "Search a free catalog, check input-output compatibility, rank by deterministic quality signals, and treat discovery metadata as advisory rather than financial authority.",
+      "businessLogic": "Offline vectors rank listings by schema, price, quality, and latency; the live route accepts only the fixed merchant label and known fixture.",
       "category": "Discovery",
       "difficulty": "Advanced",
       "features": [
@@ -151,7 +151,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "request-binding",
         "independent-verification"
       ],
-      "fixtures": "Six signed catalog listings with stable schemas, prices, quality signals, merchant addresses, and outputs.",
+      "fixtures": "Three unsigned catalog fixtures with stable schemas, prices, quality signals, merchant labels, and outputs.",
       "id": "service-bazaar",
       "inspiration": [
         "coinbase-bazaar",
@@ -159,11 +159,11 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "listing-merchant-mismatch",
-        "outcome": "A listing that advertises the wrong merchant cannot be unlocked even when it ranks first."
+        "outcome": "A wrong-merchant listing is excluded even though its declared price, quality, and latency signals would otherwise rank first."
       },
       "paidResource": "GET /services/:serviceId/results/:fixtureId",
       "slug": "service-bazaar",
-      "summary": "An agent discovers services, scores declared schemas and prices, then pays the best compatible fixed merchant.",
+      "summary": "Offline vectors rank bundled service-listing fixtures; the live plan buys the fixed alpha merchant route.",
       "title": "Discoverable Service Bazaar"
     },
     {
@@ -176,7 +176,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "independent-verification",
         "explorer-evidence"
       ],
-      "fixtures": "Run-relative signed events produced from a clearly identified local Ed25519 fixture issuer.",
+      "fixtures": "Four deterministic signed events with fixed ageSeconds values produced by clearly labeled trusted and untrusted local Ed25519 fixture signers.",
       "id": "agent-reputation-snapshot",
       "inspiration": [
         "stellar-developer-meetings",
@@ -184,7 +184,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "untrusted-reputation-issuer",
-        "outcome": "Events from an untrusted issuer or outside the freshness window are excluded and wrong-merchant settlement fails."
+        "outcome": "Events signed by an issuer outside the configured trust set are excluded from the reputation calculation."
       },
       "paidResource": "GET /agents/:agentAddress/reputation",
       "slug": "agent-reputation-snapshot",
@@ -192,16 +192,16 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Agent Reputation Snapshot"
     },
     {
-      "businessLogic": "Evaluate DAG dependencies, allocate stage budgets, propagate source provenance, and stop the workflow when verification fails.",
+      "businessLogic": "Offline vectors validate DAG dependencies, stage order, and failure blocking; the live plan purchases the clean-case stages in fixed order.",
       "category": "Orchestration",
       "difficulty": "Advanced",
       "features": [
-        "agent-fetch",
-        "cumulative-budget",
-        "sequence-enforcement",
+        "verified-bound-purchase",
+        "dependency-validation",
+        "sequence-validation",
         "explorer-evidence"
       ],
-      "fixtures": "Three deterministic case graphs with specialist outputs and one intentional verification failure.",
+      "fixtures": "Two deterministic case graphs with staged artifact identifiers and one intentional verification failure.",
       "id": "multi-agent-workflow",
       "inspiration": [
         "stellar-developer-meetings",
@@ -209,7 +209,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "failed-stage-blocks-synthesis",
-        "outcome": "Failed verification prevents synthesis and insufficient remaining budget blocks the next stage on-chain."
+        "outcome": "A failed verification stage prevents synthesis from running."
       },
       "paidResource": "GET /workflow/:caseId/:stage",
       "slug": "multi-agent-workflow",
@@ -217,24 +217,24 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Multi-Agent Workflow Router"
     },
     {
-      "businessLogic": "Apply fixed work tiers and CPU ceilings, execute a deterministic hash chain, and require the consumer to recompute the expected digest.",
+      "businessLogic": "Apply fixed work tiers and iteration ceilings, execute a deterministic hash chain, and require the consumer to recompute the expected digest.",
       "category": "Compute",
       "difficulty": "Intermediate",
       "features": [
         "price-inspection",
-        "cumulative-budget",
+        "resource-ceiling",
         "request-binding",
         "independent-verification"
       ],
-      "fixtures": "Fixed seeds and work tiers with independently calculated digest vectors and runtime ceilings.",
+      "fixtures": "Two fixed seeds, two work tiers, one checked deterministic digest prefix, and a maximum iteration count.",
       "id": "compute-broker",
       "inspiration": [
         "coinbase-agent-winners",
         "coinbase-x402"
       ],
       "negativePath": {
-        "id": "compute-tier-over-budget",
-        "outcome": "A tier outside the mandate fails while unknown seeds and work above the server ceiling never execute."
+        "id": "compute-tier-over-ceiling",
+        "outcome": "The deterministic hash function rejects an iteration count above 512 before hashing begins."
       },
       "paidResource": "GET /compute/sha256-chain/:tier/:seedId",
       "slug": "compute-broker",
@@ -242,16 +242,16 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Verifiable Compute Broker"
     },
     {
-      "businessLogic": "Select an allowlisted patch, run it against server-only tests, redact sensitive output, and hash the final pass-or-fail report.",
+      "businessLogic": "Select one of two allowlisted patch identifiers, return its precomputed outcome fixture, omit private test sources, and hash the final pass-or-fail report; this starter does not execute user code.",
       "category": "Developer tooling",
       "difficulty": "Intermediate",
       "features": [
-        "agent-fetch",
+        "verified-bound-purchase",
         "request-binding",
-        "one-time-redemption",
+        "report-integrity",
         "explorer-evidence"
       ],
-      "fixtures": "A small sample repository, three fixed patches, and fulfillment-only tests with stable report hashes.",
+      "fixtures": "Two precomputed patch-outcome fixtures with stable report hashes and no private test source.",
       "id": "private-test-runner",
       "inspiration": [
         "coinbase-agent-winners",
@@ -259,24 +259,24 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "patch-path-traversal",
-        "outcome": "Path traversal and unknown patch identifiers are rejected while a known bad patch returns a paid failing report."
+        "outcome": "A patch identifier containing traversal syntax is rejected before fixture lookup."
       },
       "paidResource": "GET /checks/:patchId/report",
       "slug": "private-test-runner",
-      "summary": "A coding agent buys a hidden-test report for a known patch without receiving the private test source.",
+      "summary": "A coding agent buys a deterministic hidden-test-result fixture for a known patch identifier.",
       "title": "Private Test Runner"
     },
     {
-      "businessLogic": "Verify the requested SHA-256, inventory a fixed lockfile, canonicalize the statement, sign it, and verify that signature offline.",
+      "businessLogic": "Verify a fixture artifact SHA-256, canonicalize its declared dependency and build-command metadata, sign the statement, and verify that signature offline.",
       "category": "Software supply chain",
       "difficulty": "Advanced",
       "features": [
         "request-binding",
         "independent-verification",
-        "one-time-redemption",
+        "signature-verification",
         "explorer-evidence"
       ],
-      "fixtures": "Two small artifacts, exact dependency inventories, and a clearly identified local fixture signer.",
+      "fixtures": "Two small artifact-content fixtures with declared dependency arrays, build-command strings, and a clearly identified local fixture signer.",
       "id": "build-notary",
       "inspiration": [
         "coinbase-code-winners",
@@ -284,21 +284,21 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "artifact-hash-mismatch",
-        "outcome": "A tampered artifact fails local signature or hash verification and one build's payment cannot fetch another statement."
+        "outcome": "A statement carrying an artifact hash different from the requested artifact fails local verification."
       },
       "paidResource": "GET /attestations/:artifactSha",
       "slug": "build-notary",
-      "summary": "Buy a signed statement binding an artifact hash to its dependency inventory and reproducible build metadata.",
+      "summary": "Buy a signed fixture statement binding an artifact hash to declared dependency and build-command metadata.",
       "title": "Build Notary"
     },
     {
-      "businessLogic": "Check quote freshness, score price-quality-latency policy, verify the provider merchant, and preserve output provenance and fallback reasoning.",
+      "businessLogic": "Offline checks enforce quote freshness plus merchant, quality, and latency eligibility, then choose the lowest price; the live plan serves provenance-marked output from that fixed provider.",
       "category": "AI infrastructure",
       "difficulty": "Advanced",
       "features": [
         "price-inspection",
         "merchant-scope",
-        "cumulative-budget",
+        "quote-freshness",
         "request-binding"
       ],
       "fixtures": "Clearly labeled fixture providers with stable quotes, scores, and precomputed outputs; no live-model claim.",
@@ -309,24 +309,24 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "stale-provider-quote",
-        "outcome": "A stale quote or provider-merchant mismatch is rejected and a route above remaining budget is skipped."
+        "outcome": "A provider quote older than the configured freshness window is rejected before provider selection or payment."
       },
       "paidResource": "GET /providers/:providerId/results/:promptId",
       "slug": "model-route-bazaar",
-      "summary": "Compare provider quotes, choose the lowest-cost route satisfying quality and latency policy, and buy its result.",
+      "summary": "Offline vectors compare fixture quotes and select the lowest-cost eligible provider; the live plan buys that fixed selected provider result.",
       "title": "Model Route Bazaar"
     },
     {
-      "businessLogic": "Address content by hash, select versioned plain-language license terms, construct a local receipt, and verify every binding before use.",
+      "businessLogic": "Select text or data fixtures by asset ID and license version, hash the content and terms, record the settlement transaction hash, and verify the asset, version, content, and terms.",
       "category": "Creative commerce",
       "difficulty": "Beginner",
       "features": [
         "request-binding",
-        "one-time-redemption",
+        "license-versioning",
         "explorer-evidence",
         "independent-verification"
       ],
-      "fixtures": "Bundled text, image, and data assets with stable hashes and clearly labeled sample license terms.",
+      "fixtures": "Bundled text and CSV data assets with stable hashes and clearly labeled sample license terms.",
       "id": "rights-receipt",
       "inspiration": [
         "coinbase-agent-winners",
@@ -338,11 +338,11 @@ export const HACKATHON_STARTER_CATALOG = {
       },
       "paidResource": "GET /licenses/:assetId/:licenseVersion",
       "slug": "rights-receipt",
-      "summary": "Purchase an exact asset-license version and receive content plus a receipt binding terms, asset hash, and payment transaction.",
+      "summary": "Purchase an exact asset-license version and receive content plus a receipt containing content and terms hashes and the settlement transaction hash.",
       "title": "Rights Receipt"
     },
     {
-      "businessLogic": "Resolve an owner-specific fixed merchant, verify dataset freshness and permitted-use metadata, and return content provenance without claiming revenue splits.",
+      "businessLogic": "Resolve an owner-scoped dataset fixture, return its observed-at and permitted-use metadata, and verify the content hash without claiming revenue splits.",
       "category": "Data commerce",
       "difficulty": "Intermediate",
       "features": [
@@ -351,7 +351,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "independent-verification",
         "explorer-evidence"
       ],
-      "fixtures": "Three owner-specific datasets with stable hashes, freshness timestamps, and use-policy metadata.",
+      "fixtures": "Two owner-specific dataset fixtures with stable hashes, observed-at timestamps, and permitted-use metadata.",
       "id": "data-owner-gateway",
       "inspiration": [
         "cloudflare-gateway",
@@ -360,15 +360,15 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "dataset-owner-mismatch",
-        "outcome": "A dataset mapped to another owner cannot be unlocked with the current merchant-scoped mandate."
+        "outcome": "A dataset mapped to another owner is rejected by the endpoint's owner mapping before a payment challenge."
       },
       "paidResource": "GET /datasets/:ownerId/:datasetId",
       "slug": "data-owner-gateway",
-      "summary": "A data owner operates the merchant endpoint and receives payment directly when an agent unlocks that owner's dataset.",
+      "summary": "The live fixture merchant serves one owner-alpha dataset endpoint and receives payment when the agent unlocks that dataset.",
       "title": "Data Owner Gateway"
     },
     {
-      "businessLogic": "Track pending and ready states, enforce an SLA timestamp, validate the reviewer signature, and durably accept exactly one decision.",
+      "businessLogic": "Serve two ready-state fixture decisions, validate a fixture HMAC signature, and demonstrate contract-mandate expiry before settlement.",
       "category": "Operations",
       "difficulty": "Advanced",
       "features": [
@@ -377,7 +377,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "request-binding",
         "independent-verification"
       ],
-      "fixtures": "A clearly labeled fixture reviewer writes deterministic signed decisions and one deliberately stale decision.",
+      "fixtures": "Two ready-state deterministic decisions signed by a clearly labeled fixture reviewer; one uses a queue duration beyond the example SLA.",
       "id": "human-review-outbox",
       "inspiration": [
         "cloudflare-agents",
@@ -385,7 +385,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "authority-expires-in-queue",
-        "outcome": "Authority that expires while the case waits blocks settlement and stale or unsigned decisions fail local validation."
+        "outcome": "A distinct short-lived mandate expires before settlement against the ready delayed-case fixture, and the contract rejects payment."
       },
       "paidResource": "GET /reviews/:caseId/decision",
       "slug": "human-review-outbox",
@@ -393,11 +393,11 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Human Review Outbox"
     },
     {
-      "businessLogic": "Calculate threshold duration, detect telemetry gaps, order custody transfers, and bind every finding to hashed evidence references.",
+      "businessLogic": "Calculate threshold duration, detect telemetry gaps, order custody transfers, and bind the passport to one hash covering its telemetry and custody fixtures.",
       "category": "Supply chain",
       "difficulty": "Intermediate",
       "features": [
-        "expiry",
+        "sensor-continuity",
         "request-binding",
         "independent-verification",
         "explorer-evidence"
@@ -410,7 +410,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "incomplete-sensor-evidence",
-        "outcome": "Expired authority blocks delivery and missing sensor intervals produce an explicit incomplete result rather than a false pass."
+        "outcome": "A missing sensor interval produces an explicit incomplete passport rather than an unsupported compliance pass."
       },
       "paidResource": "GET /shipments/:shipmentId/passport",
       "slug": "cold-chain-passport",
@@ -422,12 +422,12 @@ export const HACKATHON_STARTER_CATALOG = {
       "category": "Sustainability",
       "difficulty": "Intermediate",
       "features": [
-        "expiry",
-        "cumulative-budget",
+        "forecast-freshness",
+        "capacity-validation",
         "request-binding",
         "independent-verification"
       ],
-      "fixtures": "Fixed hourly intensity, capacity, and workload records with independently checked optimal windows.",
+      "fixtures": "Fixed hourly intensity, capacity, and workload records with one independently checked optimal window.",
       "id": "carbon-aware-run-window",
       "inspiration": [
         "stellar-i3",
@@ -435,7 +435,7 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "forecast-expired",
-        "outcome": "A stale forecast or infeasible window returns an explicit business outcome and expired authority cannot buy refreshed data."
+        "outcome": "A forecast older than the scheduling freshness limit is rejected before a run window is selected."
       },
       "paidResource": "GET /schedules/:jobId/window",
       "slug": "carbon-aware-run-window",
@@ -443,16 +443,16 @@ export const HACKATHON_STARTER_CATALOG = {
       "title": "Carbon-Aware Run Window"
     },
     {
-      "businessLogic": "Validate segment order and weather epoch, maintain route provenance, and require a fresh contract-authorized purchase for each clearance.",
+      "businessLogic": "Offline vectors validate segment order and weather epoch; the live plan purchases segments 1 and 2 before revocation blocks segment 3.",
       "category": "Operations",
       "difficulty": "Intermediate",
       "features": [
         "revocation",
-        "sequence-enforcement",
+        "sequence-validation",
         "request-binding",
         "explorer-evidence"
       ],
-      "fixtures": "Three deterministic route segments with fixed weather epochs, constraints, and expected clearance decisions.",
+      "fixtures": "Three deterministic route segments with fixed order, endpoints, clearance decisions, and one route-level weather epoch.",
       "id": "fleet-corridor-authority",
       "inspiration": [
         "stellar-developer-meetings",
@@ -464,7 +464,7 @@ export const HACKATHON_STARTER_CATALOG = {
       },
       "paidResource": "GET /corridors/:routeId/segments/:segmentId",
       "slug": "fleet-corridor-authority",
-      "summary": "A fleet agent buys successive route clearances until an operator revokes its mandate and the next segment fails closed.",
+      "summary": "A fleet agent buys two planned route clearances; then the mandate user revokes authority and the third planned settlement fails closed.",
       "title": "Fleet Corridor Authority"
     },
     {
@@ -477,7 +477,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "request-binding",
         "independent-verification"
       ],
-      "fixtures": "Three stable vault resources while every payment proof remains live Stellar testnet evidence.",
+      "fixtures": "Two stable vault resources; the live demo purchases one and reuses its exact Stellar testnet proof after restart.",
       "id": "payment-receipt-firewall",
       "inspiration": [
         "x402-foundation",
@@ -485,36 +485,36 @@ export const HACKATHON_STARTER_CATALOG = {
       ],
       "negativePath": {
         "id": "durable-replay-after-restart",
-        "outcome": "Re-signing an old transaction for a new resource returns 409 and a process restart never reopens the proof."
+        "outcome": "After restart the exact same proof returns the byte-identical stored response without repeating verification or paid fulfillment."
       },
       "paidResource": "GET /vault/:resourceId",
       "slug": "payment-receipt-firewall",
-      "summary": "A hardened merchant demonstrates persistent replay admission, exact request binding, and safe recovery after restart.",
+      "summary": "A reference merchant demonstrates persistent replay admission, exact request binding, and safe recovery after restart.",
       "title": "Payment Receipt Firewall"
     },
     {
-      "businessLogic": "Apply a vendor allowlist, optimize cost and lead time, reject stale quotes, and explain why the selected purchase plan satisfies policy.",
+      "businessLogic": "Offline vectors rank approved fixture quotes by cost, lead time, and freshness; the live route serves one explicitly selected allowlisted quote pack.",
       "category": "Small-business automation",
       "difficulty": "Beginner",
       "features": [
         "merchant-scope",
-        "cumulative-budget",
-        "expiry",
+        "vendor-allowlist",
+        "quote-freshness",
         "explorer-evidence"
       ],
-      "fixtures": "Stable vendor catalogs, delivery windows, request constraints, and independently checked optimal plans.",
+      "fixtures": "Three stable quote fixtures with vendor IDs, lead times, quote ages, item rows, and one checked approved-vendor selection.",
       "id": "procurement-guard",
       "inspiration": [
         "coinbase-agent-winners",
         "stellar-better"
       ],
       "negativePath": {
-        "id": "unauthorized-vendor-and-budget",
-        "outcome": "An unauthorized vendor remains blocked when cheaper and the final otherwise-valid pack is rejected after budget exhaustion."
+        "id": "unauthorized-vendor",
+        "outcome": "A cheaper vendor outside the configured allowlist remains ineligible and cannot be selected for purchase."
       },
       "paidResource": "GET /vendors/:vendorId/quote-packs/:requestId",
       "slug": "procurement-guard",
-      "summary": "A purchasing agent compares approved vendor quote packs and buys only a plan permitted by budget, merchant scope, and deadline.",
+      "summary": "A purchasing agent evaluates approved vendor quote fixtures offline and buys one explicitly selected allowlisted quote pack.",
       "title": "Procurement Guard"
     }
   ],

@@ -16,6 +16,7 @@ import {
 } from "@reapp-sdk/core";
 import {
   createFulfillmentApp,
+  createFulfillmentMetrics,
   rejectWithoutPayment,
 } from "../starter-kit-src/shared/fulfillment.mjs";
 import { FileBoundRedemptionStore } from "../starter-kit-src/shared/storage.mjs";
@@ -224,6 +225,7 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
   const path = "/items/alpha";
   let firstVerifierCalls = 0;
   let firstFulfillmentCalls = 0;
+  const firstMetrics = createFulfillmentMetrics();
 
   const firstApp = createFulfillmentApp({
     merchant,
@@ -233,6 +235,7 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
     amount: "1.00",
     redemptionStore,
     stateRoot,
+    metrics: firstMetrics,
     preflight(request) {
       return { id: request.params.id, priceXlm: "1.00" };
     },
@@ -262,6 +265,10 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
   assert.equal(delivered.status, 200);
   assert.equal(firstVerifierCalls, 1);
   assert.equal(firstFulfillmentCalls, 1);
+  assert.deepEqual(firstMetrics.snapshot(), {
+    verificationCalls: 1,
+    fulfillmentCalls: 1,
+  });
 
   const changedPreflights = [
     () => null,
@@ -272,6 +279,7 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
     let preflightCalls = 0;
     let fulfillmentCalls = 0;
     let verifierCalls = 0;
+    const restartMetrics = createFulfillmentMetrics();
     const restarted = createFulfillmentApp({
       merchant,
       audience: "http://127.0.0.1:4021",
@@ -282,6 +290,7 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
         resolve(stateRoot, "fulfillment-redemptions.json"),
       ),
       stateRoot,
+      metrics: restartMetrics,
       preflight(request) {
         preflightCalls += 1;
         return changedPreflight(request);
@@ -304,6 +313,10 @@ test("fresh apps recover exact completed bytes before missing, stale, or changed
     assert.equal(preflightCalls, 0);
     assert.equal(fulfillmentCalls, 0);
     assert.equal(verifierCalls, 0);
+    assert.deepEqual(restartMetrics.snapshot(), {
+      verificationCalls: 0,
+      fulfillmentCalls: 0,
+    });
   }
 
   const recoveryApp = createFulfillmentApp({

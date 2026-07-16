@@ -24,6 +24,23 @@ Machine-readable maps are published at `/llms.txt`, `/llms-full.txt`, `/sitemap.
 
 REAPP is the live implementation companion to [REAPP NETWORK](https://reapp.network), the source-linked research and architecture field guide for agentic payments. The two sites share ownership and link to each other transparently.
 
+## Hackathon starter library
+
+`/hackathon` publishes 20 self-contained Stellar testnet starters. Each kit includes editable consumer and Express fulfillment source, deterministic fixtures, exact package versions, one focused rejection path, an offline gate check, and a downloadable archive with a public SHA-256 manifest.
+
+For the guided hosted flow, create a disposable workspace on [`reapp.live/hackathon`](https://reapp.live/hackathon), copy the generated setup command into an empty VS Code folder, and run the displayed consumer command. The terminal and browser companion then show the same `402 → contract payment → 200` sequence, three verified deliveries, the fourth contract rejection, and explorer evidence.
+
+For a fully local consumer-and-fulfillment run:
+
+```bash
+npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/hackathon .
+npm ci
+npm run check
+npm run demo
+```
+
+The latest clean-room test on 2026-07-16 reached its first verified delivery in 26.1 seconds and completed the three-delivery plus rejection flow in 40.3 seconds. Those measurements are evidence from one run, not a network-speed guarantee; the public target remains under five minutes.
+
 ## Demonstration details
 
 **Video paywall** (`/video`) — the agent pays 1 XLM per video unlock under a 3 XLM

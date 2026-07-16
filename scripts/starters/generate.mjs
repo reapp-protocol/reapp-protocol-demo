@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { synchronizeGeneratedMetadata } from "./catalog.mjs";
+import { synchronizeStarterPackages } from "./materialize.mjs";
 
 const argumentsList = process.argv.slice(2);
 const supported = argumentsList.length === 0 || (argumentsList.length === 1 && argumentsList[0] === "--check");
@@ -10,9 +11,13 @@ if (!supported) {
   process.exitCode = 2;
 } else {
   try {
-    const result = await synchronizeGeneratedMetadata({ check: argumentsList[0] === "--check" });
-    const action = result.checked ? "verified" : result.changed ? "generated" : "current";
-    console.log(`Starter metadata ${action}: ${result.kitCount} kits`);
+    const check = argumentsList[0] === "--check";
+    const [metadata, packages] = await Promise.all([
+      synchronizeGeneratedMetadata({ check }),
+      synchronizeStarterPackages({ check }),
+    ]);
+    const action = check ? "verified" : "generated";
+    console.log(`Starter catalog and packages ${action}: ${metadata.kitCount} kits, ${packages.kitCount} deterministic archives`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

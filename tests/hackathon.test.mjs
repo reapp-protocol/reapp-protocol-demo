@@ -42,6 +42,9 @@ test("the Hackathon page keeps the established responsive pattern and complete g
     "Replay defense",
     "Recovery",
     "Explorer evidence",
+    "20 self-contained starters",
+    "Integrity manifest",
+    "Copy setup",
     "sessionStorage",
     "polling hosted /express",
     "sm:text-6xl",
@@ -51,6 +54,8 @@ test("the Hackathon page keeps the established responsive pattern and complete g
   ]) assert.match(page, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), required);
   assert.match(layout, /path: "\/hackathon"/);
   assert.match(sitemap, /"\/hackathon"/);
+  assert.match(page, /\/starters\/v1\/\$\{kit\.slug\}\.zip/);
+  assert.match(page, /starters\/\$\{kit\.slug\}/);
 });
 
 test("the starter is deterministic, typed by package metadata, and testnet-only", async () => {
@@ -62,6 +67,9 @@ test("the starter is deterministic, typed by package metadata, and testnet-only"
     "starters/hackathon/README.md",
     "starters/hackathon/src/consumer.mjs",
     "starters/hackathon/src/fulfillment.mjs",
+    "starters/hackathon/src/hosted.mjs",
+    "starters/hackathon/shared/contract.mjs",
+    "starters/hackathon/shared/fulfillment.mjs",
   ];
   const sources = Object.fromEntries(await Promise.all(paths.map(async (path) => [path, await read(path)])));
   const manifest = JSON.parse(sources["starters/hackathon/package.json"]);
@@ -71,12 +79,18 @@ test("the starter is deterministic, typed by package metadata, and testnet-only"
   assert.equal(manifest.dependencies["@reapp-sdk/express-middleware"], "0.2.1");
   assert.ok(manifest.scripts.demo);
   assert.ok(manifest.scripts.fulfillment);
+  assert.equal(manifest.scripts.hosted, "node src/hosted.mjs");
   assert.match(sources["starters/hackathon/.gitignore"], /^\.env$/m);
   assert.match(sources["starters/hackathon/.gitignore"], /^\.reapp\/$/m);
-  assert.match(sources["starters/hackathon/src/consumer.mjs"], /proofPolicy:\s*["']bound-v2-only["']/);
-  assert.match(sources["starters/hackathon/src/consumer.mjs"], /agent\.fetch/);
-  assert.match(sources["starters/hackathon/src/consumer.mjs"], /\/api\\\/express\\\//, "preview and production companion paths must both report verified rejection");
-  assert.match(sources["starters/hackathon/src/fulfillment.mjs"], /createBoundReappPaidJsonRoute/);
+  assert.match(sources["starters/hackathon/src/consumer.mjs"], /runLocalTestnetDemo/);
+  assert.match(sources["starters/hackathon/src/fulfillment.mjs"], /startFulfillmentServer/);
+  assert.match(sources["starters/hackathon/src/hosted.mjs"], /\/api\\\/express\\\//, "the hosted companion must report verified rejection to the exact workspace path");
+  assert.match(sources["starters/hackathon/src/hosted.mjs"], /createBoundTestnetConsumer/);
+  assert.match(sources["starters/hackathon/src/hosted.mjs"], /purchaseVerifiedBoundJson/);
+  assert.match(sources["starters/hackathon/src/hosted.mjs"], /expectVerifiedBudgetRejection/);
+  assert.match(sources["starters/hackathon/shared/contract.mjs"], /proofPolicy:\s*["']bound-v2-only["']/);
+  assert.match(sources["starters/hackathon/shared/contract.mjs"], /reapp\.agent/);
+  assert.match(sources["starters/hackathon/shared/fulfillment.mjs"], /createBoundReappPaidJsonRoute/);
   const combined = Object.values(sources).join("\n");
   assert.doesNotMatch(combined, /\bS[A-Z2-7]{55}\b/, "no Stellar secret seed may be committed");
   assert.doesNotMatch(combined, /@reapp\//, "only the @reapp-sdk namespace is valid");
@@ -85,12 +99,37 @@ test("the starter is deterministic, typed by package metadata, and testnet-only"
   assert.doesNotMatch(sources["starters/hackathon/src/fulfillment.mjs"], /reapp\.mainnet/i);
 });
 
+test("the hosted page command stays in parity with the generated starter", async () => {
+  const [page, manifestSource, hosted] = await Promise.all([
+    read("app/hackathon/page.tsx"),
+    read("starters/hackathon/package.json"),
+    read("starters/hackathon/src/hosted.mjs"),
+  ]);
+  const manifest = JSON.parse(manifestSource);
+  assert.equal(manifest.scripts.hosted, "node src/hosted.mjs");
+  assert.match(page, /npm run hosted -- --endpoint=/);
+  assert.doesNotMatch(page, /npm run demo -- --endpoint=/);
+  assert.match(hosted, /parseNamedArgs\(process\.argv\.slice\(2\), \["endpoint", "merchant"\]\)/);
+});
+
 test("new public copy follows repository terminology rules", async () => {
   const combined = [
     await read("app/hackathon/page.tsx"),
     await read("app/hackathon/layout.tsx"),
+    await read("app/llms.txt/route.ts"),
+    await read("app/llms-full.txt/route.ts"),
     await read("starters/hackathon/README.md"),
   ].join("\n");
   assert.doesNotMatch(combined, /\b(?:audit|tranche|milestone)\b/i);
   assert.doesNotMatch(combined, /\bNO MOCKS\b/i);
+  assert.doesNotMatch(combined, /@reapp\//, "only the @reapp-sdk namespace is valid");
+  assert.doesNotMatch(combined, /Hackathon starter[\s\S]*?calls the hosted endpoint through agent\.fetch\(\)/);
+  assert.match(combined, /inspects the exact 402 challenge, submits the request-bound contract payment/);
+  for (const version of [
+    "@reapp-sdk/core 0.3.0",
+    "@reapp-sdk/stellar 0.2.1",
+    "@reapp-sdk/ap2 0.2.1",
+    "@reapp-sdk/express-middleware 0.2.1",
+    "reapp-protocol-cli 0.1.4",
+  ]) assert.match(combined, new RegExp(version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), version);
 });

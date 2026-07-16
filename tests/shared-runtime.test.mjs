@@ -56,6 +56,7 @@ import {
   FileRunResultStore,
   FileSettlementReceiptStore,
 } from "../starter-kit-src/shared/storage.mjs";
+import { waitForTestnetLedgerTime } from "../starter-kit-src/shared/testnet.mjs";
 
 class CaptureSocket extends Duplex {
   constructor() {
@@ -224,6 +225,35 @@ test("config and canonical evidence reject ambiguous values", () => {
   assert(Object.isFrozen(left));
   assert.throws(() => toJsonSafeValue({ amount: 1n }), /non-JSON/);
   assert.throws(() => toJsonSafeValue({ when: new Date() }), /non-plain object/);
+});
+
+test("expiry waiting is pinned to observed testnet ledger time", async () => {
+  const originalFetch = globalThis.fetch;
+  let requested;
+  globalThis.fetch = async (input) => {
+    requested = new URL(input);
+    return new Response(JSON.stringify({
+      _embedded: {
+        records: [{ closed_at: "2026-07-16T09:00:05.000Z" }],
+      },
+    }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+  try {
+    assert.equal(await waitForTestnetLedgerTime(1_784_192_405, { attempts: 1 }), 1_784_192_405);
+    assert.equal(requested.origin, "https://horizon-testnet.stellar.org");
+    assert.equal(requested.pathname, "/ledgers");
+    assert.equal(requested.searchParams.get("order"), "desc");
+    assert.equal(requested.searchParams.get("limit"), "1");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  await assert.rejects(
+    waitForTestnetLedgerTime(0, { attempts: 1 }),
+    /target ledger time/,
+  );
 });
 
 test("fulfillment preflight rejects without billing and paid routes remain GET-only", async (t) => {

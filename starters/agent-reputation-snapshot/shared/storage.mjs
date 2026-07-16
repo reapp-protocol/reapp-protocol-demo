@@ -9,13 +9,35 @@ import {
   stat,
 } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import {
   createSettlementReceiptId,
   decodePaymentProof,
   encodePaymentProof,
 } from "@reapp-sdk/core";
+import { toJsonSafeObject } from "./evidence.mjs";
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
+const MAX_RUNS = 20;
+const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const EVENT_TYPE = /^[a-z][a-z0-9]*(?:[_-][a-z0-9]+)*$/;
+const RESERVED_APPEND_EVENT_TYPES = new Set([
+  "delivery_accepted",
+  "run_complete",
+  "run_failed",
+  "run_started",
+]);
+const DELIVERY_EVENT_KEYS = new Set([
+  "at",
+  "bodySha256",
+  "evidence",
+  "explorer",
+  "path",
+  "receiptId",
+  "step",
+  "txHash",
+  "type",
+]);
 const queues = new Map();
 
 function exactKeys(value, expected) {
@@ -50,7 +72,28 @@ async function readJson(path, fallback) {
   }
 }
 
+function serializedJson(path, value) {
+  let contents;
+  try {
+    const json = JSON.stringify(value, null, 2);
+    if (json === undefined) throw new Error("state root is not JSON-serializable");
+    contents = `${json}\n`;
+  } catch (error) {
+    throw new Error(`${path} could not be serialized as REAPP state`, { cause: error });
+  }
+  const bytes = Buffer.byteLength(contents, "utf8");
+  if (bytes > MAX_FILE_BYTES) {
+    throw new Error(
+      `${path} would exceed the safe REAPP state limit of ${MAX_FILE_BYTES} bytes`,
+    );
+  }
+  return contents;
+}
+
 async function writeJson(path, value) {
+  // Serialize and bound the complete replacement before creating a temporary
+  // file. A rejected update therefore cannot disturb the last durable state.
+  const contents = serializedJson(path, value);
   const directory = dirname(path);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await chmod(directory, 0o700);
@@ -58,7 +101,7 @@ async function writeJson(path, value) {
   let handle;
   try {
     handle = await open(temporary, "wx", 0o600);
-    await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
+    await handle.writeFile(contents, "utf8");
     await handle.sync();
     await handle.close();
     handle = undefined;
@@ -176,12 +219,176 @@ export class FileSettlementReceiptStore {
   }
 }
 
+function canonicalTimestamp(value, label) {
+  if (typeof value !== "string") throw new Error(`${label} must be an ISO timestamp`);
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString() !== value) {
+    throw new Error(`${label} must be a canonical ISO timestamp`);
+  }
+  return value;
+}
+
+function validateEventType(value, label = "event type") {
+  if (typeof value !== "string" || !EVENT_TYPE.test(value)) {
+    throw new Error(`${label} must use lowercase words separated by hyphens or underscores`);
+  }
+  return value;
+}
+
+function validateCommittedDeliveryEvent(value, { stored }) {
+  const checked = toJsonSafeObject(value, "committed delivery event");
+  for (const key of Object.keys(checked)) {
+    if (!DELIVERY_EVENT_KEYS.has(key)) {
+      throw new Error(`committed delivery event contains unsupported field ${key}`);
+    }
+  }
+  if (
+    checked.type !== "delivery_accepted"
+    || !/^[0-9a-f]{64}$/.test(checked.receiptId)
+    || !/^[0-9a-f]{64}$/.test(checked.txHash)
+  ) {
+    throw new Error("committed delivery event requires canonical receipt and transaction hashes");
+  }
+  if (stored) canonicalTimestamp(checked.at, "committed delivery timestamp");
+  else if (Object.hasOwn(checked, "at")) {
+    throw new Error("committed delivery timestamp is assigned by the result store");
+  }
+  if (
+    checked.step !== undefined
+    && (!Number.isSafeInteger(checked.step) || checked.step < 1)
+  ) {
+    throw new Error("committed delivery step must be a positive safe integer");
+  }
+  if (checked.path !== undefined) {
+    if (
+      typeof checked.path !== "string"
+      || !checked.path.startsWith("/")
+      || checked.path.startsWith("//")
+      || checked.path.includes("#")
+      || /[\r\n]/.test(checked.path)
+    ) {
+      throw new Error("committed delivery path is invalid");
+    }
+    const parsed = new URL(checked.path, "http://127.0.0.1");
+    if (`${parsed.pathname}${parsed.search}` !== checked.path) {
+      throw new Error("committed delivery path is not canonical");
+    }
+  }
+  if (
+    checked.bodySha256 !== undefined
+    && (typeof checked.bodySha256 !== "string" || !/^[0-9a-f]{64}$/.test(checked.bodySha256))
+  ) {
+    throw new Error("committed delivery body hash is invalid");
+  }
+  if (
+    checked.explorer !== undefined
+    && checked.explorer !== `https://stellar.expert/explorer/testnet/tx/${checked.txHash}`
+  ) {
+    throw new Error("committed delivery explorer URL does not match its transaction");
+  }
+  return checked;
+}
+
+function validateAppendEvent(value) {
+  const checked = toJsonSafeObject(value, "run event");
+  const type = validateEventType(checked.type);
+  if (Object.hasOwn(checked, "at")) {
+    throw new Error("run event timestamp is assigned by the result store");
+  }
+  if (RESERVED_APPEND_EVENT_TYPES.has(type)) {
+    throw new Error(`run event type ${type} is reserved for a dedicated lifecycle operation`);
+  }
+  return checked;
+}
+
+function validateStoredEvent(value) {
+  const checked = toJsonSafeObject(value, "stored run event");
+  const type = validateEventType(checked.type, "stored run event type");
+  canonicalTimestamp(checked.at, "stored run event timestamp");
+  if (type === "delivery_accepted") {
+    return validateCommittedDeliveryEvent(checked, { stored: true });
+  }
+  if (RESERVED_APPEND_EVENT_TYPES.has(type)) {
+    throw new Error(`stored run event type ${type} is not valid inside an event journal`);
+  }
+  return checked;
+}
+
+function validateRunResultFile(value) {
+  const checked = toJsonSafeObject(value, "result file");
+  if (
+    !exactKeys(checked, ["version", "runs"])
+    || checked.version !== 1
+    || !Array.isArray(checked.runs)
+    || checked.runs.length > MAX_RUNS
+  ) {
+    throw new Error("result file schema is invalid");
+  }
+
+  const runIds = new Set();
+  const receiptTransactions = new Map();
+  const transactionReceipts = new Map();
+  const runs = checked.runs.map((candidate) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      throw new Error("result run is not an object");
+    }
+    const terminal = candidate.status === "complete" || candidate.status === "failed";
+    const expectedKeys = terminal
+      ? ["config", "events", "finishedAt", "runId", "startedAt", "status", "summary"]
+      : ["config", "events", "finishedAt", "runId", "startedAt", "status"];
+    if (
+      !exactKeys(candidate, expectedKeys)
+      || !RUN_ID.test(candidate.runId)
+      || runIds.has(candidate.runId)
+      || (candidate.status !== "running" && !terminal)
+      || !Array.isArray(candidate.events)
+    ) {
+      throw new Error("result run schema is invalid");
+    }
+    runIds.add(candidate.runId);
+    const startedAt = canonicalTimestamp(candidate.startedAt, "result run start");
+    let finishedAt = null;
+    if (terminal) {
+      finishedAt = canonicalTimestamp(candidate.finishedAt, "result run finish");
+      if (Date.parse(finishedAt) < Date.parse(startedAt)) {
+        throw new Error("result run finish cannot precede its start");
+      }
+    } else if (candidate.finishedAt !== null) {
+      throw new Error("running result must not have a finish timestamp");
+    }
+    const events = candidate.events.map(validateStoredEvent);
+    for (const event of events) {
+      if (event.type !== "delivery_accepted") continue;
+      if (receiptTransactions.has(event.receiptId)) {
+        throw new Error("result file contains a duplicate committed receipt");
+      }
+      if (transactionReceipts.has(event.txHash)) {
+        throw new Error("result file binds one settlement transaction to multiple receipts");
+      }
+      receiptTransactions.set(event.receiptId, event.txHash);
+      transactionReceipts.set(event.txHash, event.receiptId);
+    }
+    const result = {
+      runId: candidate.runId,
+      status: candidate.status,
+      startedAt,
+      finishedAt,
+      config: toJsonSafeObject(candidate.config, "result run config"),
+      events: [...events],
+    };
+    if (terminal) result.summary = toJsonSafeObject(candidate.summary, "result run summary");
+    return result;
+  });
+  return { version: 1, runs };
+}
+
 export class FileRunResultStore {
   constructor(filePath) {
     this.filePath = resolve(filePath);
   }
 
   async begin(publicConfig) {
+    const checkedConfig = toJsonSafeObject(publicConfig, "run public config");
     const runId = randomUUID();
     await serialized(this.filePath, async () => {
       const file = await this.#load();
@@ -190,24 +397,57 @@ export class FileRunResultStore {
         status: "running",
         startedAt: new Date().toISOString(),
         finishedAt: null,
-        config: publicConfig,
+        config: checkedConfig,
         events: [],
       });
-      if (file.runs.length > 20) file.runs.splice(0, file.runs.length - 20);
-      await writeJson(this.filePath, file);
+      if (file.runs.length > MAX_RUNS) file.runs.splice(0, file.runs.length - MAX_RUNS);
+      await writeJson(this.filePath, validateRunResultFile(file));
     });
     return runId;
   }
 
   async append(runId, event) {
+    const checkedEvent = validateAppendEvent(event);
     return serialized(this.filePath, async () => {
       const file = await this.#load();
       const run = file.runs.find((candidate) => candidate.runId === runId);
       if (!run || run.status !== "running") {
         throw new Error("cannot append to a missing or finished REAPP run");
       }
-      run.events.push(Object.freeze({ at: new Date().toISOString(), ...event }));
-      await writeJson(this.filePath, file);
+      run.events.push(Object.freeze({ ...checkedEvent, at: new Date().toISOString() }));
+      await writeJson(this.filePath, validateRunResultFile(file));
+    });
+  }
+
+  async commitDelivery(runId, event) {
+    const checkedEvent = validateCommittedDeliveryEvent(event, { stored: false });
+    return serialized(this.filePath, async () => {
+      const file = await this.#load();
+      const run = file.runs.find((candidate) => candidate.runId === runId);
+      if (!run || run.status !== "running") {
+        throw new Error("cannot commit delivery to a missing or finished REAPP run");
+      }
+      const existing = run.events.find(
+        (candidate) => candidate.type === "delivery_accepted"
+          && candidate.receiptId === checkedEvent.receiptId,
+      );
+      if (existing) {
+        const { at: _at, ...existingPayload } = existing;
+        if (!isDeepStrictEqual(existingPayload, checkedEvent)) {
+          throw new Error("receipt id is already bound to different delivery evidence");
+        }
+        return existing;
+      }
+      if (run.events.some(
+        (candidate) => candidate.type === "delivery_accepted"
+          && candidate.txHash === checkedEvent.txHash,
+      )) {
+        throw new Error("transaction hash is already committed to another receipt");
+      }
+      const committed = Object.freeze({ ...checkedEvent, at: new Date().toISOString() });
+      run.events.push(committed);
+      await writeJson(this.filePath, validateRunResultFile(file));
+      return committed;
     });
   }
 
@@ -215,6 +455,7 @@ export class FileRunResultStore {
     if (status !== "complete" && status !== "failed") {
       throw new Error("result status must be complete or failed");
     }
+    const checkedSummary = toJsonSafeObject(summary, "run result summary");
     return serialized(this.filePath, async () => {
       const file = await this.#load();
       const run = file.runs.find((candidate) => candidate.runId === runId);
@@ -223,8 +464,8 @@ export class FileRunResultStore {
       }
       run.status = status;
       run.finishedAt = new Date().toISOString();
-      run.summary = summary;
-      await writeJson(this.filePath, file);
+      run.summary = checkedSummary;
+      await writeJson(this.filePath, validateRunResultFile(file));
     });
   }
 
@@ -239,14 +480,7 @@ export class FileRunResultStore {
 
   async #load() {
     const file = await readJson(this.filePath, { version: 1, runs: [] });
-    if (
-      !exactKeys(file, ["version", "runs"])
-      || file.version !== 1
-      || !Array.isArray(file.runs)
-    ) {
-      throw new Error("result file schema is invalid");
-    }
-    return { version: 1, runs: [...file.runs] };
+    return validateRunResultFile(file);
   }
 }
 

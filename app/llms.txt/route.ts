@@ -24,11 +24,11 @@ REAPP separates adaptive agent planning from deterministic financial authority. 
 
 ## Packages and source
 
-- [@reapp-sdk/core](https://www.npmjs.com/package/@reapp-sdk/core/v/0.2.2): Mandates, contract-enforced payments, and agent.fetch().
+- [@reapp-sdk/core](https://www.npmjs.com/package/@reapp-sdk/core/v/0.3.0): Mandates, contract-enforced payments, and agent.fetch().
 - [@reapp-sdk/stellar](https://www.npmjs.com/package/@reapp-sdk/stellar/v/0.2.1): Typed Stellar contract client, signers, and network configuration.
-- [@reapp-sdk/ap2](https://www.npmjs.com/package/@reapp-sdk/ap2/v/0.1.0): Version-pinned AP2 mandate bridge.
-- [@reapp-sdk/express-middleware](https://www.npmjs.com/package/@reapp-sdk/express-middleware/v/0.1.0): Express settlement and redemption verification.
-- [reapp-protocol-cli](https://www.npmjs.com/package/reapp-protocol-cli/v/0.1.1): Terminal workflows and testnet demos.
+- [@reapp-sdk/ap2](https://www.npmjs.com/package/@reapp-sdk/ap2/v/0.2.1): Version-pinned AP2 mandate bridge.
+- [@reapp-sdk/express-middleware](https://www.npmjs.com/package/@reapp-sdk/express-middleware/v/0.2.1): Express settlement and redemption verification.
+- [reapp-protocol-cli](https://www.npmjs.com/package/reapp-protocol-cli/v/0.1.4): Terminal workflows and testnet demos.
 - [Protocol repository](https://github.com/reapp-protocol/reapp-protocol): Contracts, SDK packages, tests, and examples.
 - [Full implementation context](https://reapp.live/llms-full.txt): One plain-text technical brief for assistants working with the protocol.
 
