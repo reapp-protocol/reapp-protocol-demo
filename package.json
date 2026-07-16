@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "generate:starters": "node scripts/starters/generate.mjs",
     "check:starters": "node scripts/starters/verify.mjs",
-    "test:hackathon": "node --test tests/hackathon.test.mjs tests/starter-catalog.test.mjs tests/starter-generation.test.mjs",
+    "test:hackathon": "node --test tests/hackathon.test.mjs tests/starter-catalog.test.mjs tests/starter-generation.test.mjs tests/shared-runtime.test.mjs tests/scenario-contract.test.mjs tests/scenario-runtime-boundary.test.mjs tests/contract-exact-payment.test.mjs tests/fulfillment-recovery.test.mjs tests/storage-recovery.test.mjs tests/operator-closure.test.mjs",
     "smoke:hackathon": "node scripts/hackathon-smoke.mjs",
     "gatecheck:hackathon": "npm run typecheck && npm run test:hackathon && npm run build && npm run smoke:hackathon"
   },
@@ -20,7 +20,7 @@
     "@anthropic-ai/sdk": "^0.104.1",
     "@reapp-sdk/ap2": "0.2.1",
     "@reapp-sdk/core": "0.3.0",
-    "@reapp-sdk/express-middleware": "0.2.0",
+    "@reapp-sdk/express-middleware": "0.2.1",
     "@reapp-sdk/stellar": "0.2.1",
     "@stellar/stellar-sdk": "^14.5.0",
     "@types/three": "^0.184.1",
