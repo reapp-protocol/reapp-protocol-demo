@@ -8,7 +8,11 @@
     "dev": "NODE_OPTIONS='--disable-warning=DEP0205' next dev",
     "build": "next build",
     "start": "NODE_OPTIONS='--disable-warning=DEP0205' next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:hackathon": "node --test tests/hackathon.test.mjs",
+    "smoke:hackathon": "node scripts/hackathon-smoke.mjs",
+    "gatecheck:hackathon": "npm run typecheck && npm run test:hackathon && npm run build && npm run smoke:hackathon"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

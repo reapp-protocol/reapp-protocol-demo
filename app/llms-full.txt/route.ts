@@ -53,6 +53,10 @@ The CLI surface demonstrates actor setup, mandate creation, payment submission, 
 
 The Express flow demonstrates pay-per-use API fulfillment. A 402 response describes a scoped requirement; the consumer checks it against the mandate, settles, and retries with proof. The middleware verifies the REAPP event and token transfer before the route handler can return the protected value. Production deployments need a shared durable redemption store across workers.
 
+### Hackathon starter — https://reapp.live/hackathon
+
+The Hackathon starter creates a disposable hosted fulfillment workspace and generates two commands for a clean VS Code folder. The local consumer owns its ephemeral signers, registers a scoped testnet mandate, calls the hosted endpoint through agent.fetch(), and streams the resulting 402, settlement, proof, delivery, budget, and rejection evidence back to the browser page. The generated project includes editable consumer and fulfillment source files plus guided examples for merchant scope, expiry, replay defense, recovery, and explorer evidence.
+
 ### AP2 — https://reapp.live/ap2
 
 The AP2 page demonstrates canonical mandate binding and negative cases. It covers signature validity, merchant mismatch, amount limits, expiry, and replay. AP2 artifacts represent intent and transaction authority; REAPP maps those artifacts into enforceable payment constraints rather than treating signed text as unlimited permission.

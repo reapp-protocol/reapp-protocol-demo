@@ -11,6 +11,7 @@ REAPP separates adaptive agent planning from deterministic financial authority. 
 
 - [REAPP SDK documentation](https://reapp.live/): Install the published packages and understand the end-to-end consumer and merchant flow.
 - [Express payment flow](https://reapp.live/express): Pay-per-use API fulfillment with settlement and one-time redemption verification.
+- [Hackathon starter](https://reapp.live/hackathon): Start from an empty folder, run a local consumer against hosted fulfillment, and inspect matching testnet evidence.
 - [AP2 mandate bridge](https://reapp.live/ap2): Canonical intent and transaction mandate checks, signatures, scope, expiry, and replay protection.
 - [CLI](https://reapp.live/cli): Initialize actors, create a mandate, pay, inspect evidence, and exercise rejection paths.
 

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 const BASE_URL = "https://reapp.live";
-const LAST_MODIFIED = new Date("2026-07-12T00:00:00Z");
+const LAST_MODIFIED = new Date("2026-07-16T00:00:00Z");
 
 const routes = [
   "",
@@ -9,6 +9,7 @@ const routes = [
   "/cli",
   "/composites",
   "/express",
+  "/hackathon",
   "/research",
   "/t2",
   "/t2/demo",

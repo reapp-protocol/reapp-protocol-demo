@@ -14,10 +14,11 @@ The site is both the implementation guide and a set of inspectable agentic payme
 - **Docs** (`/`) — published SDK installation, consumer flow, Express verification, testnet run, and safety boundary.
 - **CLI** (`/cli`) — initialize actors, create mandates, pay, and inspect rejection paths from the terminal.
 - **Express** (`/express`) — payment-required API flow with settlement and one-time redemption verification.
+- **Hackathon** (`/hackathon`) — blank-folder starter connected to hosted Express fulfillment, with live local-consumer evidence.
 - **AP2** (`/ap2`) — intent and transaction mandate binding, canonical signatures, scope, expiry, and replay checks.
 - **Composite mandates** (`/composites`) — multiple buyer agents coordinate an atomic group purchase.
 - **Research agent** (`/research`) — paid-source selection constrained by an on-chain budget.
-- **Video paywall** (`/video`) — three permitted unlocks followed by a contract-rejected fourth payment.
+- **Video paywall** (`/video`, direct link) — three permitted unlocks followed by a contract-rejected fourth payment.
 
 Machine-readable maps are published at `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, and `/robots.txt`.
 

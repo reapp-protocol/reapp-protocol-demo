@@ -30,6 +30,9 @@ video demo still works and the research page shows a notice.
 - `/` — **Docs** (landing page). Source: `app/page.tsx`.
 - `/research` — research agent demo (LLM). Source: `app/research/page.tsx`.
 - `/video` — video paywall demo. Source: `app/video/page.tsx`.
+- `/hackathon` — beginner onboarding: scaffold a clean project, connect it to
+  hosted Express fulfillment, and watch local `agent.fetch()` evidence arrive.
+  Source: `app/hackathon/page.tsx`.
 - `/t2` — **Tranche 2** hub. New T2 work is isolated here so it doesn't confuse the
   Tranche 1 review. Source: `app/t2/page.tsx`.
 - `/t2/demo` — live **xterm.js terminal** that runs the real `reapp` CLI on the
@@ -39,7 +42,8 @@ video demo still works and the research page shows a notice.
   transaction. Runs against the T2 composite build of MandateRegistry (a separate
   testnet deployment; id pinned in `lib/composites-client.ts`). Source: `app/composites/page.tsx`.
 
-Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Research · Video.
+Nav order is defined in `components/Nav.tsx` (`links` array): Docs · CLI · Express ·
+AP2 · Research · Hackathon. The `/video` route remains available by direct link.
 T1 pages stay grouped first. Tranche 2 surfaces are UNLISTED (not in the nav, per team
 decision — no tranche-era items in the site chrome): `/t2` and `/composites` are reachable
 by direct link only; the `/t2` hub links to `/composites`.
