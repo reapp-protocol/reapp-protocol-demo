@@ -33,7 +33,9 @@ For the guided hosted flow, create a disposable workspace on [`reapp.live/hackat
 For a fully local consumer-and-fulfillment run:
 
 ```bash
-npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/hackathon .
+curl -fsSLo reapp-hackathon.zip https://reapp.live/starters/v1/hackathon.zip
+unzip -q reapp-hackathon.zip
+rm reapp-hackathon.zip
 npm ci
 npm run check
 npm run demo

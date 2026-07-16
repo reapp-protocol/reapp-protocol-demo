@@ -55,7 +55,10 @@ test("the Hackathon page keeps the established responsive pattern and complete g
   assert.match(layout, /path: "\/hackathon"/);
   assert.match(sitemap, /"\/hackathon"/);
   assert.match(page, /\/starters\/v1\/\$\{kit\.slug\}\.zip/);
-  assert.match(page, /starters\/\$\{kit\.slug\}/);
+  assert.match(page, /curl -fsSLo reapp-\$\{slug\}\.zip https:\/\/reapp\.live\/starters\/v1\/\$\{slug\}\.zip/);
+  assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/tree\/main\/starters\/\$\{kit\.slug\}/);
+  assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/tree\/main\/starters\/hackathon/);
+  assert.doesNotMatch(page, /degit/);
 });
 
 test("the starter is deterministic, typed by package metadata, and testnet-only", async () => {

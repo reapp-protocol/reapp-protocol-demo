@@ -28,12 +28,12 @@ import { contractUrl, txUrl } from "@/lib/explorer";
 import { HACKATHON_STARTER_CATALOG } from "@/lib/hackathon-starters.generated";
 
 const STORAGE_KEY = "reapp-hackathon-workspace-v1";
-const SETUP_COMMAND = "npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/hackathon . && npm ci";
+const SETUP_COMMAND = "curl -fsSLo reapp-hackathon.zip https://reapp.live/starters/v1/hackathon.zip && unzip -q reapp-hackathon.zip && rm reapp-hackathon.zip && npm ci";
 const STARTER_KITS = HACKATHON_STARTER_CATALOG.kits;
 const STARTER_CATEGORIES = ["All", ...Array.from(new Set(STARTER_KITS.map((kit) => kit.category)))];
 
 const starterCommand = (slug: string) =>
-  `npx --yes degit@2.8.4 reapp-protocol/reapp-protocol-demo/starters/${slug} . && npm ci`;
+  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci`;
 
 type ResourceSummary = { id: string; label: string; attempt: number };
 type Workspace = {
