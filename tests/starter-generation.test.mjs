@@ -117,6 +117,14 @@ test("all twenty generated packages are self-contained and use one exact canonic
     assert.equal(packageJson.scripts.fulfillment, "node src/fulfillment.mjs");
     assert.equal(packageJson.scripts.check, "node src/check.mjs");
     assert.equal(files.has("README.md"), true);
+    const readme = files.get("README.md").toString("utf8");
+    assert.match(readme, /Open this folder in VS Code/);
+    assert.match(readme, /Terminal → New Terminal/);
+    assert.match(readme, /npm ci && npm run check && npm run demo/);
+    assert.match(readme, /You do not need a wallet or a GitHub repo/);
+    assert.match(readme, /What success looks like/);
+    assert.match(readme, /Make it yours/);
+    assert.doesNotMatch(readme, /Create a workspace|workspace flow/);
     assert.equal(files.has(".env.example"), true);
     assert.equal(files.has(".gitignore"), true);
     assert.equal(files.has("scenario/scenario.mjs"), true);

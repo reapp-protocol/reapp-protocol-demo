@@ -7,160 +7,160 @@
       "archive": "/starters/v1/hackathon.zip",
       "files": 26,
       "id": "research-source-scout",
-      "sha256": "bd27002bc8050d13853fc4de97edda92605dad91ac9885d63c7c383f5ff8d435",
-      "size": 230082,
+      "sha256": "c91d93a4d0db21b86f57b02dc97ec5ff4a08433ba6f5eeb588bed31ffe54a30f",
+      "size": 229887,
       "slug": "hackathon"
     },
     {
       "archive": "/starters/v1/page-snapshot-meter.zip",
       "files": 25,
       "id": "page-snapshot-meter",
-      "sha256": "64412011e466a5d1a2d17a895d71eae77b019a52abfe973efdaba27e55775c12",
-      "size": 221368,
+      "sha256": "faef7a90ebddca71b14fcdeda57e05d8961100bf89bdbe3d5789fa8242a2cb20",
+      "size": 221382,
       "slug": "page-snapshot-meter"
     },
     {
       "archive": "/starters/v1/api-tollgate.zip",
       "files": 25,
       "id": "api-tollgate",
-      "sha256": "fb96633243c23444121f371f1cce06bb6bdcaaeb90a1bdd2486b358f2737e522",
-      "size": 220843,
+      "sha256": "c726e66d12847968ca1111ebeddce2b9467db4352ef9d98e44bbf455b3e48d3a",
+      "size": 220857,
       "slug": "api-tollgate"
     },
     {
       "archive": "/starters/v1/paid-tool-gateway.zip",
       "files": 25,
       "id": "paid-tool-gateway",
-      "sha256": "c18c4579f2b0c32d60a7fe33fa2212a77afb488b8f3a9d2bfb0eb882bc153ca6",
-      "size": 221142,
+      "sha256": "043f6cad6be541929783db20f100ccd63bb59778333f86ecb493bfeb0028b0c1",
+      "size": 221156,
       "slug": "paid-tool-gateway"
     },
     {
       "archive": "/starters/v1/coding-agent-purchase-hook.zip",
       "files": 25,
       "id": "coding-agent-purchase-hook",
-      "sha256": "4a1d6080b79fc977b6a27cbb25f7dba7565a3d4acf017e5bcddb76d90cc8c118",
-      "size": 221401,
+      "sha256": "a029f7c3872cff9e59a31dcc7565a91a65af0bf71ce0aeaf37a0786f71bb3815",
+      "size": 221415,
       "slug": "coding-agent-purchase-hook"
     },
     {
       "archive": "/starters/v1/service-bazaar.zip",
       "files": 25,
       "id": "service-bazaar",
-      "sha256": "e2bbf505038b3acc03bb6389e725d95bab6ab282fc2ec2967d8ebbf25f433c19",
-      "size": 221817,
+      "sha256": "f809410d105ab4e92a07ffb633c99184cf80429a64300409d76f3d27c0be0101",
+      "size": 221831,
       "slug": "service-bazaar"
     },
     {
       "archive": "/starters/v1/agent-reputation-snapshot.zip",
       "files": 25,
       "id": "agent-reputation-snapshot",
-      "sha256": "690e9b352861277919c7c7f5903094739fb11a1d1340c09a70015eead7f35515",
-      "size": 223011,
+      "sha256": "42790acaca68e9b7fda2ebfd05f291177a8a50a5cf1e123ea38cabdfdb809df6",
+      "size": 223025,
       "slug": "agent-reputation-snapshot"
     },
     {
       "archive": "/starters/v1/multi-agent-workflow.zip",
       "files": 25,
       "id": "multi-agent-workflow",
-      "sha256": "d87959c6876b42495aaa2d6b74c586012e4bb76ec5eaa25df81e8a98a19eb31d",
-      "size": 222045,
+      "sha256": "c17c96c372ea2708b56392507c24746adebdfc40e7022d926174f56f7cf1e74e",
+      "size": 222059,
       "slug": "multi-agent-workflow"
     },
     {
       "archive": "/starters/v1/compute-broker.zip",
       "files": 25,
       "id": "compute-broker",
-      "sha256": "1f8a67bb0a1d5faf01ee92c0cb1d0ec93f034a6af11e22ee05a4eb0b9a9047ad",
-      "size": 221613,
+      "sha256": "023df12d571dd80881163a09b1f206f530f8eb8029c91ebb8d111c733103e7eb",
+      "size": 221627,
       "slug": "compute-broker"
     },
     {
       "archive": "/starters/v1/private-test-runner.zip",
       "files": 25,
       "id": "private-test-runner",
-      "sha256": "be82e40fe4672b7ebc1178b3de7ad27e54c3822eded4647e94e689cd5205b5fb",
-      "size": 221208,
+      "sha256": "b6681faff196f73962ef46ed2621db8ab144a04da1f86b849f418893316f7cf8",
+      "size": 221222,
       "slug": "private-test-runner"
     },
     {
       "archive": "/starters/v1/build-notary.zip",
       "files": 25,
       "id": "build-notary",
-      "sha256": "33aea4d438d3916779c1f1909c1689170f11b3499e149184cce2dba4de12d2d6",
-      "size": 222290,
+      "sha256": "eca79edb80626c69859296a7cba2e6749d4ffd3506bb4d2759bdf326bab4f705",
+      "size": 222304,
       "slug": "build-notary"
     },
     {
       "archive": "/starters/v1/model-route-bazaar.zip",
       "files": 25,
       "id": "model-route-bazaar",
-      "sha256": "d32a00fb40fb171ac8d2d6673b97d4605dc49af764ffaa9676e129250b63dcbb",
-      "size": 221939,
+      "sha256": "52063950548a5c7f63b32cdce46f5e20b1e523d8cbc1572cc68a01ac208e85ac",
+      "size": 221953,
       "slug": "model-route-bazaar"
     },
     {
       "archive": "/starters/v1/rights-receipt.zip",
       "files": 25,
       "id": "rights-receipt",
-      "sha256": "371ad4c6b40d6b8cefaaac83e5c19941859ffd260bc2d22b3d28583a6e33373f",
-      "size": 221680,
+      "sha256": "57d193610e913014286aba084330e5d9a3e2a692f97aef5f5ed1a6910d9c77ee",
+      "size": 221694,
       "slug": "rights-receipt"
     },
     {
       "archive": "/starters/v1/data-owner-gateway.zip",
       "files": 25,
       "id": "data-owner-gateway",
-      "sha256": "6fe25b4edf5eb1ac59770d5f84792c1fdaf18a465751aa55eb48202ef2097b88",
-      "size": 221460,
+      "sha256": "edcb2239b348957b927342e98c880d68546b27eec4151d023fa22a9e7e5af732",
+      "size": 221474,
       "slug": "data-owner-gateway"
     },
     {
       "archive": "/starters/v1/human-review-outbox.zip",
       "files": 25,
       "id": "human-review-outbox",
-      "sha256": "1c50e154b4f7f9a3ec437597d8acea0894b18002947fdc09d5307c6f96eaa55e",
-      "size": 222134,
+      "sha256": "b38bed944286025bdc5dec776f385df9a218b03a3d41eb1707d99baf12f1bbfa",
+      "size": 222148,
       "slug": "human-review-outbox"
     },
     {
       "archive": "/starters/v1/cold-chain-passport.zip",
       "files": 25,
       "id": "cold-chain-passport",
-      "sha256": "c95b11068683eeba27390e9edfceb469648e9dcf74de0898facab88216c28d89",
-      "size": 222295,
+      "sha256": "6757a5f15e3188d1a5cd9152b6fdf93f58da2b381e030eca90d812f90ae528c1",
+      "size": 222309,
       "slug": "cold-chain-passport"
     },
     {
       "archive": "/starters/v1/carbon-aware-run-window.zip",
       "files": 25,
       "id": "carbon-aware-run-window",
-      "sha256": "f7a71ea878009b1a7749b242ae63e7f1ea07182ced5504beb583e40a4a1fd41c",
-      "size": 221864,
+      "sha256": "ea1cee6ffd1e38316296d6c42b0ceabca8fa7732eea692fe70d81f4b71bf1e2e",
+      "size": 221878,
       "slug": "carbon-aware-run-window"
     },
     {
       "archive": "/starters/v1/fleet-corridor-authority.zip",
       "files": 25,
       "id": "fleet-corridor-authority",
-      "sha256": "b022c5b1e2bb3ce3d29fd27edb0bff066512e8a9d9697910c7ad6d85064496be",
-      "size": 221889,
+      "sha256": "d2b5076c514e148a0fdf52502362a0285b310f39dfb3b68549a349f9b48a0325",
+      "size": 221903,
       "slug": "fleet-corridor-authority"
     },
     {
       "archive": "/starters/v1/payment-receipt-firewall.zip",
       "files": 25,
       "id": "payment-receipt-firewall",
-      "sha256": "2b8f9f15dfd01874b281fef7fdc2ca4e9541aa6f5d5dfd1f5dfe9bbcf12ec6c4",
-      "size": 221332,
+      "sha256": "89f59347a9aa01300bc9b24b9b2543a2a4372ee031d974c8a14942f6529d2f54",
+      "size": 221346,
       "slug": "payment-receipt-firewall"
     },
     {
       "archive": "/starters/v1/procurement-guard.zip",
       "files": 25,
       "id": "procurement-guard",
-      "sha256": "ea82201aa7fd878066d010ce59d35f0b425b53e6a027063e72a9c6d02903ff10",
-      "size": 221785,
+      "sha256": "81d3e6cb055a22150909338303ecf1d296989788a223c23510b8eb7c4660cf35",
+      "size": 221799,
       "slug": "procurement-guard"
     }
   ],

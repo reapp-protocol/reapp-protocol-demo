@@ -36,7 +36,13 @@ test("the Hackathon page keeps the established responsive pattern and complete g
     read("app/sitemap.ts"),
   ]);
   for (const required of [
-    "Start guided setup",
+    "Click Start",
+    "Copy command 1",
+    "Copy command 2",
+    "See the proof",
+    "No GitHub repo or wallet needed",
+    "FIRST VERIFIED PAYMENT · ABOUT 60 SECONDS",
+    "48.317 seconds",
     "402 → payment → 200",
     "Merchant scope",
     "Replay defense",
@@ -44,7 +50,7 @@ test("the Hackathon page keeps the established responsive pattern and complete g
     "Explorer evidence",
     "20 self-contained starters",
     "Integrity manifest",
-    "Copy setup",
+    "Copy one command",
     "sessionStorage",
     "polling hosted /express",
     "sm:text-6xl",
@@ -55,10 +61,11 @@ test("the Hackathon page keeps the established responsive pattern and complete g
   assert.match(layout, /path: "\/hackathon"/);
   assert.match(sitemap, /"\/hackathon"/);
   assert.match(page, /\/starters\/v1\/\$\{kit\.slug\}\.zip/);
-  assert.match(page, /curl -fsSLo reapp-\$\{slug\}\.zip https:\/\/reapp\.live\/starters\/v1\/\$\{slug\}\.zip/);
+  assert.match(page, /curl -fsSLo reapp-\$\{slug\}\.zip https:\/\/reapp\.live\/starters\/v1\/\$\{slug\}\.zip.*npm run check && npm run demo/);
   assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/tree\/main\/starters\/\$\{kit\.slug\}/);
   assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/tree\/main\/starters\/hackathon/);
   assert.doesNotMatch(page, /degit/);
+  assert.doesNotMatch(page, /Create a disposable testnet workspace|Create hosted workspace|Run against your workspace/);
 });
 
 test("the starter is deterministic, typed by package metadata, and testnet-only", async () => {

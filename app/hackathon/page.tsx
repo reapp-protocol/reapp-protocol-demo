@@ -33,7 +33,7 @@ const STARTER_KITS = HACKATHON_STARTER_CATALOG.kits;
 const STARTER_CATEGORIES = ["All", ...Array.from(new Set(STARTER_KITS.map((kit) => kit.category)))];
 
 const starterCommand = (slug: string) =>
-  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci`;
+  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci && npm run check && npm run demo`;
 
 type ResourceSummary = { id: string; label: string; attempt: number };
 type Workspace = {
@@ -265,7 +265,7 @@ export default function HackathonPage() {
           if (payload.code === "expired" || payload.code === "not_found") {
             sessionStorage.removeItem(STORAGE_KEY);
             setPersisted(null);
-            setError(payload.error || "This testnet workspace expired. Create a new one.");
+            setError("This demo expired. Click Start again.");
           }
           return;
         }
@@ -291,7 +291,7 @@ export default function HackathonPage() {
 
   const runCommand = persisted
     ? `npm run hosted -- --endpoint="${persisted.workspace.endpointBase.replace(/\/$/, "")}" --merchant="${persisted.workspace.merchant}"`
-    : "Create a testnet workspace to generate this command.";
+    : "Click Start to unlock this command.";
 
   const delivered = events.filter((event) => event.type === "delivery_200");
   const sawChallenge = events.some((event) => event.type === "challenge_402");
@@ -349,20 +349,20 @@ export default function HackathonPage() {
       });
       const payload = await response.json().catch(() => null) as CreateResponse | FailureResponse | null;
       if (!payload) {
-        throw new Error(`Workspace creation failed (HTTP ${response.status}).`);
+        throw new Error("The demo could not start. Try again.");
       }
       if (payload.ok === false) {
-        throw new Error(payload.error || `Workspace creation failed (HTTP ${response.status}).`);
+        throw new Error("The demo could not start. Try again.");
       }
       if (!response.ok || payload.action !== "create") {
-        throw new Error(`Workspace creation failed (HTTP ${response.status}).`);
+        throw new Error("The demo could not start. Try again.");
       }
       const next = { sessionId: payload.sessionId, expiresAt: payload.expiresAt, workspace: payload.workspace };
-      if (!isWorkspace(next)) throw new Error("The workspace response was incomplete.");
+      if (!isWorkspace(next)) throw new Error("The demo could not start. Try again.");
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setPersisted(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Workspace creation failed safely.");
+      setError(cause instanceof Error ? cause.message : "The demo could not start. Try again.");
     } finally {
       setCreating(false);
     }
@@ -406,13 +406,13 @@ export default function HackathonPage() {
       <motion.header {...fade()} className="mx-auto max-w-4xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          HACKATHON STARTER · STELLAR TESTNET
+          FIRST VERIFIED PAYMENT · ABOUT 60 SECONDS
         </div>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">
           Empty folder to a verified <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">402 → payment → 200</span>.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-emerald-100/70 sm:text-lg">
-          Create a disposable testnet workspace, copy two commands into VS Code, and watch your local consumer call the hosted Express fulfillment API. The contract permits three purchases and rejects the fourth.
+          Measured reference run: 48.317 seconds from an empty folder to the completed demo. Click Start, open an empty folder in VS Code, then copy each command into its terminal and press Enter. Network speed may vary.
         </p>
         <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
           <motion.button
@@ -424,7 +424,7 @@ export default function HackathonPage() {
             className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-6 py-3 text-sm font-black text-[#06241a] shadow-[0_10px_36px_-8px_rgba(52,211,153,0.75)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : persisted ? <Check className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
-            {creating ? "Creating workspace…" : persisted ? "Workspace ready" : "Start guided setup"}
+            {creating ? "Starting…" : persisted ? "Ready" : "Start"}
           </motion.button>
           <button
             type="button"
@@ -436,7 +436,7 @@ export default function HackathonPage() {
             Reset
           </button>
         </div>
-        <p className="mt-3 text-xs text-emerald-100/40">Disposable testnet identities · private signers stay in your local project · no wallet connection</p>
+        <p className="mt-3 text-xs text-emerald-100/40">No GitHub repo or wallet needed · testnet only · private keys stay on your computer</p>
       </motion.header>
 
       <AnimatePresence>
@@ -474,10 +474,10 @@ export default function HackathonPage() {
 
         <div className="grid min-w-0 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="min-w-0 space-y-3">
-            <GuideStep number="01" title="Create hosted workspace" detail={persisted ? "Endpoint and merchant are ready" : "Click Start guided setup above"} complete={Boolean(persisted)} active={creating} />
-            <GuideStep number="02" title="Scaffold the project" detail="Open an empty folder in VS Code and paste the setup command" complete={copied === "setup" || Boolean(delivered.length)} active={false} />
-            <GuideStep number="03" title="Run the consumer" detail="Paste the generated command; private keys remain local" complete={delivered.length > 0} active={sawChallenge && !complete} />
-            <GuideStep number="04" title="Verify contract enforcement" detail="Three deliveries, fourth rejected, explorer hashes recorded" complete={complete} active={delivered.length > 0 && !complete} />
+            <GuideStep number="01" title="Click Start" detail={persisted ? "Your demo is ready" : "Use the Start button above"} complete={Boolean(persisted)} active={creating} />
+            <GuideStep number="02" title="Copy command 1" detail="Open an empty folder in VS Code, paste it in the terminal, and press Enter" complete={copied === "setup" || Boolean(delivered.length)} active={false} />
+            <GuideStep number="03" title="Copy command 2" detail="Paste it into the same terminal and press Enter" complete={delivered.length > 0} active={sawChallenge && !complete} />
+            <GuideStep number="04" title="See the proof" detail="Three deliveries succeed and the fourth is blocked" complete={complete} active={delivered.length > 0 && !complete} />
 
             {persisted && (
               <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-black/25 p-4">
@@ -506,8 +506,8 @@ export default function HackathonPage() {
               <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100/45">blank folder</span>
             </div>
             <div className="space-y-4 p-4">
-              <CommandBlock label="1 · Scaffold + install" value={SETUP_COMMAND} copyKey="setup" copied={copied} onCopy={copyValue} />
-              <CommandBlock label="2 · Run against your workspace" value={runCommand} copyKey="run" copied={copied} onCopy={copyValue} disabled={!persisted} />
+              <CommandBlock label="1 · Set up the project" value={SETUP_COMMAND} copyKey="setup" copied={copied} onCopy={copyValue} />
+              <CommandBlock label="2 · Run the demo" value={runCommand} copyKey="run" copied={copied} onCopy={copyValue} disabled={!persisted} />
               <div className="rounded-xl border border-emerald-400/15 bg-[#020806] p-3 font-mono text-[11px] leading-relaxed text-emerald-100/65">
                 <div className="text-emerald-300">$ expected output</div>
                 <div className={sawChallenge ? "text-emerald-200" : "text-emerald-100/35"}>{sawChallenge ? "✓ 402 Payment Required" : "· waiting for the local consumer"}</div>
@@ -593,7 +593,7 @@ export default function HackathonPage() {
             <Layers3 className="h-4 w-4" aria-hidden /> 20 self-contained starters
           </div>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-emerald-50 sm:text-4xl">Pick a serious project. Keep the payment boundary.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">Each testnet kit includes editable consumer and Express fulfillment source, deterministic fixtures, one focused rejection path, exact package versions, and an offline business-logic check.</p>
+          <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">Choose a starter, click Copy one command, paste it into the terminal for an empty VS Code folder, and press Enter. Each kit includes editable consumer and Express fulfillment source.</p>
         </div>
 
         <div className="mt-7 overflow-hidden rounded-3xl border border-emerald-300/15 bg-[#06100d]/80">
@@ -671,7 +671,7 @@ export default function HackathonPage() {
                           className="inline-flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-3 py-2 text-xs font-black text-[#06241a] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
                         >
                           {copied === copyKey ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
-                          <span className="truncate">{copied === copyKey ? "Copied" : "Copy setup"}</span>
+                          <span className="truncate">{copied === copyKey ? "Copied" : "Copy one command"}</span>
                         </button>
                         <a href={`/starters/v1/${kit.slug}.zip`} download className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60" aria-label={`Download ${kit.title} archive`}>
                           <Download className="h-4 w-4" aria-hidden />

@@ -6,24 +6,33 @@ This self-contained REAPP starter protects `GET /source/:sourceId` with a reques
 
 ## Start
 
-You need Node.js 20 or newer. From this extracted folder:
+You need Node.js 20 or newer. You do not need a wallet or a GitHub repo.
+
+1. Open this folder in VS Code.
+2. Select **Terminal → New Terminal**.
+3. Paste this line and press **Enter**:
 
 ```bash
-npm ci
-npm run check
-npm run demo
+npm ci && npm run check && npm run demo
 ```
 
-The offline gate check runs deterministic business, rejection, delivery-tamper, and free-route vectors. The live demo creates disposable testnet accounts, starts this kit's local Express fulfillment server, registers a scoped mandate, pays with the consumer, records explorer evidence, and runs the named negative check. It never requests a wallet or mainnet secret.
-## Hosted /hackathon companion
+That one line installs the packages, checks the starter, and runs the live testnet demo. It never requests a wallet or mainnet secret.
+## Run with reapp.live
 
-Create a workspace at [reapp.live/hackathon](https://reapp.live/hackathon), then run the exact command it displays:
+1. Open [reapp.live/hackathon](https://reapp.live/hackathon).
+2. Click **Start**.
+3. Copy command 2 into the same VS Code terminal and press **Enter**.
 
-```bash
-npm run hosted -- --endpoint="https://reapp.live/api/express/WORKSPACE/source" --merchant="G..."
-```
+The browser and terminal show the same paid demo. Your private signers and recovery evidence stay in this local folder.
 
-This keeps the merchant on the hosted Express service while the consumer, disposable signers, mandate, contract settlement, and durable evidence stay in your local extracted folder. The terminal and browser companion show the same workspace flow.
+## What success looks like
+
+The terminal prints:
+
+1. The offline gate check passing.
+2. The local fulfillment server starting.
+3. Paid testnet requests completing with Stellar explorer links.
+4. The named rejection check being blocked as expected.
 
 ## Scenario
 
@@ -42,16 +51,17 @@ Rank sources by relevance, purchase the three planned sources sequentially, reta
 - `independent-verification`
 - `explorer-evidence`
 
-## Files to edit
+## Make it yours
 
-| File | Purpose |
+Start with these three files:
+
+| File | What to change |
 |---|---|
-| `scenario/scenario.mjs` | Distinct deterministic business rules, fixtures, delivery checks, and rejection check. |
-| `src/consumer.mjs` | Runs the disposable consumer and calls the paid route through the shared request-bound runtime. |
-| `src/fulfillment.mjs` | Runs this scenario as a local 402-gated Express service. |
-| `shared/` | Copied, self-contained payment, storage, recovery, and evidence runtime. |
-| `src/check.mjs` | Executes this scenario's offline vectors. |
-| `src/reset.mjs` | Archives resolved local state and refuses unsafe cleanup. |
+| `scenario/scenario.mjs` | Your product's rules, sample data, delivery checks, and rejection check. |
+| `src/consumer.mjs` | How your app requests and pays for the protected result. |
+| `src/fulfillment.mjs` | What your paid Express endpoint returns. |
+
+The shared payment and recovery code lives in `shared/`. Leave it unchanged until your project needs advanced customization.
 
 ## Run fulfillment separately
 

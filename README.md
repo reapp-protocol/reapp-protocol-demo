@@ -28,7 +28,7 @@ REAPP is the live implementation companion to [REAPP NETWORK](https://reapp.netw
 
 `/hackathon` publishes 20 self-contained Stellar testnet starters. Each kit includes editable consumer and Express fulfillment source, deterministic fixtures, exact package versions, one focused rejection path, an offline gate check, and a downloadable archive with a public SHA-256 manifest.
 
-For the guided hosted flow, create a disposable workspace on [`reapp.live/hackathon`](https://reapp.live/hackathon), copy the generated setup command into an empty VS Code folder, and run the displayed consumer command. The terminal and browser companion then show the same `402 → contract payment → 200` sequence, three verified deliveries, the fourth contract rejection, and explorer evidence.
+For the guided hosted flow, open an empty folder in VS Code and select **Terminal → New Terminal**. Then open [`reapp.live/hackathon`](https://reapp.live/hackathon), click **Start**, copy each command into that terminal, and press **Enter**. The terminal and browser show the same `402 → contract payment → 200` sequence, three verified deliveries, the fourth contract rejection, and explorer evidence.
 
 For a fully local consumer-and-fulfillment run:
 
