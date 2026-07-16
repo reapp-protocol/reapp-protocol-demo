@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://reapp.live/schemas/hackathon-starter-catalog-v1.json",
+  "title": "REAPP hackathon starter catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "catalogId", "constraints", "sources", "kits"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "catalogId": { "const": "reapp-hackathon-starters-v1" },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "paidMethod", "proofPolicy", "runtime", "fixturePolicy", "compatibilityClaim"],
+      "properties": {
+        "network": { "const": "stellar-testnet" },
+        "paidMethod": { "const": "GET" },
+        "proofPolicy": { "const": "bound-v2-only" },
+        "runtime": { "const": "local-consumer-and-fulfillment" },
+        "fixturePolicy": { "const": "deterministic-and-clearly-labeled" },
+        "compatibilityClaim": { "const": "reapp-bound-v2" }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url"],
+        "properties": {
+          "title": { "type": "string", "minLength": 5 },
+          "url": { "type": "string", "pattern": "^https://" }
+        }
+      }
+    },
+    "kits": {
+      "type": "array",
+      "minItems": 20,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "slug", "title", "category", "difficulty", "summary", "paidResource", "businessLogic", "features", "negativePath", "fixtures", "inspiration"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "slug": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "title": { "type": "string", "minLength": 5 },
+          "category": { "type": "string", "minLength": 3 },
+          "difficulty": { "enum": ["Beginner", "Intermediate", "Advanced"] },
+          "summary": { "type": "string", "minLength": 40 },
+          "paidResource": { "type": "string", "pattern": "^GET /" },
+          "businessLogic": { "type": "string", "minLength": 60 },
+          "features": {
+            "type": "array",
+            "minItems": 3,
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+          },
+          "negativePath": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "outcome"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+              "outcome": { "type": "string", "minLength": 40 }
+            }
+          },
+          "fixtures": { "type": "string", "minLength": 40 },
+          "inspiration": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 3 }
+          }
+        }
+      }
+    }
+  }
+}
