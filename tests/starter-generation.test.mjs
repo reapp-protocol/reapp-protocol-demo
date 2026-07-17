@@ -153,7 +153,7 @@ test("all twenty generated packages are self-contained and use one exact canonic
     assert.match(readme, /`src\/consumer\.mjs`/);
     assert.match(readme, /`src\/fulfillment\.mjs`/);
     assert.doesNotMatch(readme, /Create a workspace|workspace flow/);
-    if (kit.slug === "hackathon") assert.match(readme, /Optional hosted walkthrough/);
+    if (kit.id === "research-source-scout") assert.match(readme, /Optional hosted walkthrough/);
     else assert.doesNotMatch(readme, /Optional hosted walkthrough/);
     assert.equal(files.has(".env.example"), true);
     assert.equal(files.has(".gitignore"), true);

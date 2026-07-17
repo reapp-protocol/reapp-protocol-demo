@@ -26,7 +26,7 @@ test("the catalog fixes exactly twenty distinct GET-only starter contracts", asy
   unique(catalog.kits.map((kit) => kit.paidResource), "paid resources");
   unique(catalog.kits.map((kit) => kit.negativePath.id), "negative paths");
   assert.equal(catalog.kits[0].id, "research-source-scout");
-  assert.equal(catalog.kits[0].slug, "hackathon", "the verified starter keeps its stable path");
+  assert.equal(catalog.kits[0].slug, "research-source-scout", "the verified starter keeps its stable path");
   for (const kit of catalog.kits) {
     assert.match(kit.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.match(kit.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);

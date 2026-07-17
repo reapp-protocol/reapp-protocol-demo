@@ -31,7 +31,7 @@ async function waitForSite() {
   while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`Site exited early:\n${output.join("")}`);
     try {
-      const response = await fetch(`${origin}/hackathon`, { redirect: "manual" });
+      const response = await fetch(`${origin}/solutions`, { redirect: "manual" });
       if (response.ok) return response;
     } catch {
       // The server is still starting.
@@ -42,32 +42,35 @@ async function waitForSite() {
 }
 
 try {
-  const hackathon = await waitForSite();
-  assert.equal(hackathon.status, 200);
-  const hackathonPage = await hackathon.text();
+  const solutions = await waitForSite();
+  assert.equal(solutions.status, 200);
+  const solutionsPage = await solutions.text();
   for (const required of ["Use this starter", "Copy setup command", "npm run demo", "Read the README", "Optional hosted walkthrough"]) {
-    assert.match(hackathonPage, new RegExp(required), required);
+    assert.match(solutionsPage, new RegExp(required), required);
   }
+
+  const removedRoute = await fetch(`${origin}/${["hack", "athon"].join("")}`, { redirect: "manual" });
+  assert.equal(removedRoute.status, 404);
 
   const starterManifestResponse = await fetch(`${origin}/starters/v1/manifest.json`);
   assert.equal(starterManifestResponse.status, 200);
   const starterManifest = await starterManifestResponse.json();
   assert.equal(starterManifest.kits.length, 20);
-  const hackathonKit = starterManifest.kits.find(({ slug }) => slug === "hackathon");
-  assert.ok(hackathonKit);
-  const starterArchiveResponse = await fetch(`${origin}${hackathonKit.archive}`);
+  const featuredKit = starterManifest.kits.find(({ slug }) => slug === "research-source-scout");
+  assert.ok(featuredKit);
+  const starterArchiveResponse = await fetch(`${origin}${featuredKit.archive}`);
   assert.equal(starterArchiveResponse.status, 200);
   const starterArchive = Buffer.from(await starterArchiveResponse.arrayBuffer());
-  assert.equal(starterArchive.length, hackathonKit.size);
-  assert.equal(createHash("sha256").update(starterArchive).digest("hex"), hackathonKit.sha256);
+  assert.equal(starterArchive.length, featuredKit.size);
+  assert.equal(createHash("sha256").update(starterArchive).digest("hex"), featuredKit.sha256);
   for (const shell of ["posix", "powershell"]) {
-    const metadata = hackathonKit.installers[shell];
+    const metadata = featuredKit.installers[shell];
     const installerResponse = await fetch(`${origin}${metadata.path}`);
     assert.equal(installerResponse.status, 200);
     const installer = await installerResponse.text();
     assert.equal(Buffer.byteLength(installer), metadata.size);
     assert.equal(createHash("sha256").update(installer).digest("hex"), metadata.sha256);
-    assert.match(installer, new RegExp(hackathonKit.sha256));
+    assert.match(installer, new RegExp(featuredKit.sha256));
     assert.match(installer, /Starter integrity check failed/);
     assert.match(installer, /npm ci/);
   }
@@ -87,10 +90,10 @@ try {
   assert.equal(invalidResource.status, 404);
   assert.match(invalidResource.headers.get("cache-control") || "", /no-store/);
 
-  const serverAction = await fetch(`${origin}/hackathon`, { headers: { "Next-Action": "not-used" } });
+  const serverAction = await fetch(`${origin}/solutions`, { headers: { "Next-Action": "not-used" } });
   assert.equal(serverAction.status, 204);
 
-  process.stdout.write("Hackathon production smoke passed.\n");
+  process.stdout.write("Solutions production smoke passed.\n");
 } finally {
   if (child.exitCode === null) child.kill("SIGTERM");
   await Promise.race([

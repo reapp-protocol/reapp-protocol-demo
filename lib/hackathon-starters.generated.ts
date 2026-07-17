@@ -35,7 +35,7 @@ export const HACKATHON_STARTER_CATALOG = {
         "outcome": "The fourth purchase is rejected on-chain because its exact amount exceeds the mandate's remaining authority."
       },
       "paidResource": "GET /source/:sourceId",
-      "slug": "hackathon",
+      "slug": "research-source-scout",
       "summary": "A research agent buys ranked market, academic, and news sources, then stops when its mandate cannot fund a fourth source.",
       "title": "Research Source Scout"
     },

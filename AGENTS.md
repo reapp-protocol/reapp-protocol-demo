@@ -33,9 +33,9 @@ video demo still works and the research page shows a notice.
   `app/consumer/page.tsx`.
 - `/research` — research agent demo (LLM). Source: `app/research/page.tsx`.
 - `/video` — video paywall demo. Source: `app/video/page.tsx`.
-- `/hackathon` — beginner onboarding: scaffold a clean project, connect it to
+- `/solutions` — beginner onboarding: scaffold a clean project, connect it to
   hosted Express fulfillment, and watch local `agent.fetch()` evidence arrive.
-  Source: `app/hackathon/page.tsx`.
+  Source: `app/solutions/page.tsx`.
 - `/t2` — **Tranche 2** hub. New T2 work is isolated here so it doesn't confuse the
   Tranche 1 review. Source: `app/t2/page.tsx`.
 - `/t2/demo` — live **xterm.js terminal** that runs the real `reapp` CLI on the

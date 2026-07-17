@@ -6,13 +6,13 @@
 
 ## Choose from 20 starter packs
 
-Share the full catalog with your team at **[reapp.live/hackathon](https://reapp.live/hackathon)**. Each starter name below opens a standalone README you can share directly; each ZIP link downloads that exact starter.
+Share the full catalog with your team at **[reapp.live/solutions](https://reapp.live/solutions)**. Each starter name below opens a standalone README you can share directly; each ZIP link downloads that exact starter.
 
 Every pack contains editable consumer and Express fulfillment source, deterministic fixtures, exact package versions, an offline gate check, a named rejection path, and a downloadable ZIP recorded in the [public SHA-256 manifest](https://reapp.live/starters/v1/manifest.json).
 
 | # | Starter | Category | Level | Download |
 |---:|---|---|---|---|
-| 01 | [**Research Source Scout**](https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/hackathon/README.md) | Data APIs | Beginner | [ZIP](https://reapp.live/starters/v1/hackathon.zip) |
+| 01 | [**Research Source Scout**](https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/research-source-scout/README.md) | Data APIs | Beginner | [ZIP](https://reapp.live/starters/v1/research-source-scout.zip) |
 | 02 | [**Page Snapshot Meter**](https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/page-snapshot-meter/README.md) | Content infrastructure | Intermediate | [ZIP](https://reapp.live/starters/v1/page-snapshot-meter.zip) |
 | 03 | [**Existing API Tollgate**](https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/api-tollgate/README.md) | Infrastructure | Beginner | [ZIP](https://reapp.live/starters/v1/api-tollgate.zip) |
 | 04 | [**Paid Tool Gateway**](https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/paid-tool-gateway/README.md) | Agent tooling | Intermediate | [ZIP](https://reapp.live/starters/v1/paid-tool-gateway.zip) |
@@ -47,7 +47,7 @@ Start with three files; the payment and recovery machinery can stay untouched un
 
 ## Start here: empty folder to a working testnet demo
 
-Go to **[reapp.live/hackathon](https://reapp.live/hackathon)** and follow five steps:
+Go to **[reapp.live/solutions](https://reapp.live/solutions)** and follow five steps:
 
 1. **Choose one** of the 20 starter packs.
 2. **Open an empty folder** in VS Code, then select **Terminal → New Terminal**.
@@ -91,12 +91,12 @@ The ZIPs are the shortest beginner path. Security reviewers can run the same gen
 
 ```bash
 git clone --depth 1 https://github.com/reapp-protocol/reapp-protocol-demo.git
-cd reapp-protocol-demo/starters/hackathon
+cd reapp-protocol-demo/starters/research-source-scout
 npm ci
 npm run demo
 ```
 
-Every starter folder is self-contained. Replace `hackathon` with any of the other starter slugs in the table above.
+Every starter folder is self-contained. Replace `research-source-scout` with any of the other starter slugs in the table above.
 
 ### What success looks like
 
@@ -135,7 +135,7 @@ This repository powers the implementation guide and inspectable demonstrations a
 | [**CLI**](https://reapp.live/cli) | Actor setup, mandate creation, payment, and terminal rejection paths. |
 | [**Consumer**](https://reapp.live/consumer) | Give an AI agent a task, budget, approved services, and deadline without granting open-ended payment authority. |
 | [**Express**](https://reapp.live/express) | `402` challenge, contract settlement, one-time redemption, and `200` fulfillment. |
-| [**Hackathon**](https://reapp.live/hackathon) | Twenty blank-folder starters plus the optional hosted Research Source Scout walkthrough. |
+| [**Solutions**](https://reapp.live/solutions) | Twenty blank-folder starters plus the optional hosted Research Source Scout walkthrough. |
 | [**AP2**](https://reapp.live/ap2) | Intent and transaction mandate binding, canonical signatures, scope, expiry, and replay checks. |
 | [**Composite mandates**](https://reapp.live/composites) | Multiple buyer agents coordinating an atomic group purchase. |
 | [**Research agent**](https://reapp.live/research) | Paid-source selection constrained by an on-chain budget. |
@@ -171,7 +171,7 @@ Without an LLM key, the starter library, Express, CLI, AP2, composite, and video
 
 ## Repository map
 
-- `app/hackathon/page.tsx` — starter picker, exact setup commands, and optional hosted walkthrough.
+- `app/solutions/page.tsx` — starter picker, exact setup commands, and optional hosted walkthrough.
 - `starters/` — the 20 generated, inspectable starter projects.
 - `starter-kit-src/` — catalog, scenarios, and shared source used to generate the starter library.
 - `scripts/starters/` — deterministic materialization, ZIP generation, manifest creation, and verification.

@@ -28,7 +28,7 @@ test("navigation exposes Consumer and Solutions without deleting the direct Vide
     read("app/video/page.tsx"),
   ]);
   assert.match(nav, /href: "\/consumer", label: "Consumer"/);
-  assert.match(nav, /href: "\/hackathon", label: "Solutions"/);
+  assert.match(nav, /href: "\/solutions", label: "Solutions"/);
   assert.doesNotMatch(nav, /href: "\/video", label: "Video"/);
   assert.match(nav, /href: "\/express", label: "Express"/);
   assert.match(consumer, /Preview only · no funds move/);
@@ -40,10 +40,10 @@ test("navigation exposes Consumer and Solutions without deleting the direct Vide
   assert.ok(video.length > 100);
 });
 
-test("the Hackathon page keeps the established responsive pattern and complete guide", async () => {
+test("the Solutions page keeps the established responsive pattern and complete guide", async () => {
   const [page, layout, sitemap, installer] = await Promise.all([
-    read("app/hackathon/page.tsx"),
-    read("app/hackathon/layout.tsx"),
+    read("app/solutions/page.tsx"),
+    read("app/solutions/layout.tsx"),
     read("app/sitemap.ts"),
     read("lib/starter-install.js"),
   ]);
@@ -72,14 +72,14 @@ test("the Hackathon page keeps the established responsive pattern and complete g
     "min-w-0",
     "overflow-auto",
   ]) assert.match(page, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), required);
-  assert.match(layout, /path: "\/hackathon"/);
-  assert.match(sitemap, /"\/hackathon"/);
+  assert.match(layout, /path: "\/solutions"/);
+  assert.match(sitemap, /"\/solutions"/);
   assert.match(page, /import STARTER_MANIFEST from "@\/public\/starters\/v1\/manifest\.json"/);
   assert.match(page, /import \{ buildStarterInstallCommand \} from "@\/lib\/starter-install"/);
   assert.match(page, /const STARTER_ARCHIVES = new Map/);
   assert.match(page, /const \[installerShell, setInstallerShell\] = useState<InstallerShell>\("posix"\)/);
   assert.match(page, /starterCommand\(kit\.slug, installerShell\)/);
-  assert.match(page, /starterCommand\("hackathon", installerShell\)/);
+  assert.match(page, /starterCommand\("research-source-scout", installerShell\)/);
   assert.match(installer, /createHash\('sha256'\)/);
   assert.match(installer, /Installer integrity check failed/);
   assert.match(installer, /Invoke-WebRequest/);
@@ -103,19 +103,19 @@ test("the Hackathon page keeps the established responsive pattern and complete g
 
 test("the starter is deterministic, typed by package metadata, and testnet-only", async () => {
   const paths = [
-    "starters/hackathon/package.json",
-    "starters/hackathon/package-lock.json",
-    "starters/hackathon/.gitignore",
-    "starters/hackathon/.env.example",
-    "starters/hackathon/README.md",
-    "starters/hackathon/src/consumer.mjs",
-    "starters/hackathon/src/fulfillment.mjs",
-    "starters/hackathon/src/hosted.mjs",
-    "starters/hackathon/shared/contract.mjs",
-    "starters/hackathon/shared/fulfillment.mjs",
+    "starters/research-source-scout/package.json",
+    "starters/research-source-scout/package-lock.json",
+    "starters/research-source-scout/.gitignore",
+    "starters/research-source-scout/.env.example",
+    "starters/research-source-scout/README.md",
+    "starters/research-source-scout/src/consumer.mjs",
+    "starters/research-source-scout/src/fulfillment.mjs",
+    "starters/research-source-scout/src/hosted.mjs",
+    "starters/research-source-scout/shared/contract.mjs",
+    "starters/research-source-scout/shared/fulfillment.mjs",
   ];
   const sources = Object.fromEntries(await Promise.all(paths.map(async (path) => [path, await read(path)])));
-  const manifest = JSON.parse(sources["starters/hackathon/package.json"]);
+  const manifest = JSON.parse(sources["starters/research-source-scout/package.json"]);
   assert.equal(manifest.dependencies["@reapp-sdk/core"], "0.3.0");
   assert.equal(manifest.dependencies["@reapp-sdk/stellar"], "0.2.1");
   assert.equal(manifest.dependencies["@reapp-sdk/ap2"], "0.2.1");
@@ -123,30 +123,30 @@ test("the starter is deterministic, typed by package metadata, and testnet-only"
   assert.ok(manifest.scripts.demo);
   assert.ok(manifest.scripts.fulfillment);
   assert.equal(manifest.scripts.hosted, "node src/hosted.mjs");
-  assert.match(sources["starters/hackathon/.gitignore"], /^\.env$/m);
-  assert.match(sources["starters/hackathon/.gitignore"], /^\.reapp\/$/m);
-  assert.match(sources["starters/hackathon/src/consumer.mjs"], /runLocalTestnetDemo/);
-  assert.match(sources["starters/hackathon/src/fulfillment.mjs"], /startFulfillmentServer/);
-  assert.match(sources["starters/hackathon/src/hosted.mjs"], /\/api\\\/express\\\//, "the hosted companion must report verified rejection to the exact workspace path");
-  assert.match(sources["starters/hackathon/src/hosted.mjs"], /createBoundTestnetConsumer/);
-  assert.match(sources["starters/hackathon/src/hosted.mjs"], /purchaseVerifiedBoundJson/);
-  assert.match(sources["starters/hackathon/src/hosted.mjs"], /expectVerifiedBudgetRejection/);
-  assert.match(sources["starters/hackathon/shared/contract.mjs"], /proofPolicy:\s*["']bound-v2-only["']/);
-  assert.match(sources["starters/hackathon/shared/contract.mjs"], /reapp\.agent/);
-  assert.match(sources["starters/hackathon/shared/fulfillment.mjs"], /createBoundReappPaidJsonRoute/);
+  assert.match(sources["starters/research-source-scout/.gitignore"], /^\.env$/m);
+  assert.match(sources["starters/research-source-scout/.gitignore"], /^\.reapp\/$/m);
+  assert.match(sources["starters/research-source-scout/src/consumer.mjs"], /runLocalTestnetDemo/);
+  assert.match(sources["starters/research-source-scout/src/fulfillment.mjs"], /startFulfillmentServer/);
+  assert.match(sources["starters/research-source-scout/src/hosted.mjs"], /\/api\\\/express\\\//, "the hosted companion must report verified rejection to the exact workspace path");
+  assert.match(sources["starters/research-source-scout/src/hosted.mjs"], /createBoundTestnetConsumer/);
+  assert.match(sources["starters/research-source-scout/src/hosted.mjs"], /purchaseVerifiedBoundJson/);
+  assert.match(sources["starters/research-source-scout/src/hosted.mjs"], /expectVerifiedBudgetRejection/);
+  assert.match(sources["starters/research-source-scout/shared/contract.mjs"], /proofPolicy:\s*["']bound-v2-only["']/);
+  assert.match(sources["starters/research-source-scout/shared/contract.mjs"], /reapp\.agent/);
+  assert.match(sources["starters/research-source-scout/shared/fulfillment.mjs"], /createBoundReappPaidJsonRoute/);
   const combined = Object.values(sources).join("\n");
   assert.doesNotMatch(combined, /\bS[A-Z2-7]{55}\b/, "no Stellar secret seed may be committed");
   assert.doesNotMatch(combined, /@reapp\//, "only the @reapp-sdk namespace is valid");
-  assert.doesNotMatch(sources["starters/hackathon/.env.example"], /mainnet/i, "the starter environment must remain testnet-only");
-  assert.doesNotMatch(sources["starters/hackathon/src/consumer.mjs"], /reapp\.mainnet/i);
-  assert.doesNotMatch(sources["starters/hackathon/src/fulfillment.mjs"], /reapp\.mainnet/i);
+  assert.doesNotMatch(sources["starters/research-source-scout/.env.example"], /mainnet/i, "the starter environment must remain testnet-only");
+  assert.doesNotMatch(sources["starters/research-source-scout/src/consumer.mjs"], /reapp\.mainnet/i);
+  assert.doesNotMatch(sources["starters/research-source-scout/src/fulfillment.mjs"], /reapp\.mainnet/i);
 });
 
 test("the hosted page command stays in parity with the generated starter", async () => {
   const [page, manifestSource, hosted] = await Promise.all([
-    read("app/hackathon/page.tsx"),
-    read("starters/hackathon/package.json"),
-    read("starters/hackathon/src/hosted.mjs"),
+    read("app/solutions/page.tsx"),
+    read("starters/research-source-scout/package.json"),
+    read("starters/research-source-scout/src/hosted.mjs"),
   ]);
   const manifest = JSON.parse(manifestSource);
   assert.equal(manifest.scripts.hosted, "node src/hosted.mjs");
@@ -157,11 +157,11 @@ test("the hosted page command stays in parity with the generated starter", async
 
 test("new public copy follows repository terminology rules", async () => {
   const combined = [
-    await read("app/hackathon/page.tsx"),
-    await read("app/hackathon/layout.tsx"),
+    await read("app/solutions/page.tsx"),
+    await read("app/solutions/layout.tsx"),
     await read("app/llms.txt/route.ts"),
     await read("app/llms-full.txt/route.ts"),
-    await read("starters/hackathon/README.md"),
+    await read("starters/research-source-scout/README.md"),
   ].join("\n");
   assert.doesNotMatch(combined, /\b(?:audit|tranche|milestone)\b/i);
   assert.doesNotMatch(combined, /\bNO MOCKS\b/i);

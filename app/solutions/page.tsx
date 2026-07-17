@@ -229,7 +229,7 @@ const isWorkspace = (value: unknown): value is PersistedWorkspace => {
     && /^C[A-Z2-7]{55}$/.test(candidate.workspace.contractId);
 };
 
-export default function HackathonPage() {
+export default function SolutionsPage() {
   const [persisted, setPersisted] = useState<PersistedWorkspace | null>(null);
   const [events, setEvents] = useState<DemoEvent[]>([]);
   const [creating, setCreating] = useState(false);
@@ -694,7 +694,7 @@ export default function HackathonPage() {
             <div className="space-y-4 p-4">
               <p className="text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-200">Requirement:</strong> <a href="https://nodejs.org/en/download" target="_blank" rel="noreferrer" className="font-semibold text-emerald-300 underline decoration-emerald-400/30 underline-offset-4 hover:text-emerald-200">Node.js 20 or newer</a>.</p>
               <InstallerShellPicker value={installerShell} onChange={setInstallerShell} />
-              <CommandBlock label="1 · Set up the project" value={starterCommand("hackathon", installerShell)} copyKey="setup" copied={copied} onCopy={copyValue} />
+              <CommandBlock label="1 · Set up the project" value={starterCommand("research-source-scout", installerShell)} copyKey="setup" copied={copied} onCopy={copyValue} />
               <CommandBlock label="2 · Run the demo" value={runCommand} copyKey="run" copied={copied} onCopy={copyValue} disabled={!persisted} />
               <div className="rounded-xl border border-emerald-400/15 bg-[#020806] p-3 font-mono text-[11px] leading-relaxed text-emerald-100/65">
                 <div className="text-emerald-300">$ expected output</div>
@@ -845,7 +845,7 @@ export default function HackathonPage() {
           <div className="border-t border-white/10 bg-black/20 p-5 lg:border-l lg:border-t-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-emerald-100"><Code2 className="h-4 w-4 text-emerald-400" aria-hidden />Advanced mode</div>
             <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">The guided command runs <code className="text-emerald-300">src/hosted.mjs</code> against this page. Run <code className="text-emerald-300">npm run demo</code> for the complete local consumer-and-fulfillment flow, then edit either side directly.</p>
-            <a href="https://github.com/reapp-protocol/reapp-protocol-demo/tree/main/starters/hackathon" target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/75 transition hover:border-emerald-400/40 hover:text-emerald-100">
+            <a href="https://github.com/reapp-protocol/reapp-protocol-demo/tree/main/starters/research-source-scout" target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/75 transition hover:border-emerald-400/40 hover:text-emerald-100">
               Open starter source <ExternalLink className="h-3.5 w-3.5" aria-hidden />
             </a>
           </div>

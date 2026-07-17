@@ -170,7 +170,10 @@ export function validateCatalog(catalog) {
   requireUnique(catalog.kits.map((kit) => kit?.title), "kit titles");
   requireUnique(catalog.kits.map((kit) => kit?.paidResource), "paid resources");
   requireUnique(catalog.kits.map((kit) => kit?.negativePath?.id), "negative path ids");
-  requireCondition(catalog.kits[0]?.id === "research-source-scout" && catalog.kits[0]?.slug === "hackathon", "the verified starter must keep the stable hackathon slug");
+  requireCondition(
+    catalog.kits[0]?.id === "research-source-scout" && catalog.kits[0]?.slug === "research-source-scout",
+    "the verified starter must keep the stable research-source-scout slug",
+  );
 
   for (const kit of catalog.kits) {
     requireExactKeys(kit, KIT_KEYS, `kit ${kit?.id ?? "unknown"}`);

@@ -10,7 +10,7 @@ const routes = [
   "/composites",
   "/consumer",
   "/express",
-  "/hackathon",
+  "/solutions",
   "/research",
   "/t2",
   "/t2/demo",

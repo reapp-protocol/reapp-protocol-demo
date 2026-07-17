@@ -431,7 +431,7 @@ export default function ConsumerPage() {
               See the live research demo
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link href="/hackathon" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-50/75 transition hover:border-emerald-300/30 hover:text-white">
+            <Link href="/solutions" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-50/75 transition hover:border-emerald-300/30 hover:text-white">
               Build with REAPP
             </Link>
           </div>

@@ -10,7 +10,7 @@ You need Node.js 20 or newer. You do not need a wallet or a GitHub repo.
 
 ### If you used Copy setup command
 
-The setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran `npm ci`. Before extraction, it verified the ZIP against the exact SHA-256 in the [public integrity manifest](https://reapp.live/starters/v1/manifest.json). In the same VS Code terminal, run:
+The setup command on [reapp.live/solutions](https://reapp.live/solutions) already downloaded this starter, extracted it into your empty folder, and ran `npm ci`. Before extraction, it verified the ZIP against the exact SHA-256 in the [public integrity manifest](https://reapp.live/starters/v1/manifest.json). In the same VS Code terminal, run:
 
 ```bash
 npm run demo
@@ -45,7 +45,7 @@ flowchart LR
 
 The local demo above is the primary starter flow. To connect the same project to the browser companion afterward:
 
-1. Open [reapp.live/hackathon](https://reapp.live/hackathon).
+1. Open [reapp.live/solutions](https://reapp.live/solutions).
 2. Start the optional hosted walkthrough.
 3. Copy the displayed `npm run hosted -- --endpoint=... --merchant=...` command into this project's VS Code terminal and press **Enter**.
 
