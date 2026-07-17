@@ -9,7 +9,6 @@ import {
   ChevronDown,
   Code2,
   Copy,
-  Download,
   ExternalLink,
   FileCode2,
   KeyRound,
@@ -31,9 +30,16 @@ const STORAGE_KEY = "reapp-hackathon-workspace-v1";
 const SETUP_COMMAND = "curl -fsSLo reapp-hackathon.zip https://reapp.live/starters/v1/hackathon.zip && unzip -q reapp-hackathon.zip && rm reapp-hackathon.zip && npm ci";
 const STARTER_KITS = HACKATHON_STARTER_CATALOG.kits;
 const STARTER_CATEGORIES = ["All", ...Array.from(new Set(STARTER_KITS.map((kit) => kit.category)))];
+const STARTER_ACCENTS = [
+  { number: "bg-sky-400/10 text-sky-300", category: "border-sky-400/20 bg-sky-400/[0.07] text-sky-200/80" },
+  { number: "bg-violet-400/10 text-violet-300", category: "border-violet-400/20 bg-violet-400/[0.07] text-violet-200/80" },
+  { number: "bg-fuchsia-400/10 text-fuchsia-300", category: "border-fuchsia-400/20 bg-fuchsia-400/[0.07] text-fuchsia-200/80" },
+  { number: "bg-amber-400/10 text-amber-300", category: "border-amber-400/20 bg-amber-400/[0.07] text-amber-200/80" },
+  { number: "bg-cyan-400/10 text-cyan-300", category: "border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-200/80" },
+] as const;
 
 const starterCommand = (slug: string) =>
-  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci && npm run check && npm run demo`;
+  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci`;
 
 type ResourceSummary = { id: string; label: string; attempt: number };
 type Workspace = {
@@ -227,6 +233,8 @@ export default function HackathonPage() {
   const [openLesson, setOpenLesson] = useState<string>("mandate");
   const [starterQuery, setStarterQuery] = useState("");
   const [starterCategory, setStarterCategory] = useState("All");
+  const [selectedStarterSlug, setSelectedStarterSlug] = useState("");
+  const [showHostedDemo, setShowHostedDemo] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -406,35 +414,23 @@ export default function HackathonPage() {
       <motion.header {...fade()} className="mx-auto max-w-4xl text-center">
         <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          FIRST VERIFIED PAYMENT · ABOUT 60 SECONDS
+          20 STARTER PACKS · ABOUT 60 SECONDS
         </div>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">
-          Empty folder to a verified <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">402 → payment → 200</span>.
+          Pick a starter. Copy one command. <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(52,211,153,0.25)]">Start building.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-emerald-100/70 sm:text-lg">
-          Measured reference run: 48.317 seconds from an empty folder to the completed demo. Click Start, open an empty folder in VS Code, then copy each command into its terminal and press Enter. Network speed may vary.
+          Open an empty folder in VS Code. Pick one of the 20 packs below, copy its setup command, paste it into the terminal, and press Enter. Your project will be populated and ready to run.
         </p>
         <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-          <motion.button
-            type="button"
-            whileHover={creating || persisted ? {} : { scale: 1.025, y: -1 }}
-            whileTap={creating || persisted ? {} : { scale: 0.98 }}
-            onClick={createWorkspace}
-            disabled={creating || Boolean(persisted)}
+          <motion.a
+            href="#starter-packs"
+            whileHover={{ scale: 1.025, y: -1 }}
+            whileTap={{ scale: 0.98 }}
             className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-6 py-3 text-sm font-black text-[#06241a] shadow-[0_10px_36px_-8px_rgba(52,211,153,0.75)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-55 disabled:shadow-none"
           >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : persisted ? <Check className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
-            {creating ? "Starting…" : persisted ? "Ready" : "Start"}
-          </motion.button>
-          <button
-            type="button"
-            onClick={resetWorkspace}
-            disabled={!persisted || resetting}
-            className="inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-emerald-100/75 transition hover:border-emerald-400/35 hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60 disabled:cursor-not-allowed disabled:opacity-35"
-          >
-            {resetting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RotateCcw className="h-4 w-4" aria-hidden />}
-            Reset
-          </button>
+            <Layers3 className="h-4 w-4" aria-hidden /> Choose a starter
+          </motion.a>
         </div>
         <p className="mt-3 text-xs text-emerald-100/40">No GitHub repo or wallet needed · testnet only · private keys stay on your computer</p>
       </motion.header>
@@ -454,6 +450,164 @@ export default function HackathonPage() {
         )}
       </AnimatePresence>
 
+      <motion.section id="starter-packs" {...fade(0.14)} className="mt-12 scroll-mt-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
+            <Layers3 className="h-4 w-4" aria-hidden /> Choose from 20 starter packs
+          </div>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-emerald-50 sm:text-4xl">Pick one. Copy one command. Done.</h2>
+          <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">The setup command downloads your chosen pack, fills your empty folder, and installs everything. When it finishes, run <code className="text-emerald-300">npm run demo</code>.</p>
+        </div>
+
+        <div className="mx-auto mt-6 grid max-w-4xl gap-3 sm:grid-cols-2">
+          <GuideStep number="01" title="Pick a starter pack" detail="Choose the project you want below" complete={false} active={false} />
+          <GuideStep number="02" title="Open an empty folder" detail="In VS Code, select Terminal → New Terminal" complete={false} active={false} />
+          <GuideStep number="03" title="Copy setup command" detail="Paste it into the terminal and press Enter" complete={false} active={false} />
+          <GuideStep number="04" title="Run your project" detail="Type npm run demo and press Enter" complete={false} active={false} />
+        </div>
+
+        <div className="mt-7 overflow-hidden rounded-3xl border border-emerald-300/15 bg-[#06100d]/80">
+          <div className="border-b border-white/10 bg-white/[0.025] p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <label className="relative block min-w-0 flex-1 lg:max-w-md">
+                <span className="sr-only">Search starter kits</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-100/35" aria-hidden />
+                <input
+                  type="search"
+                  value={starterQuery}
+                  onChange={(event) => setStarterQuery(event.target.value)}
+                  placeholder="Search payments, compute, data, agents…"
+                  className="min-h-11 w-full rounded-xl border border-white/10 bg-black/30 py-2.5 pl-10 pr-3 text-sm text-emerald-100 outline-none placeholder:text-emerald-100/30 focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-300/15"
+                />
+              </label>
+              <div className="flex items-center justify-between gap-3 text-xs text-emerald-100/45 lg:justify-end">
+                <span><strong className="text-emerald-200">{visibleStarterKits.length}</strong> of {STARTER_KITS.length} starters</span>
+                <a href="/starters/v1/manifest.json" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-emerald-300/75 hover:text-emerald-200">
+                  Integrity manifest <ExternalLink className="h-3 w-3" aria-hidden />
+                </a>
+              </div>
+            </div>
+            <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Starter categories">
+              {STARTER_CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setStarterCategory(category)}
+                  aria-pressed={starterCategory === category}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60 ${starterCategory === category ? "border-emerald-400/35 bg-emerald-400/15 text-emerald-200" : "border-white/10 bg-black/20 text-emerald-100/45 hover:border-emerald-400/25 hover:text-emerald-100/75"}`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {visibleStarterKits.length ? (
+            <div className="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-2">
+              {visibleStarterKits.map((kit) => {
+                const starterIndex = STARTER_KITS.indexOf(kit);
+                const accent = STARTER_ACCENTS[starterIndex % STARTER_ACCENTS.length];
+                const selected = selectedStarterSlug === kit.slug;
+                const setupCopyKey = `starter-setup-${kit.slug}`;
+                const runCopyKey = `starter-run-${kit.slug}`;
+                const commandPanelId = `starter-commands-${kit.slug}`;
+                return (
+                  <article key={kit.id} className={`flex min-w-0 flex-col overflow-hidden rounded-2xl glass transition ${selected ? "ring-1 ring-emerald-300/45" : ""}`}>
+                    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl font-mono text-xs font-black ${accent.number}`}>{String(starterIndex + 1).padStart(2, "0")}</span>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-bold leading-snug text-emerald-100">{kit.title}</h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-100/40">
+                            <span className={`rounded-full border px-1.5 py-0.5 ${accent.category}`}>{kit.category}</span><span>{kit.difficulty}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <code className="shrink-0 rounded-lg border border-emerald-400/15 bg-emerald-400/[0.06] px-2 py-1 text-[9px] text-emerald-300/70">GET only</code>
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="text-sm leading-relaxed text-emerald-100/60">{kit.summary}</p>
+                      <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-[10px] text-emerald-200/65">{kit.paidResource}</code>
+                      <div className="mt-3 rounded-xl border border-red-400/15 bg-red-400/[0.035] p-3">
+                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-red-300/60">Enforced boundary</div>
+                        <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-100/50">{kit.negativePath.outcome}</p>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {kit.features.slice(0, 5).map((feature) => (
+                          <span key={feature} className="rounded-full border border-white/10 bg-white/[0.025] px-2 py-1 text-[9px] font-medium text-emerald-100/40">{feature}</span>
+                        ))}
+                      </div>
+
+                      <div className="mt-auto grid grid-cols-1 gap-2 pt-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedStarterSlug(selected ? "" : kit.slug)}
+                          aria-expanded={selected}
+                          aria-controls={commandPanelId}
+                          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-3 py-2 text-xs font-black text-[#06241a] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                        >
+                          {selected ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Layers3 className="h-3.5 w-3.5" aria-hidden />}
+                          <span className="truncate">{selected ? "Selected" : "Use this starter"}</span>
+                        </button>
+                        <a href={`https://github.com/reapp-protocol/reapp-protocol-demo/blob/main/starters/${kit.slug}/README.md`} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60">
+                          Read the README <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                        </a>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {selected && (
+                          <motion.div
+                            id={commandPanelId}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
+                              <p className="text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-100">Open an empty folder in VS Code.</strong> Open its terminal, copy command 1, paste it, and press Enter.</p>
+                              <CommandBlock label="1 · Populate this empty folder" value={starterCommand(kit.slug)} copyKey={setupCopyKey} copied={copied} onCopy={copyValue} />
+                              <p className="text-xs leading-relaxed text-emerald-100/55">When command 1 finishes, your starter is installed. Copy command 2 into the same terminal and press Enter.</p>
+                              <CommandBlock label="2 · Run your starter" value="npm run demo" copyKey={runCopyKey} copied={copied} onCopy={copyValue} />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid min-h-56 place-items-center p-6 text-center">
+              <div>
+                <Search className="mx-auto h-6 w-6 text-emerald-100/25" aria-hidden />
+                <p className="mt-3 text-sm text-emerald-100/45">No starters match that search and category.</p>
+                <button type="button" onClick={() => { setStarterQuery(""); setStarterCategory("All"); }} className="mt-3 text-xs font-semibold text-emerald-300 hover:text-emerald-200">Clear filters</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mx-auto mt-6 flex max-w-4xl flex-col gap-4 rounded-2xl border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div>
+            <div className="text-sm font-bold text-emerald-100">Optional hosted walkthrough: Research Source Scout</div>
+            <p className="mt-1 text-xs leading-relaxed text-emerald-100/45">Use the browser companion only after you have picked a starter. It shows the live 402 → payment → 200 flow, three settlements, and the contract-blocked fourth purchase.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowHostedDemo((current) => !current)}
+            aria-expanded={showHostedDemo}
+            aria-controls="optional-hosted-demo"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/[0.08] px-4 py-2.5 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300/50 hover:bg-emerald-400/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60"
+          >
+            <Play className="h-4 w-4" aria-hidden /> {showHostedDemo ? "Hide walkthrough" : "Open hosted walkthrough"}
+          </button>
+        </div>
+      </motion.section>
+
+      {showHostedDemo && (
+        <div id="optional-hosted-demo">
       <motion.section {...fade(0.08)} className="relative mt-10 overflow-hidden rounded-3xl border border-emerald-300/15 bg-[#06100d]/80 shadow-[0_24px_90px_-32px_rgba(16,185,129,0.5)] backdrop-blur-xl">
         <div className="border-b border-white/10 bg-white/[0.025] px-4 py-4 sm:px-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -463,6 +617,26 @@ export default function HackathonPage() {
                 <h2 className="text-sm font-bold tracking-wide text-emerald-100">GUIDED SETUP</h2>
               </div>
               <p className="mt-2 text-xs text-emerald-100/45">One setup command, one run command, then inspect the evidence.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={createWorkspace}
+                  disabled={creating || Boolean(persisted)}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-4 py-2 text-xs font-black text-[#06241a] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : persisted ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Play className="h-3.5 w-3.5" aria-hidden />}
+                  {creating ? "Starting…" : persisted ? "Demo ready" : "Start demo"}
+                </button>
+                <button
+                  type="button"
+                  onClick={resetWorkspace}
+                  disabled={!persisted || resetting}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2 text-xs font-semibold text-emerald-100/70 transition hover:border-emerald-400/35 disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  {resetting ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <RotateCcw className="h-3.5 w-3.5" aria-hidden />}
+                  Reset
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center sm:min-w-[360px]">
               <Stat label="delivered" value={delivered.length} tone={delivered.length ? "emerald" : "muted"} />
@@ -474,7 +648,7 @@ export default function HackathonPage() {
 
         <div className="grid min-w-0 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div className="min-w-0 space-y-3">
-            <GuideStep number="01" title="Click Start" detail={persisted ? "Your demo is ready" : "Use the Start button above"} complete={Boolean(persisted)} active={creating} />
+            <GuideStep number="01" title="Click Start demo" detail={persisted ? "Your demo is ready" : "Use the Start demo button in this panel"} complete={Boolean(persisted)} active={creating} />
             <GuideStep number="02" title="Copy command 1" detail="Open an empty folder in VS Code, paste it in the terminal, and press Enter" complete={copied === "setup" || Boolean(delivered.length)} active={false} />
             <GuideStep number="03" title="Copy command 2" detail="Paste it into the same terminal and press Enter" complete={delivered.length > 0} active={sawChallenge && !complete} />
             <GuideStep number="04" title="See the proof" detail="Three deliveries succeed and the fourth is blocked" complete={complete} active={delivered.length > 0 && !complete} />
@@ -586,116 +760,8 @@ export default function HackathonPage() {
           </div>
         </div>
       </motion.section>
-
-      <motion.section {...fade(0.14)} className="mt-12">
-        <div className="mx-auto max-w-3xl text-center">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
-            <Layers3 className="h-4 w-4" aria-hidden /> 20 self-contained starters
-          </div>
-          <h2 className="mt-3 text-3xl font-black tracking-tight text-emerald-50 sm:text-4xl">Pick a serious project. Keep the payment boundary.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-emerald-100/55">Choose a starter, click Copy one command, paste it into the terminal for an empty VS Code folder, and press Enter. Each kit includes editable consumer and Express fulfillment source.</p>
         </div>
-
-        <div className="mt-7 overflow-hidden rounded-3xl border border-emerald-300/15 bg-[#06100d]/80">
-          <div className="border-b border-white/10 bg-white/[0.025] p-4 sm:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <label className="relative block min-w-0 flex-1 lg:max-w-md">
-                <span className="sr-only">Search starter kits</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-100/35" aria-hidden />
-                <input
-                  type="search"
-                  value={starterQuery}
-                  onChange={(event) => setStarterQuery(event.target.value)}
-                  placeholder="Search payments, compute, data, agents…"
-                  className="min-h-11 w-full rounded-xl border border-white/10 bg-black/30 py-2.5 pl-10 pr-3 text-sm text-emerald-100 outline-none placeholder:text-emerald-100/30 focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-300/15"
-                />
-              </label>
-              <div className="flex items-center justify-between gap-3 text-xs text-emerald-100/45 lg:justify-end">
-                <span><strong className="text-emerald-200">{visibleStarterKits.length}</strong> of {STARTER_KITS.length} starters</span>
-                <a href="/starters/v1/manifest.json" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-emerald-300/75 hover:text-emerald-200">
-                  Integrity manifest <ExternalLink className="h-3 w-3" aria-hidden />
-                </a>
-              </div>
-            </div>
-            <div className="mt-3 flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Starter categories">
-              {STARTER_CATEGORIES.map((category) => (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setStarterCategory(category)}
-                  aria-pressed={starterCategory === category}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60 ${starterCategory === category ? "border-emerald-400/35 bg-emerald-400/15 text-emerald-200" : "border-white/10 bg-black/20 text-emerald-100/45 hover:border-emerald-400/25 hover:text-emerald-100/75"}`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {visibleStarterKits.length ? (
-            <div className="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-2">
-              {visibleStarterKits.map((kit) => {
-                const copyKey = `starter-${kit.slug}`;
-                return (
-                  <article key={kit.id} className="flex min-w-0 flex-col overflow-hidden rounded-2xl glass">
-                    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-white/10 bg-black/20 px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-400/10 font-mono text-xs font-black text-emerald-300">{String(STARTER_KITS.indexOf(kit) + 1).padStart(2, "0")}</span>
-                        <div className="min-w-0">
-                          <h3 className="text-sm font-bold leading-snug text-emerald-100">{kit.title}</h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-100/40">
-                            <span>{kit.category}</span><span aria-hidden>·</span><span>{kit.difficulty}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <code className="shrink-0 rounded-lg border border-emerald-400/15 bg-emerald-400/[0.06] px-2 py-1 text-[9px] text-emerald-300/70">GET only</code>
-                    </div>
-
-                    <div className="flex flex-1 flex-col p-4">
-                      <p className="text-sm leading-relaxed text-emerald-100/60">{kit.summary}</p>
-                      <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/8 bg-black/25 px-3 py-2 text-[10px] text-emerald-200/65">{kit.paidResource}</code>
-                      <div className="mt-3 rounded-xl border border-red-400/15 bg-red-400/[0.035] p-3">
-                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-red-300/60">Enforced boundary</div>
-                        <p className="mt-1.5 text-[11px] leading-relaxed text-emerald-100/50">{kit.negativePath.outcome}</p>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {kit.features.slice(0, 5).map((feature) => (
-                          <span key={feature} className="rounded-full border border-white/10 bg-white/[0.025] px-2 py-1 text-[9px] font-medium text-emerald-100/40">{feature}</span>
-                        ))}
-                      </div>
-
-                      <div className="mt-auto grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 pt-4">
-                        <button
-                          type="button"
-                          onClick={() => void copyValue(starterCommand(kit.slug), copyKey)}
-                          className="inline-flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 px-3 py-2 text-xs font-black text-[#06241a] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
-                        >
-                          {copied === copyKey ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
-                          <span className="truncate">{copied === copyKey ? "Copied" : "Copy one command"}</span>
-                        </button>
-                        <a href={`/starters/v1/${kit.slug}.zip`} download className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60" aria-label={`Download ${kit.title} archive`}>
-                          <Download className="h-4 w-4" aria-hidden />
-                        </a>
-                        <a href={`https://github.com/reapp-protocol/reapp-protocol-demo/tree/main/starters/${kit.slug}`} target="_blank" rel="noreferrer" className="grid h-10 w-10 place-items-center rounded-xl border border-white/15 text-emerald-100/60 transition hover:border-emerald-400/35 hover:text-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60" aria-label={`Open ${kit.title} source`}>
-                          <ExternalLink className="h-4 w-4" aria-hidden />
-                        </a>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid min-h-56 place-items-center p-6 text-center">
-              <div>
-                <Search className="mx-auto h-6 w-6 text-emerald-100/25" aria-hidden />
-                <p className="mt-3 text-sm text-emerald-100/45">No starters match that search and category.</p>
-                <button type="button" onClick={() => { setStarterQuery(""); setStarterCategory("All"); }} className="mt-3 text-xs font-semibold text-emerald-300 hover:text-emerald-200">Clear filters</button>
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.section>
+      )}
 
       <motion.section {...fade(0.16)} className="mt-12">
         <div className="mx-auto max-w-3xl text-center">

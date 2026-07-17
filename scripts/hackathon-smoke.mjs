@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { once } from "node:events";
 import net from "node:net";
 
@@ -43,7 +44,22 @@ async function waitForSite() {
 try {
   const hackathon = await waitForSite();
   assert.equal(hackathon.status, 200);
-  assert.match(await hackathon.text(), /Empty folder to a verified/);
+  const hackathonPage = await hackathon.text();
+  for (const required of ["Use this starter", "Copy setup command", "npm run demo", "Read the README", "Optional hosted walkthrough"]) {
+    assert.match(hackathonPage, new RegExp(required), required);
+  }
+
+  const starterManifestResponse = await fetch(`${origin}/starters/v1/manifest.json`);
+  assert.equal(starterManifestResponse.status, 200);
+  const starterManifest = await starterManifestResponse.json();
+  assert.equal(starterManifest.kits.length, 20);
+  const hackathonKit = starterManifest.kits.find(({ slug }) => slug === "hackathon");
+  assert.ok(hackathonKit);
+  const starterArchiveResponse = await fetch(`${origin}${hackathonKit.archive}`);
+  assert.equal(starterArchiveResponse.status, 200);
+  const starterArchive = Buffer.from(await starterArchiveResponse.arrayBuffer());
+  assert.equal(starterArchive.length, hackathonKit.size);
+  assert.equal(createHash("sha256").update(starterArchive).digest("hex"), hackathonKit.sha256);
 
   const expressPage = await fetch(`${origin}/express`);
   assert.equal(expressPage.status, 200);

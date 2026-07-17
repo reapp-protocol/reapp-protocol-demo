@@ -8,31 +8,43 @@ This self-contained REAPP starter protects `GET /source/:sourceId` with a reques
 
 You need Node.js 20 or newer. You do not need a wallet or a GitHub repo.
 
-1. Open this folder in VS Code.
-2. Select **Terminal → New Terminal**.
-3. Paste this line and press **Enter**:
+### If you used Copy setup command
+
+The setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran `npm ci`. In the same VS Code terminal, run:
 
 ```bash
-npm ci && npm run check && npm run demo
+npm run demo
 ```
 
-That one line installs the packages, checks the starter, and runs the live testnet demo. It never requests a wallet or mainnet secret.
-## Run with reapp.live
+### If you downloaded the ZIP manually
+
+Extract the ZIP, open the extracted folder in VS Code, select **Terminal → New Terminal**, then run:
+
+```bash
+npm ci
+npm run demo
+```
+
+The demo creates disposable testnet accounts, starts the local consumer and fulfillment service, and runs the scenario. It never requests a wallet or mainnet secret.
+
+## Optional hosted walkthrough
+
+The local demo above is the primary starter flow. To connect the same project to the browser companion afterward:
 
 1. Open [reapp.live/hackathon](https://reapp.live/hackathon).
-2. Click **Start**.
-3. Copy command 2 into the same VS Code terminal and press **Enter**.
+2. Start the optional hosted walkthrough.
+3. Copy the displayed `npm run hosted -- --endpoint=... --merchant=...` command into this project's VS Code terminal and press **Enter**.
 
-The browser and terminal show the same paid demo. Your private signers and recovery evidence stay in this local folder.
+The browser and terminal then show the same hosted paid flow. Your private signers and recovery evidence stay in this local folder.
 
 ## What success looks like
 
-The terminal prints:
+The terminal shows:
 
-1. The offline gate check passing.
-2. The local fulfillment server starting.
-3. Paid testnet requests completing with Stellar explorer links.
-4. The named rejection check being blocked as expected.
+1. The local fulfillment server starting.
+2. Accepted Stellar testnet payment evidence with explorer transaction hashes.
+3. The protected result delivered to the consumer.
+4. The named negative or recovery check reaching its documented outcome.
 
 ## Scenario
 
