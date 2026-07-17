@@ -577,7 +577,7 @@ export default function HackathonPage() {
                               <InstallerShellPicker value={installerShell} onChange={setInstallerShell} />
                               <p className="text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-100">Open an empty folder in VS Code.</strong> Open its terminal, copy command 1, paste it, and press Enter.</p>
                               <CommandBlock label="1 · Populate this empty folder" value={starterCommand(kit.slug, installerShell)} copyKey={setupCopyKey} copied={copied} onCopy={copyValue} />
-                              <p className="text-[11px] leading-relaxed text-emerald-100/40">Command 1 checks the ZIP&apos;s exact published SHA-256 before extracting any file.</p>
+                              <p className="text-[11px] leading-relaxed text-emerald-100/40">The installer verifies the download before extracting any file.</p>
                               <p className="text-xs leading-relaxed text-emerald-100/55">When command 1 finishes, your starter is installed. Copy command 2 into the same terminal and press Enter.</p>
                               <CommandBlock label="2 · Run your starter" value="npm run demo" copyKey={runCopyKey} copied={copied} onCopy={copyValue} />
                               <p className="rounded-xl border border-emerald-400/15 bg-emerald-400/[0.04] p-3 text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-200">Then just read the screen.</strong> Six numbered steps explain the practice accounts, HTTP 402, contract payment, HTTP 200 result, Stellar proof links, and this starter&apos;s safety check.</p>

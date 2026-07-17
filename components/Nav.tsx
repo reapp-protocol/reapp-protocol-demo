@@ -11,7 +11,7 @@ const links = [
   { href: "/express", label: "Express" },
   { href: "/ap2", label: "AP2" },
   { href: "/research", label: "Research" },
-  { href: "/hackathon", label: "Hackathon" },
+  { href: "/hackathon", label: "Solutions" },
 ];
 
 export default function Nav() {

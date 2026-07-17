@@ -21,9 +21,9 @@ test("the verified Express runtime remains byte-for-byte unchanged", async () =>
   }
 });
 
-test("navigation exposes Hackathon without deleting the direct Video route", async () => {
+test("navigation exposes Solutions without deleting the direct Video route", async () => {
   const [nav, video] = await Promise.all([read("components/Nav.tsx"), read("app/video/page.tsx")]);
-  assert.match(nav, /href: "\/hackathon", label: "Hackathon"/);
+  assert.match(nav, /href: "\/hackathon", label: "Solutions"/);
   assert.doesNotMatch(nav, /href: "\/video", label: "Video"/);
   assert.match(nav, /href: "\/express", label: "Express"/);
   assert.ok(video.length > 100);
@@ -70,17 +70,19 @@ test("the Hackathon page keeps the established responsive pattern and complete g
   assert.match(page, /starterCommand\(kit\.slug, installerShell\)/);
   assert.match(page, /starterCommand\("hackathon", installerShell\)/);
   assert.match(installer, /createHash\('sha256'\)/);
-  assert.match(installer, /Starter integrity check failed/);
+  assert.match(installer, /Installer integrity check failed/);
   assert.match(installer, /Invoke-WebRequest/);
   assert.match(installer, /Expand-Archive/);
+  assert.match(installer, /Get-FileHash/);
+  assert.match(installer, /powershell\.exe -NoProfile -ExecutionPolicy Bypass/);
   assert.match(installer, /\$LASTEXITCODE/);
-  assert.match(page, /checks the ZIP&apos;s exact published SHA-256 before extracting any file/);
+  assert.match(page, /installer verifies the download before extracting any file/);
   const starterSetup = [...installer.matchAll(/return `([^`]+)`;/g)].at(-1)?.[1];
   assert.ok(starterSetup, "starter setup helper is missing");
-  assert.match(starterSetup, /https:\/\/reapp\.live\$\{archive\}/);
+  assert.match(starterSetup, /https:\/\/reapp\.live\$\{installer\.path\}/);
   assert.match(starterSetup, /node -e/);
-  assert.match(starterSetup, /unzip -q/);
-  assert.match(starterSetup, /npm ci$/);
+  assert.match(starterSetup, /sh reapp-setup\.sh/);
+  assert.doesNotMatch(starterSetup, /unzip -q|npm ci/);
   assert.doesNotMatch(starterSetup, /npm run/);
   assert.doesNotMatch(installer, /curl[^\n|]*\|\s*(?:sh|bash)/);
   assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/blob\/main\/starters\/\$\{kit\.slug\}\/README\.md/);

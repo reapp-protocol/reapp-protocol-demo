@@ -55,6 +55,17 @@ test("generated TypeScript is byte-for-byte current", async () => {
   assert.equal(generated, renderGeneratedMetadata(catalog, dependencyPolicy));
 });
 
+test("the main README leads with a shareable plain-text starter catalog", async () => {
+  const readme = await readFile(resolveRepositoryPath("README.md"), "utf8");
+  const catalog = readme.indexOf("## Choose from 20 starter packs");
+  const setup = readme.indexOf("## Start here: empty folder to a working testnet demo");
+  assert.ok(catalog > 0, "starter catalog is missing");
+  assert.ok(setup > catalog, "starter catalog must appear before setup instructions");
+  assert.match(readme, /Share the full catalog with your team/);
+  assert.equal(readme.match(/^\| \d{2} \|/gm)?.length, 20);
+  assert.doesNotMatch(readme, /img\.shields\.io\/badge\//);
+});
+
 test("dependency policy uses only exact approved package versions", async () => {
   const { dependencyPolicy } = await loadCatalogInputs();
   assert.equal(dependencyPolicy.installCommand, "npm ci");
@@ -135,12 +146,7 @@ test("all twenty generated packages are self-contained and use one exact canonic
     assert.match(readme, /HTTP 200/);
     assert.match(readme, /no real money/i);
     assert.equal(readme.match(/^```mermaid$/gm)?.length, 2, `${kit.id} must contain two Mermaid diagrams`);
-    assert.match(readme, /img\.shields\.io\/badge\/Stellar-Testnet-7B73FF/);
-    assert.match(readme, /%40reapp--sdk%2Fcore-0\.3\.0-CB3837/);
-    assert.match(readme, /%40reapp--sdk%2Fstellar-0\.2\.1-7C3AED/);
-    assert.match(readme, /%40reapp--sdk%2Fap2-0\.2\.1-2563EB/);
-    assert.match(readme, /%40reapp--sdk%2Fexpress--middleware-0\.2\.1-059669/);
-    assert.match(readme, new RegExp(`Safety_check-${kit.negativePath.id.replaceAll("-", "--")}-E11D48`));
+    assert.doesNotMatch(readme, /img\.shields\.io\/badge\//);
     assert.match(readme, /Make it yours/);
     assert.match(readme, /Start with these three files/);
     assert.match(readme, /`scenario\/scenario\.mjs`/);
@@ -216,6 +222,16 @@ test("manifest hashes, sizes, paths, and generated trees match the committed arc
     assert.equal(entry.sha256, createHash("sha256").update(built.archive).digest("hex"));
     assert.equal(entry.size, built.archive.byteLength);
     assert.equal(entry.files, built.files.size);
+    for (const shell of ["posix", "powershell"]) {
+      const installer = built.installers[shell];
+      assert.equal(entry.installers[shell].path, installer.path);
+      assert.equal(entry.installers[shell].sha256, createHash("sha256").update(installer.source).digest("hex"));
+      assert.equal(entry.installers[shell].size, installer.source.byteLength);
+      const committedInstaller = await readFile(resolveRepositoryPath(
+        `${GENERATED_ARCHIVES_RELATIVE_PATH}/${entry.slug}.${shell === "posix" ? "sh" : "ps1"}`,
+      ));
+      assert.equal(committedInstaller.equals(installer.source), true, `${entry.id}/${shell}`);
+    }
     const committedArchive = await readFile(resolveRepositoryPath(`${GENERATED_ARCHIVES_RELATIVE_PATH}/${entry.slug}.zip`));
     assert.equal(committedArchive.equals(built.archive), true, entry.id);
     for (const [path, contents] of built.files) {

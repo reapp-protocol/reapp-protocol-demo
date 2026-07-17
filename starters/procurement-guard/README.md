@@ -2,16 +2,6 @@
 
 **A purchasing agent evaluates approved vendor quote fixtures offline and buys one explicitly selected allowlisted quote pack.**
 
-[![Stellar testnet](https://img.shields.io/badge/Stellar-Testnet-7B73FF?style=flat-square&logo=stellar&logoColor=white)](https://stellar.expert/explorer/testnet)
-[![HTTP payment flow](https://img.shields.io/badge/HTTP-402_%E2%86%92_contract_%E2%86%92_200-14B8A6?style=flat-square)](https://reapp.live/express)
-[![Small-business automation](https://img.shields.io/badge/Use_case-Small--business_automation-9333EA?style=flat-square)](https://reapp.live/hackathon#starter-packs)
-[![Beginner](https://img.shields.io/badge/Level-Beginner-047857?style=flat-square)](https://reapp.live/hackathon#starter-packs)
-[![unauthorized-vendor](https://img.shields.io/badge/Safety_check-unauthorized--vendor-E11D48?style=flat-square)](#scenario)
-[![REAPP core](https://img.shields.io/badge/%40reapp--sdk%2Fcore-0.3.0-CB3837?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/core)
-[![REAPP Stellar](https://img.shields.io/badge/%40reapp--sdk%2Fstellar-0.2.1-7C3AED?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/stellar)
-[![REAPP AP2](https://img.shields.io/badge/%40reapp--sdk%2Fap2-0.2.1-2563EB?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/ap2)
-[![REAPP Express middleware](https://img.shields.io/badge/%40reapp--sdk%2Fexpress--middleware-0.2.1-059669?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/express-middleware)
-
 This starter protects `GET /vendors/:vendorId/quote-packs/:requestId` with a request-bound payment on Stellar testnet. The app asks; the MandateRegistry contract decides whether money moves.
 
 ## Start — two commands, no wallet

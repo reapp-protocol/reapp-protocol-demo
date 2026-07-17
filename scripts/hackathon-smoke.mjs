@@ -60,6 +60,17 @@ try {
   const starterArchive = Buffer.from(await starterArchiveResponse.arrayBuffer());
   assert.equal(starterArchive.length, hackathonKit.size);
   assert.equal(createHash("sha256").update(starterArchive).digest("hex"), hackathonKit.sha256);
+  for (const shell of ["posix", "powershell"]) {
+    const metadata = hackathonKit.installers[shell];
+    const installerResponse = await fetch(`${origin}${metadata.path}`);
+    assert.equal(installerResponse.status, 200);
+    const installer = await installerResponse.text();
+    assert.equal(Buffer.byteLength(installer), metadata.size);
+    assert.equal(createHash("sha256").update(installer).digest("hex"), metadata.sha256);
+    assert.match(installer, new RegExp(hackathonKit.sha256));
+    assert.match(installer, /Starter integrity check failed/);
+    assert.match(installer, /npm ci/);
+  }
 
   const expressPage = await fetch(`${origin}/express`);
   assert.equal(expressPage.status, 200);
