@@ -21,11 +21,18 @@ test("the verified Express runtime remains byte-for-byte unchanged", async () =>
   }
 });
 
-test("navigation exposes Solutions without deleting the direct Video route", async () => {
-  const [nav, video] = await Promise.all([read("components/Nav.tsx"), read("app/video/page.tsx")]);
+test("navigation exposes Consumer and Solutions without deleting the direct Video route", async () => {
+  const [nav, consumer, video] = await Promise.all([
+    read("components/Nav.tsx"),
+    read("app/consumer/page.tsx"),
+    read("app/video/page.tsx"),
+  ]);
+  assert.match(nav, /href: "\/consumer", label: "Consumer"/);
   assert.match(nav, /href: "\/hackathon", label: "Solutions"/);
   assert.doesNotMatch(nav, /href: "\/video", label: "Video"/);
   assert.match(nav, /href: "\/express", label: "Express"/);
+  assert.match(consumer, /Preview only · no funds move/);
+  assert.match(consumer, /No wallet was created and no transaction was signed/);
   assert.ok(video.length > 100);
 });
 

@@ -49,6 +49,10 @@ The documentation page shows a clean-clone testnet run, published package instal
 
 The CLI surface demonstrates actor setup, mandate creation, payment submission, inspection, and rejection paths from the terminal. CLI output should be treated as an interface over contract and rail evidence, not as the source of truth for settlement.
 
+### Consumer — https://reapp.live/consumer
+
+The Consumer page previews a person-facing task flow that translates an outcome, maximum budget, approved service type, expiry, and human approval rule into bounded agent authority. Its interactive mandate builder is a product preview: it does not create a wallet, sign a transaction, or move funds.
+
 ### Express — https://reapp.live/express
 
 The Express flow demonstrates pay-per-use API fulfillment. A 402 response describes a scoped requirement; the consumer checks it against the mandate, settles, and retries with proof. The middleware verifies the REAPP event and token transfer before the route handler can return the protected value. Production deployments need a shared durable redemption store across workers.

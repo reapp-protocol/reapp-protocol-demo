@@ -133,6 +133,7 @@ This repository powers the implementation guide and inspectable demonstrations a
 |---|---|
 | [**Docs**](https://reapp.live/) | SDK installation, consumer flow, Express verification, testnet execution, and safety boundary. |
 | [**CLI**](https://reapp.live/cli) | Actor setup, mandate creation, payment, and terminal rejection paths. |
+| [**Consumer**](https://reapp.live/consumer) | A product preview for turning a consumer request, budget, scope, expiry, and approval rule into bounded agent authority. |
 | [**Express**](https://reapp.live/express) | `402` challenge, contract settlement, one-time redemption, and `200` fulfillment. |
 | [**Hackathon**](https://reapp.live/hackathon) | Twenty blank-folder starters plus the optional hosted Research Source Scout walkthrough. |
 | [**AP2**](https://reapp.live/ap2) | Intent and transaction mandate binding, canonical signatures, scope, expiry, and replay checks. |
