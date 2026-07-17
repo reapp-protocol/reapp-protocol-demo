@@ -30,16 +30,23 @@ test("navigation exposes Hackathon without deleting the direct Video route", asy
 });
 
 test("the Hackathon page keeps the established responsive pattern and complete guide", async () => {
-  const [page, layout, sitemap] = await Promise.all([
+  const [page, layout, sitemap, installer] = await Promise.all([
     read("app/hackathon/page.tsx"),
     read("app/hackathon/layout.tsx"),
     read("app/sitemap.ts"),
+    read("lib/starter-install.js"),
   ]);
   for (const required of [
     "Use this starter",
     "Copy setup command",
     "npm run demo",
     "Read the README",
+    "Then just read the screen",
+    "Six numbered steps explain",
+    "Requires Node.js 20+",
+    "Node.js 20 or newer",
+    "Mac / Linux",
+    "Windows PowerShell",
     "Optional hosted walkthrough",
     "Merchant scope",
     "Replay defense",
@@ -56,16 +63,26 @@ test("the Hackathon page keeps the established responsive pattern and complete g
   ]) assert.match(page, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), required);
   assert.match(layout, /path: "\/hackathon"/);
   assert.match(sitemap, /"\/hackathon"/);
-  const guidedSetup = page.match(/const SETUP_COMMAND = "([^"]+)";/)?.[1];
-  assert.ok(guidedSetup, "guided setup command is missing");
-  assert.match(guidedSetup, /\/starters\/v1\/hackathon\.zip/);
-  assert.match(guidedSetup, /npm ci$/);
-  assert.doesNotMatch(guidedSetup, /npm run/);
-  const starterSetup = page.match(/const starterCommand = \(slug: string\) =>\s*`([^`]+)`;/)?.[1];
+  assert.match(page, /import STARTER_MANIFEST from "@\/public\/starters\/v1\/manifest\.json"/);
+  assert.match(page, /import \{ buildStarterInstallCommand \} from "@\/lib\/starter-install"/);
+  assert.match(page, /const STARTER_ARCHIVES = new Map/);
+  assert.match(page, /const \[installerShell, setInstallerShell\] = useState<InstallerShell>\("posix"\)/);
+  assert.match(page, /starterCommand\(kit\.slug, installerShell\)/);
+  assert.match(page, /starterCommand\("hackathon", installerShell\)/);
+  assert.match(installer, /createHash\('sha256'\)/);
+  assert.match(installer, /Starter integrity check failed/);
+  assert.match(installer, /Invoke-WebRequest/);
+  assert.match(installer, /Expand-Archive/);
+  assert.match(installer, /\$LASTEXITCODE/);
+  assert.match(page, /checks the ZIP&apos;s exact published SHA-256 before extracting any file/);
+  const starterSetup = [...installer.matchAll(/return `([^`]+)`;/g)].at(-1)?.[1];
   assert.ok(starterSetup, "starter setup helper is missing");
-  assert.match(starterSetup, /\/starters\/v1\/\$\{slug\}\.zip/);
+  assert.match(starterSetup, /https:\/\/reapp\.live\$\{archive\}/);
+  assert.match(starterSetup, /node -e/);
+  assert.match(starterSetup, /unzip -q/);
   assert.match(starterSetup, /npm ci$/);
   assert.doesNotMatch(starterSetup, /npm run/);
+  assert.doesNotMatch(installer, /curl[^\n|]*\|\s*(?:sh|bash)/);
   assert.match(page, /github\.com\/reapp-protocol\/reapp-protocol-demo\/blob\/main\/starters\/\$\{kit\.slug\}\/README\.md/);
   assert.doesNotMatch(page, /degit/);
   assert.doesNotMatch(page, /npm ci && npm run/);

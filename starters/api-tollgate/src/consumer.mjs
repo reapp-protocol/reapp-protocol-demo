@@ -2,20 +2,32 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { runLocalTestnetDemo } from "../shared/local-demo.mjs";
+import { createBeginnerDemoPresenter } from "../shared/presenter.mjs";
 import { createScenario } from "../scenario/scenario.mjs";
 import { EXPECTED_SCENARIO_METADATA } from "../scenario/metadata.mjs";
 
 export const scenario = createScenario(EXPECTED_SCENARIO_METADATA);
+export const starter = Object.freeze({
+  "id": "api-tollgate",
+  "negativePathId": "upstream-not-allowlisted",
+  "negativePathOutcome": "An upstream route outside the explicit allowlist is rejected before a payment challenge is issued.",
+  "paidResource": "GET /gateway/:service/:resourceId",
+  "summary": "Demonstrate an allowlisted fixture-gateway pattern for a read-only API boundary.",
+  "title": "Existing API Tollgate"
+});
 
 function printHelp() {
-  console.log(`REAPP ${scenario.id} starter
+  console.log(`REAPP starter: ${starter.title}
 
 Usage:
   npm run check  # deterministic offline business vectors
-  npm run demo   # disposable consumer + fulfillment on Stellar testnet
+  npm run demo   # guided consumer + fulfillment demo on Stellar testnet
 
-The live command creates disposable testnet keys and writes recovery evidence
-under .reapp/. It never requests a wallet or mainnet secret.`);
+The demo explains each 402, contract payment, 200 response, and safety check in
+plain English. It creates temporary testnet keys, stores private recovery data
+under .reapp/, and never requests a wallet or mainnet secret.
+
+Advanced: REAPP_VERBOSE=1 npm run demo also shows developer event names.`);
 }
 
 export async function runDemo({ stateRoot = resolve(".reapp"), onEvent } = {}) {
@@ -29,18 +41,16 @@ async function main() {
     return;
   }
   if (argumentsList.length !== 0) throw new Error("demo accepts only --help");
-  const result = await runDemo({
-    onEvent(event) {
-      const detail = event.txHash ? ` · ${event.txHash}` : "";
-      console.log(`[${event.type}]${detail}`);
-    },
-  });
-  console.log(`Complete: ${result.delivered} paid deliver${result.delivered === 1 ? "y" : "ies"}; ${result.negativePathId} verified.`);
+  const presenter = createBeginnerDemoPresenter({ scenario, starter });
+  const result = await runDemo({ onEvent: presenter.onEvent });
+  presenter.finish(result);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error) => {
-    console.error(`REAPP demo stopped safely: ${error instanceof Error ? error.message : String(error)}`);
+    console.error("\nThe demo stopped safely before it could finish.");
+    console.error(`Reason: ${error instanceof Error ? error.message : String(error)}`);
+    console.error("Your recovery evidence is still in .reapp/. Read README.md before resetting it.");
     process.exitCode = 1;
   });
 }

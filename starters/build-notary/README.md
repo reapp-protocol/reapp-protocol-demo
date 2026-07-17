@@ -1,16 +1,26 @@
 # Build Notary
 
-Buy a signed fixture statement binding an artifact hash to declared dependency and build-command metadata.
+**Buy a signed fixture statement binding an artifact hash to declared dependency and build-command metadata.**
 
-This self-contained REAPP starter protects `GET /attestations/:artifactSha` with a request-bound v2 payment on Stellar testnet. The MandateRegistry contract is the spending authority; the SDK and this application are untrusted clients of that contract.
+[![Stellar testnet](https://img.shields.io/badge/Stellar-Testnet-7B73FF?style=flat-square&logo=stellar&logoColor=white)](https://stellar.expert/explorer/testnet)
+[![HTTP payment flow](https://img.shields.io/badge/HTTP-402_%E2%86%92_contract_%E2%86%92_200-14B8A6?style=flat-square)](https://reapp.live/express)
+[![Software supply chain](https://img.shields.io/badge/Use_case-Software_supply_chain-475569?style=flat-square)](https://reapp.live/hackathon#starter-packs)
+[![Advanced](https://img.shields.io/badge/Level-Advanced-6D28D9?style=flat-square)](https://reapp.live/hackathon#starter-packs)
+[![artifact-hash-mismatch](https://img.shields.io/badge/Safety_check-artifact--hash--mismatch-E11D48?style=flat-square)](#scenario)
+[![REAPP core](https://img.shields.io/badge/%40reapp--sdk%2Fcore-0.3.0-CB3837?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/core)
+[![REAPP Stellar](https://img.shields.io/badge/%40reapp--sdk%2Fstellar-0.2.1-7C3AED?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/stellar)
+[![REAPP AP2](https://img.shields.io/badge/%40reapp--sdk%2Fap2-0.2.1-2563EB?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/ap2)
+[![REAPP Express middleware](https://img.shields.io/badge/%40reapp--sdk%2Fexpress--middleware-0.2.1-059669?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@reapp-sdk/express-middleware)
 
-## Start
+This starter protects `GET /attestations/:artifactSha` with a request-bound payment on Stellar testnet. The app asks; the MandateRegistry contract decides whether money moves.
+
+## Start — two commands, no wallet
 
 You need Node.js 20 or newer. You do not need a wallet or a GitHub repo.
 
 ### If you used Copy setup command
 
-The setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran `npm ci`. In the same VS Code terminal, run:
+The setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran `npm ci`. Before extraction, it verified the ZIP against the exact SHA-256 in the [public integrity manifest](https://reapp.live/starters/v1/manifest.json). In the same VS Code terminal, run:
 
 ```bash
 npm run demo
@@ -18,29 +28,68 @@ npm run demo
 
 ### If you downloaded the ZIP manually
 
-Extract the ZIP, open the extracted folder in VS Code, select **Terminal → New Terminal**, then run:
+Compare its SHA-256 with the [public integrity manifest](https://reapp.live/starters/v1/manifest.json), extract the ZIP, open the extracted folder in VS Code, select **Terminal → New Terminal**, then run:
 
 ```bash
 npm ci
 npm run demo
 ```
 
-The demo creates disposable testnet accounts, starts the local consumer and fulfillment service, and runs the scenario. It never requests a wallet or mainnet secret.
+The demo creates disposable testnet accounts, starts the consumer and Express fulfillment service, and explains every step in plain English. It never requests a wallet or mainnet secret.
 
-## What success looks like
+```mermaid
+flowchart LR
+    A["① Open an empty folder"] --> B["② Copy the setup command"]
+    B --> C["③ Run npm run demo"]
+    C --> D["④ Read the guided result"]
+    D --> E["⑤ Open the Stellar proof links"]
 
-The terminal shows:
+    style A fill:#052e2b,stroke:#14b8a6,color:#ecfdf5
+    style B fill:#082f49,stroke:#0ea5e9,color:#f0f9ff
+    style C fill:#312e81,stroke:#818cf8,color:#eef2ff
+    style D fill:#4c1d95,stroke:#a78bfa,color:#f5f3ff
+    style E fill:#064e3b,stroke:#34d399,color:#ecfdf5
+```
 
-1. The local fulfillment server starting.
-2. Accepted Stellar testnet payment evidence with explorer transaction hashes.
-3. The protected result delivered to the consumer.
-4. The named negative or recovery check reaching its documented outcome.
+## What the terminal will teach you
+
+The guided output uses six numbered steps and explains the important words:
+
+1. **Testnet accounts** are temporary practice accounts. No real money is used.
+2. **HTTP 402** means the API is working and requires payment.
+3. **Contract approval** means the user's exact spending rules allowed the payment.
+4. **HTTP 200** means the paid result was delivered.
+5. **Stellar proof links** let anyone inspect each accepted payment.
+6. **The safety check** proves this starter's named boundary or recovery behavior.
+
+The terminal shows the local fulfillment server starting, accepted Stellar testnet payment evidence with explorer transaction hashes, the protected result delivered to the consumer, and the named negative or recovery check reaching its documented outcome.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant You
+    participant Agent as Consumer agent
+    participant API as Express API
+    participant Contract as MandateRegistry
+    participant Stellar as Stellar testnet
+
+    You->>Agent: Run npm run demo
+    Agent->>API: GET protected result
+    API-->>Agent: 402 Payment Required
+    Agent->>Contract: Request the exact payment
+    Contract->>Stellar: Verify the spending rules
+    Stellar-->>Agent: Confirm payment
+    Agent->>API: Retry with payment proof
+    API-->>Agent: 200 + protected result
+    Agent->>Agent: Verify the named safety or recovery check
+```
 
 ## Scenario
 
 - Paid resource: `GET /attestations/:artifactSha`
 - Price policy: exact decimal amounts declared by the scenario
-- Negative path: `artifact-hash-mismatch` — A statement carrying an artifact hash different from the requested artifact fails local verification.
+- Safety or recovery check: `artifact-hash-mismatch`
+- Expected outcome: A statement carrying an artifact hash different from the requested artifact fails local verification.
 - Fixtures: Two small artifact-content fixtures with declared dependency arrays, build-command strings, and a clearly identified local fixture signer.
 
 Verify a fixture artifact SHA-256, canonicalize its declared dependency and build-command metadata, sign the statement, and verify that signature offline.

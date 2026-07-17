@@ -125,25 +125,38 @@ function renderMetadataModule(metadata) {
   return `// Generated from the reviewed starter catalog.\nexport const EXPECTED_SCENARIO_METADATA = Object.freeze(${stableStringify(metadata)});\n`;
 }
 
-function renderConsumerSource() {
+function renderConsumerSource(kit) {
+  const presentation = stableStringify({
+    id: kit.id,
+    negativePathId: kit.negativePath.id,
+    negativePathOutcome: kit.negativePath.outcome,
+    paidResource: kit.paidResource,
+    summary: kit.summary,
+    title: kit.title,
+  });
   return `import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { runLocalTestnetDemo } from "../shared/local-demo.mjs";
+import { createBeginnerDemoPresenter } from "../shared/presenter.mjs";
 import { createScenario } from "../scenario/scenario.mjs";
 import { EXPECTED_SCENARIO_METADATA } from "../scenario/metadata.mjs";
 
 export const scenario = createScenario(EXPECTED_SCENARIO_METADATA);
+export const starter = Object.freeze(${presentation});
 
 function printHelp() {
-  console.log(\`REAPP \${scenario.id} starter
+  console.log(\`REAPP starter: \${starter.title}
 
 Usage:
   npm run check  # deterministic offline business vectors
-  npm run demo   # disposable consumer + fulfillment on Stellar testnet
+  npm run demo   # guided consumer + fulfillment demo on Stellar testnet
 
-The live command creates disposable testnet keys and writes recovery evidence
-under .reapp/. It never requests a wallet or mainnet secret.\`);
+The demo explains each 402, contract payment, 200 response, and safety check in
+plain English. It creates temporary testnet keys, stores private recovery data
+under .reapp/, and never requests a wallet or mainnet secret.
+
+Advanced: REAPP_VERBOSE=1 npm run demo also shows developer event names.\`);
 }
 
 export async function runDemo({ stateRoot = resolve(".reapp"), onEvent } = {}) {
@@ -157,22 +170,76 @@ async function main() {
     return;
   }
   if (argumentsList.length !== 0) throw new Error("demo accepts only --help");
-  const result = await runDemo({
-    onEvent(event) {
-      const detail = event.txHash ? \` · \${event.txHash}\` : "";
-      console.log(\`[\${event.type}]\${detail}\`);
-    },
-  });
-  console.log(\`Complete: \${result.delivered} paid deliver\${result.delivered === 1 ? "y" : "ies"}; \${result.negativePathId} verified.\`);
+  const presenter = createBeginnerDemoPresenter({ scenario, starter });
+  const result = await runDemo({ onEvent: presenter.onEvent });
+  presenter.finish(result);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error) => {
-    console.error(\`REAPP demo stopped safely: \${error instanceof Error ? error.message : String(error)}\`);
+    console.error("\\nThe demo stopped safely before it could finish.");
+    console.error(\`Reason: \${error instanceof Error ? error.message : String(error)}\`);
+    console.error("Your recovery evidence is still in .reapp/. Read README.md before resetting it.");
     process.exitCode = 1;
   });
 }
 `;
+}
+
+const CATEGORY_BADGE_COLORS = Object.freeze({
+  "Agent tooling": "8B5CF6",
+  "AI infrastructure": "4F46E5",
+  Compute: "0891B2",
+  "Content infrastructure": "0284C7",
+  "Creative commerce": "C026D3",
+  "Data APIs": "14B8A6",
+  "Data commerce": "0D9488",
+  "Developer tooling": "7C3AED",
+  Discovery: "6366F1",
+  Identity: "A855F7",
+  Infrastructure: "3B82F6",
+  Operations: "0284C7",
+  Orchestration: "2563EB",
+  Security: "E11D48",
+  "Small-business automation": "9333EA",
+  "Software supply chain": "475569",
+  "Supply chain": "06B6D4",
+  Sustainability: "10B981",
+});
+
+const DIFFICULTY_BADGE_COLORS = Object.freeze({
+  Advanced: "6D28D9",
+  Beginner: "047857",
+  Intermediate: "2563EB",
+});
+
+function shieldsText(value) {
+  return encodeURIComponent(String(value).replaceAll("-", "--").replaceAll(" ", "_"))
+    .replaceAll("%5F", "_");
+}
+
+function renderBadge({ alt, label, message, color, link, logo }) {
+  const image = `https://img.shields.io/badge/${shieldsText(label)}-${shieldsText(message)}-${color}?style=flat-square${logo ? `&logo=${encodeURIComponent(logo)}&logoColor=white` : ""}`;
+  return `[![${alt}](${image})](${link})`;
+}
+
+function renderStarterBadges(kit, dependencyPolicy) {
+  const version = (name) => {
+    const value = dependencyPolicy.dependencies[name];
+    requireCondition(typeof value === "string", `badge package ${name} is missing from dependency policy`);
+    return value;
+  };
+  return [
+    renderBadge({ alt: "Stellar testnet", label: "Stellar", message: "Testnet", color: "7B73FF", link: "https://stellar.expert/explorer/testnet", logo: "stellar" }),
+    renderBadge({ alt: "HTTP payment flow", label: "HTTP", message: "402 → contract → 200", color: "14B8A6", link: "https://reapp.live/express" }),
+    renderBadge({ alt: kit.category, label: "Use case", message: kit.category, color: CATEGORY_BADGE_COLORS[kit.category] ?? "0EA5E9", link: "https://reapp.live/hackathon#starter-packs" }),
+    renderBadge({ alt: kit.difficulty, label: "Level", message: kit.difficulty, color: DIFFICULTY_BADGE_COLORS[kit.difficulty] ?? "2563EB", link: "https://reapp.live/hackathon#starter-packs" }),
+    renderBadge({ alt: kit.negativePath.id, label: "Safety check", message: kit.negativePath.id, color: "E11D48", link: "#scenario" }),
+    renderBadge({ alt: "REAPP core", label: "@reapp-sdk/core", message: version("@reapp-sdk/core"), color: "CB3837", link: "https://www.npmjs.com/package/@reapp-sdk/core", logo: "npm" }),
+    renderBadge({ alt: "REAPP Stellar", label: "@reapp-sdk/stellar", message: version("@reapp-sdk/stellar"), color: "7C3AED", link: "https://www.npmjs.com/package/@reapp-sdk/stellar", logo: "npm" }),
+    renderBadge({ alt: "REAPP AP2", label: "@reapp-sdk/ap2", message: version("@reapp-sdk/ap2"), color: "2563EB", link: "https://www.npmjs.com/package/@reapp-sdk/ap2", logo: "npm" }),
+    renderBadge({ alt: "REAPP Express middleware", label: "@reapp-sdk/express-middleware", message: version("@reapp-sdk/express-middleware"), color: "059669", link: "https://www.npmjs.com/package/@reapp-sdk/express-middleware", logo: "npm" }),
+  ].join("\n");
 }
 
 function renderFulfillmentSource() {
@@ -511,10 +578,11 @@ function renderGitIgnore() {
 
 function renderReadme(kit, metadata, dependencyPolicy) {
   const features = kit.features.map((feature) => `- \`${feature}\``).join("\n");
+  const badges = renderStarterBadges(kit, dependencyPolicy);
   const hosted = kit.slug === "hackathon"
     ? `## Optional hosted walkthrough\n\nThe local demo above is the primary starter flow. To connect the same project to the browser companion afterward:\n\n1. Open [reapp.live/hackathon](https://reapp.live/hackathon).\n2. Start the optional hosted walkthrough.\n3. Copy the displayed \`npm run hosted -- --endpoint=... --merchant=...\` command into this project's VS Code terminal and press **Enter**.\n\nThe browser and terminal then show the same hosted paid flow. Your private signers and recovery evidence stay in this local folder.\n\n`
     : "";
-  return `# ${kit.title}\n\n${kit.summary}\n\nThis self-contained REAPP starter protects \`${kit.paidResource}\` with a request-bound v2 payment on Stellar testnet. The MandateRegistry contract is the spending authority; the SDK and this application are untrusted clients of that contract.\n\n## Start\n\nYou need Node.js 20 or newer. You do not need a wallet or a GitHub repo.\n\n### If you used Copy setup command\n\nThe setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran \`npm ci\`. In the same VS Code terminal, run:\n\n\`\`\`bash\nnpm run demo\n\`\`\`\n\n### If you downloaded the ZIP manually\n\nExtract the ZIP, open the extracted folder in VS Code, select **Terminal → New Terminal**, then run:\n\n\`\`\`bash\n${dependencyPolicy.installCommand}\nnpm run demo\n\`\`\`\n\nThe demo creates disposable testnet accounts, starts the local consumer and fulfillment service, and runs the scenario. It never requests a wallet or mainnet secret.\n\n${hosted}## What success looks like\n\nThe terminal shows:\n\n1. The local fulfillment server starting.\n2. Accepted Stellar testnet payment evidence with explorer transaction hashes.\n3. The protected result delivered to the consumer.\n4. The named negative or recovery check reaching its documented outcome.\n\n## Scenario\n\n- Paid resource: \`${kit.paidResource}\`\n- Price policy: exact decimal amounts declared by the scenario\n- Negative path: \`${kit.negativePath.id}\` — ${kit.negativePath.outcome}\n- Fixtures: ${kit.fixtures}\n\n${kit.businessLogic}\n\n### Capabilities\n\n${features}\n\n## Make it yours\n\nStart with these three files:\n\n| File | What to change |\n|---|---|\n| \`scenario/scenario.mjs\` | Your product's rules, sample data, delivery checks, and rejection check. |\n| \`src/consumer.mjs\` | How your app requests and pays for the protected result. |\n| \`src/fulfillment.mjs\` | What your paid Express endpoint returns. |\n\nThe shared payment and recovery code lives in \`shared/\`. Leave it unchanged until your project needs advanced customization.\n\n## Run fulfillment separately\n\nThe one-command demo starts both sides automatically. To inspect or modify the server independently:\n\n\`\`\`bash\ncp .env.example .env\n# Put a funded Stellar testnet public G-address in REAPP_MERCHANT.\nnpm run fulfillment\n\`\`\`\n\nKeep the challenge secret private and stable. The reference file store is for one local Node process; multi-process deployments need one shared linearizable store implementing the same interface.\n\n## Safety and recovery\n\n- Paid work is GET-only and bound to the exact origin, method, resource, merchant, asset, amount, registry, and short-lived challenge.\n- Delivery evidence is committed before the client acknowledges and clears a settlement receipt.\n- Exact same-proof replay returns byte-identical recovery; an old proof on a new resource is rejected, and a freshly rebound proof reusing an old transaction conflicts.\n- State under \`.reapp/\` is private and ignored by Git. Run \`npm run reset\` only after all payment and fulfillment evidence is resolved.\n\nCatalog identity: \`${metadata.id}\` · fixture policy: \`${metadata.fixturePolicy}\`.\n`;
+  return `# ${kit.title}\n\n**${kit.summary}**\n\n${badges}\n\nThis starter protects \`${kit.paidResource}\` with a request-bound payment on Stellar testnet. The app asks; the MandateRegistry contract decides whether money moves.\n\n## Start — two commands, no wallet\n\nYou need Node.js 20 or newer. You do not need a wallet or a GitHub repo.\n\n### If you used Copy setup command\n\nThe setup command on [reapp.live/hackathon](https://reapp.live/hackathon) already downloaded this starter, extracted it into your empty folder, and ran \`npm ci\`. Before extraction, it verified the ZIP against the exact SHA-256 in the [public integrity manifest](https://reapp.live/starters/v1/manifest.json). In the same VS Code terminal, run:\n\n\`\`\`bash\nnpm run demo\n\`\`\`\n\n### If you downloaded the ZIP manually\n\nCompare its SHA-256 with the [public integrity manifest](https://reapp.live/starters/v1/manifest.json), extract the ZIP, open the extracted folder in VS Code, select **Terminal → New Terminal**, then run:\n\n\`\`\`bash\n${dependencyPolicy.installCommand}\nnpm run demo\n\`\`\`\n\nThe demo creates disposable testnet accounts, starts the consumer and Express fulfillment service, and explains every step in plain English. It never requests a wallet or mainnet secret.\n\n\`\`\`mermaid\nflowchart LR\n    A["① Open an empty folder"] --> B["② Copy the setup command"]\n    B --> C["③ Run npm run demo"]\n    C --> D["④ Read the guided result"]\n    D --> E["⑤ Open the Stellar proof links"]\n\n    style A fill:#052e2b,stroke:#14b8a6,color:#ecfdf5\n    style B fill:#082f49,stroke:#0ea5e9,color:#f0f9ff\n    style C fill:#312e81,stroke:#818cf8,color:#eef2ff\n    style D fill:#4c1d95,stroke:#a78bfa,color:#f5f3ff\n    style E fill:#064e3b,stroke:#34d399,color:#ecfdf5\n\`\`\`\n\n${hosted}## What the terminal will teach you\n\nThe guided output uses six numbered steps and explains the important words:\n\n1. **Testnet accounts** are temporary practice accounts. No real money is used.\n2. **HTTP 402** means the API is working and requires payment.\n3. **Contract approval** means the user's exact spending rules allowed the payment.\n4. **HTTP 200** means the paid result was delivered.\n5. **Stellar proof links** let anyone inspect each accepted payment.\n6. **The safety check** proves this starter's named boundary or recovery behavior.\n\nThe terminal shows the local fulfillment server starting, accepted Stellar testnet payment evidence with explorer transaction hashes, the protected result delivered to the consumer, and the named negative or recovery check reaching its documented outcome.\n\n\`\`\`mermaid\nsequenceDiagram\n    autonumber\n    participant You\n    participant Agent as Consumer agent\n    participant API as Express API\n    participant Contract as MandateRegistry\n    participant Stellar as Stellar testnet\n\n    You->>Agent: Run npm run demo\n    Agent->>API: GET protected result\n    API-->>Agent: 402 Payment Required\n    Agent->>Contract: Request the exact payment\n    Contract->>Stellar: Verify the spending rules\n    Stellar-->>Agent: Confirm payment\n    Agent->>API: Retry with payment proof\n    API-->>Agent: 200 + protected result\n    Agent->>Agent: Verify the named safety or recovery check\n\`\`\`\n\n## Scenario\n\n- Paid resource: \`${kit.paidResource}\`\n- Price policy: exact decimal amounts declared by the scenario\n- Safety or recovery check: \`${kit.negativePath.id}\`\n- Expected outcome: ${kit.negativePath.outcome}\n- Fixtures: ${kit.fixtures}\n\n${kit.businessLogic}\n\n### Capabilities\n\n${features}\n\n## Make it yours\n\nStart with these three files:\n\n| File | What to change |\n|---|---|\n| \`scenario/scenario.mjs\` | Your product's rules, sample data, delivery checks, and rejection check. |\n| \`src/consumer.mjs\` | How your app requests and pays for the protected result. |\n| \`src/fulfillment.mjs\` | What your paid Express endpoint returns. |\n\nThe shared payment and recovery code lives in \`shared/\`. Leave it unchanged until your project needs advanced customization.\n\n## Run fulfillment separately\n\nThe one-command demo starts both sides automatically. To inspect or modify the server independently:\n\n\`\`\`bash\ncp .env.example .env\n# Put a funded Stellar testnet public G-address in REAPP_MERCHANT.\nnpm run fulfillment\n\`\`\`\n\nKeep the challenge secret private and stable. The reference file store is for one local Node process; multi-process deployments need one shared linearizable store implementing the same interface.\n\n## Safety and recovery\n\n- Paid work is GET-only and bound to the exact origin, method, resource, merchant, asset, amount, registry, and short-lived challenge.\n- Delivery evidence is committed before the client acknowledges and clears a settlement receipt.\n- Exact same-proof replay returns byte-identical recovery; an old proof on a new resource is rejected, and a freshly rebound proof reusing an old transaction conflicts.\n- State under \`.reapp/\` is private and ignored by Git. Run \`npm run reset\` only after all payment and fulfillment evidence is resolved.\n\nCatalog identity: \`${metadata.id}\` · fixture policy: \`${metadata.fixturePolicy}\`.\n`;
 }
 
 async function listRegularFiles(root, prefix = "") {
@@ -565,7 +633,7 @@ function buildKitFiles({ catalog, kit, dependencyPolicy, canonicalLockSource, sh
   for (const [path, source] of scenarioSources) appendFile(files, `scenario/${path}`, source);
   for (const [path, source] of sharedSources) appendFile(files, `shared/${path}`, source);
   appendFile(files, "src/check.mjs", renderCheckSource());
-  appendFile(files, "src/consumer.mjs", renderConsumerSource());
+  appendFile(files, "src/consumer.mjs", renderConsumerSource(kit));
   appendFile(files, "src/fulfillment.mjs", renderFulfillmentSource());
   if (kit.slug === "hackathon") appendFile(files, "src/hosted.mjs", renderHostedConsumerSource());
   appendFile(files, "src/reset.mjs", renderResetSource());

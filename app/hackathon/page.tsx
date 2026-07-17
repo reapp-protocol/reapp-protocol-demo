@@ -25,11 +25,13 @@ import {
 } from "lucide-react";
 import { contractUrl, txUrl } from "@/lib/explorer";
 import { HACKATHON_STARTER_CATALOG } from "@/lib/hackathon-starters.generated";
+import { buildStarterInstallCommand } from "@/lib/starter-install";
+import STARTER_MANIFEST from "@/public/starters/v1/manifest.json";
 
 const STORAGE_KEY = "reapp-hackathon-workspace-v1";
-const SETUP_COMMAND = "curl -fsSLo reapp-hackathon.zip https://reapp.live/starters/v1/hackathon.zip && unzip -q reapp-hackathon.zip && rm reapp-hackathon.zip && npm ci";
 const STARTER_KITS = HACKATHON_STARTER_CATALOG.kits;
 const STARTER_CATEGORIES = ["All", ...Array.from(new Set(STARTER_KITS.map((kit) => kit.category)))];
+const STARTER_ARCHIVES = new Map(STARTER_MANIFEST.kits.map((entry) => [entry.slug, entry]));
 const STARTER_ACCENTS = [
   { number: "bg-sky-400/10 text-sky-300", category: "border-sky-400/20 bg-sky-400/[0.07] text-sky-200/80" },
   { number: "bg-violet-400/10 text-violet-300", category: "border-violet-400/20 bg-violet-400/[0.07] text-violet-200/80" },
@@ -38,8 +40,13 @@ const STARTER_ACCENTS = [
   { number: "bg-cyan-400/10 text-cyan-300", category: "border-cyan-400/20 bg-cyan-400/[0.07] text-cyan-200/80" },
 ] as const;
 
-const starterCommand = (slug: string) =>
-  `curl -fsSLo reapp-${slug}.zip https://reapp.live/starters/v1/${slug}.zip && unzip -q reapp-${slug}.zip && rm reapp-${slug}.zip && npm ci`;
+type InstallerShell = "posix" | "powershell";
+
+const starterCommand = (slug: string, shell: InstallerShell) => {
+  const archive = STARTER_ARCHIVES.get(slug);
+  if (!archive) throw new Error(`Missing starter archive for ${slug}`);
+  return buildStarterInstallCommand(archive, { shell });
+};
 
 type ResourceSummary = { id: string; label: string; attempt: number };
 type Workspace = {
@@ -234,6 +241,7 @@ export default function HackathonPage() {
   const [starterQuery, setStarterQuery] = useState("");
   const [starterCategory, setStarterCategory] = useState("All");
   const [selectedStarterSlug, setSelectedStarterSlug] = useState("");
+  const [installerShell, setInstallerShell] = useState<InstallerShell>("posix");
   const [showHostedDemo, setShowHostedDemo] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -432,7 +440,7 @@ export default function HackathonPage() {
             <Layers3 className="h-4 w-4" aria-hidden /> Choose a starter
           </motion.a>
         </div>
-        <p className="mt-3 text-xs text-emerald-100/40">No GitHub repo or wallet needed · testnet only · private keys stay on your computer</p>
+        <p className="mt-3 text-xs text-emerald-100/40"><a href="https://nodejs.org/en/download" target="_blank" rel="noreferrer" className="font-semibold text-emerald-300/80 underline decoration-emerald-400/30 underline-offset-4 hover:text-emerald-200">Requires Node.js 20+</a> · no GitHub repo or wallet needed · testnet only · private keys stay on your computer</p>
       </motion.header>
 
       <AnimatePresence>
@@ -565,10 +573,14 @@ export default function HackathonPage() {
                             className="overflow-hidden"
                           >
                             <div className="mt-4 space-y-3 border-t border-white/10 pt-4">
+                              <p className="rounded-xl border border-emerald-400/15 bg-emerald-400/[0.04] p-3 text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-200">Before you begin:</strong> install <a href="https://nodejs.org/en/download" target="_blank" rel="noreferrer" className="font-semibold text-emerald-300 underline decoration-emerald-400/30 underline-offset-4 hover:text-emerald-200">Node.js 20 or newer</a>, then choose your computer below.</p>
+                              <InstallerShellPicker value={installerShell} onChange={setInstallerShell} />
                               <p className="text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-100">Open an empty folder in VS Code.</strong> Open its terminal, copy command 1, paste it, and press Enter.</p>
-                              <CommandBlock label="1 · Populate this empty folder" value={starterCommand(kit.slug)} copyKey={setupCopyKey} copied={copied} onCopy={copyValue} />
+                              <CommandBlock label="1 · Populate this empty folder" value={starterCommand(kit.slug, installerShell)} copyKey={setupCopyKey} copied={copied} onCopy={copyValue} />
+                              <p className="text-[11px] leading-relaxed text-emerald-100/40">Command 1 checks the ZIP&apos;s exact published SHA-256 before extracting any file.</p>
                               <p className="text-xs leading-relaxed text-emerald-100/55">When command 1 finishes, your starter is installed. Copy command 2 into the same terminal and press Enter.</p>
                               <CommandBlock label="2 · Run your starter" value="npm run demo" copyKey={runCopyKey} copied={copied} onCopy={copyValue} />
+                              <p className="rounded-xl border border-emerald-400/15 bg-emerald-400/[0.04] p-3 text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-200">Then just read the screen.</strong> Six numbered steps explain the practice accounts, HTTP 402, contract payment, HTTP 200 result, Stellar proof links, and this starter&apos;s safety check.</p>
                             </div>
                           </motion.div>
                         )}
@@ -680,7 +692,9 @@ export default function HackathonPage() {
               <span className="rounded-full border border-white/10 bg-black/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100/45">blank folder</span>
             </div>
             <div className="space-y-4 p-4">
-              <CommandBlock label="1 · Set up the project" value={SETUP_COMMAND} copyKey="setup" copied={copied} onCopy={copyValue} />
+              <p className="text-xs leading-relaxed text-emerald-100/55"><strong className="text-emerald-200">Requirement:</strong> <a href="https://nodejs.org/en/download" target="_blank" rel="noreferrer" className="font-semibold text-emerald-300 underline decoration-emerald-400/30 underline-offset-4 hover:text-emerald-200">Node.js 20 or newer</a>.</p>
+              <InstallerShellPicker value={installerShell} onChange={setInstallerShell} />
+              <CommandBlock label="1 · Set up the project" value={starterCommand("hackathon", installerShell)} copyKey="setup" copied={copied} onCopy={copyValue} />
               <CommandBlock label="2 · Run the demo" value={runCommand} copyKey="run" copied={copied} onCopy={copyValue} disabled={!persisted} />
               <div className="rounded-xl border border-emerald-400/15 bg-[#020806] p-3 font-mono text-[11px] leading-relaxed text-emerald-100/65">
                 <div className="text-emerald-300">$ expected output</div>
@@ -850,6 +864,32 @@ function GuideStep({ number, title, detail, complete, active }: { number: string
         <div className="mt-0.5 text-xs leading-relaxed text-emerald-100/45">{detail}</div>
       </div>
       {active && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sky-300" aria-hidden />}
+    </div>
+  );
+}
+
+function InstallerShellPicker({ value, onChange }: { value: InstallerShell; onChange: (value: InstallerShell) => void }) {
+  const choices: Array<{ value: InstallerShell; label: string }> = [
+    { value: "posix", label: "Mac / Linux" },
+    { value: "powershell", label: "Windows PowerShell" },
+  ];
+  return (
+    <div>
+      <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-100/35">Choose your computer</div>
+      <div className="inline-flex max-w-full rounded-lg border border-white/10 bg-black/25 p-0.5" role="tablist" aria-label="Starter installer command">
+        {choices.map((choice) => (
+          <button
+            key={choice.value}
+            type="button"
+            role="tab"
+            aria-selected={value === choice.value}
+            onClick={() => onChange(choice.value)}
+            className={`rounded-md px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/60 ${value === choice.value ? "bg-emerald-400/15 text-emerald-200" : "text-emerald-100/40 hover:text-emerald-100/75"}`}
+          >
+            {choice.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
