@@ -33,6 +33,10 @@ test("navigation exposes Consumer and Solutions without deleting the direct Vide
   assert.match(nav, /href: "\/express", label: "Express"/);
   assert.match(consumer, /Preview only · no funds move/);
   assert.match(consumer, /No wallet was created and no transaction was signed/);
+  assert.match(consumer, /Give AI a job/);
+  assert.match(consumer, /Not a blank check/);
+  assert.match(consumer, /Try the spending controls/);
+  assert.match(consumer, /Watch a budgeted agent buy three resources/);
   assert.ok(video.length > 100);
 });
 

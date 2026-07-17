@@ -51,7 +51,7 @@ The CLI surface demonstrates actor setup, mandate creation, payment submission, 
 
 ### Consumer — https://reapp.live/consumer
 
-The Consumer page previews a person-facing task flow that translates an outcome, maximum budget, approved service type, expiry, and human approval rule into bounded agent authority. Its interactive mandate builder is a product preview: it does not create a wallet, sign a transaction, or move funds.
+The Consumer page previews a person-facing task flow for giving an AI agent a job without giving it a blank check. A person chooses the outcome, hard budget limit, approved services, deadline, and exception rule. The interactive spending controls translate those choices into a plain-language plan; the preview does not create a wallet, sign a transaction, or move funds.
 
 ### Express — https://reapp.live/express
 

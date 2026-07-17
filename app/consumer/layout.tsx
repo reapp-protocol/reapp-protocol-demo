@@ -1,15 +1,15 @@
 import { createPageMetadata } from "@/lib/site-metadata";
 
 export const metadata = createPageMetadata({
-  title: "Consumer Agent Spending Preview",
+  title: "Controlled AI Spending Preview",
   description:
-    "Preview how a person can give an AI agent a task, a bounded budget, approved services, and a deadline without handing over open-ended payment authority.",
+    "See how REAPP lets a person give an AI agent a task while retaining explicit control over the budget, approved services, deadline, and exceptions.",
   path: "/consumer",
   keywords: [
     "consumer AI agent payments",
     "AI spending controls",
     "bounded agent wallet",
-    "consumer agent mandates",
+    "controlled AI spending",
   ],
 });
 

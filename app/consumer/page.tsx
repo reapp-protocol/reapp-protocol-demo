@@ -83,39 +83,39 @@ export default function ConsumerPage() {
         <motion.div {...fade()}>
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/[0.06] px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-            CONSUMER PRODUCT PREVIEW
+            CONSUMER PREVIEW · CONTROLLED AI SPENDING
           </div>
           <h1 className="mt-6 max-w-3xl text-4xl font-black tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
-            Give an agent a job.{" "}
+            Give AI a job.{" "}
             <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 bg-clip-text text-transparent">
-              Keep control of the money.
+              Not a blank check.
             </span>
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-emerald-50/65 sm:text-lg">
-            Describe the outcome, choose a maximum budget, and approve the rules once. REAPP gives the agent bounded
-            authority instead of open-ended access to your wallet.
+            Describe the result you want, set a total budget, choose approved services, and add a deadline. REAPP turns
+            those choices into spending rules checked before each supported payment.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
               href="#mandate-builder"
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-[#06241a] shadow-[0_0_30px_rgba(52,211,153,0.3)] transition hover:bg-emerald-300"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-[#06241a] shadow-[0_0_30px_rgba(52,211,153,0.3)] transition hover:bg-emerald-300"
             >
-              Build a preview mandate
+              Try the spending controls
               <ArrowRight className="h-4 w-4" aria-hidden />
             </a>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.025] px-5 py-3 text-sm font-semibold text-emerald-50/80 transition hover:border-emerald-300/30 hover:text-white"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.025] px-5 py-3 text-sm font-semibold text-emerald-50/80 transition hover:border-emerald-300/30 hover:text-white"
             >
-              See the consumer flow
+              See how it works
             </a>
           </div>
 
           <div className="mt-9 grid max-w-2xl gap-3 sm:grid-cols-3">
             {[
-              [Gauge, "Bounded budget", "The maximum spend is explicit."],
-              [LockKeyhole, "Scoped services", "Only approved providers qualify."],
-              [Pause, "Pause anytime", "Unused authority can be stopped."],
+              [Gauge, "Set a hard limit", "Choose the most the agent may spend."],
+              [LockKeyhole, "Choose where it can pay", "Limit purchases to approved services."],
+              [Pause, "Stay in control", "Pause unused authority whenever you need."],
             ].map(([Icon, title, body]) => {
               const FeatureIcon = Icon as typeof Gauge;
               return (
@@ -137,7 +137,7 @@ export default function ConsumerPage() {
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-400 text-sm font-black text-[#06241a]">R</span>
                 <div>
                   <p className="text-sm font-semibold text-white">REAPP Tasks</p>
-                  <p className="text-[11px] text-white/40">Consumer preview</p>
+                  <p className="text-[11px] text-white/40">Your agent · your spending rules</p>
                 </div>
               </div>
               <span className="rounded-full border border-emerald-300/15 bg-emerald-400/[0.07] px-2.5 py-1 text-[10px] font-semibold text-emerald-300">
@@ -164,9 +164,9 @@ export default function ConsumerPage() {
                   <CheckCircle2 className="h-4 w-4 text-emerald-300" aria-hidden />
                 </div>
                 <div className="mt-4 space-y-3">
-                  <FlowRow status="allowed" label="Market data source" amount="$3.00" />
-                  <FlowRow status="allowed" label="Provider comparison" amount="$4.50" />
-                  <FlowRow status="blocked" label="Unapproved travel service" amount="$275.00" />
+                  <FlowRow status="allowed" label="Provider coverage data" amount="$3.00" />
+                  <FlowRow status="allowed" label="Independent pricing research" amount="$4.50" />
+                  <FlowRow status="blocked" label="Unapproved entertainment purchase" amount="$275.00" />
                 </div>
               </div>
 
@@ -174,7 +174,7 @@ export default function ConsumerPage() {
                 href="#mandate-builder"
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-bold text-[#06241a] transition hover:bg-emerald-300"
               >
-                Preview these controls
+                Try these spending controls
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
               <p className="mt-3 text-center text-[11px] text-white/35">Illustrative preview · no wallet or payment required</p>
@@ -189,17 +189,17 @@ export default function ConsumerPage() {
             <div className="grid h-12 w-12 place-items-center rounded-2xl border border-emerald-300/15 bg-emerald-400/10 text-emerald-300">
               <Sparkles className="h-5 w-5" aria-hidden />
             </div>
-            <h2 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">Turn a request into rules.</h2>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight text-white sm:text-4xl">Turn a request into clear spending rules.</h2>
             <p className="mt-4 text-sm leading-relaxed text-emerald-50/60 sm:text-base">
-              The person decides the outcome and limits. The app turns those choices into a clear mandate before an
-              agent receives any payment authority.
+              You choose the job and the limits. REAPP prepares a plain-language summary before the agent receives any
+              payment authority.
             </p>
             <div className="mt-6 space-y-3 text-sm text-emerald-50/65">
               {[
-                "One maximum budget across the task",
-                "A defined service or merchant scope",
-                "An expiry that ends unused authority",
-                "A human approval rule for exceptions",
+                "One hard limit across the entire job",
+                "Only the services you approve",
+                "An automatic end time for unused authority",
+                "Your approval before exceptions",
               ].map((rule) => (
                 <p key={rule} className="flex gap-2.5">
                   <Check className="mt-0.5 h-4 w-4 flex-none text-emerald-300" aria-hidden />
@@ -212,8 +212,8 @@ export default function ConsumerPage() {
           <motion.div {...fade(0.08)} className="rounded-[2rem] border border-white/[0.09] bg-[#08100e]/90 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.3)] sm:p-7">
             <div className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/75">Mandate builder</p>
-                <h3 className="mt-1 text-xl font-semibold text-white">Set the boundaries</h3>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300/75">Spending controls</p>
+                <h3 className="mt-1 text-xl font-semibold text-white">Choose what the agent can spend</h3>
               </div>
               <span className="rounded-full border border-amber-300/15 bg-amber-300/[0.06] px-3 py-1.5 text-[11px] font-medium text-amber-100/70">
                 Preview only · no funds move
@@ -236,7 +236,7 @@ export default function ConsumerPage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-sm font-medium text-emerald-50/80">Maximum total budget</span>
+                  <span className="text-sm font-medium text-emerald-50/80">Never spend more than</span>
                   <span className="mt-2 flex items-center rounded-xl border border-white/10 bg-black/30 px-4 focus-within:border-emerald-300/40 focus-within:ring-2 focus-within:ring-emerald-400/10">
                     <span className="text-sm text-white/40">$</span>
                     <input
@@ -254,7 +254,7 @@ export default function ConsumerPage() {
                 </label>
 
                 <SelectField
-                  label="Approved service type"
+                  label="Where can the agent spend?"
                   value={service}
                   options={serviceOptions}
                   onChange={(value) => {
@@ -263,7 +263,7 @@ export default function ConsumerPage() {
                   }}
                 />
                 <SelectField
-                  label="Authority expires"
+                  label="Stop spending after"
                   value={expiry}
                   options={expiryOptions}
                   onChange={(value) => {
@@ -272,7 +272,7 @@ export default function ConsumerPage() {
                   }}
                 />
                 <SelectField
-                  label="Human approval"
+                  label="When should it ask you?"
                   value={approval}
                   options={approvalOptions}
                   onChange={(value) => {
@@ -301,7 +301,7 @@ export default function ConsumerPage() {
                     disabled={!task.trim() || safeBudget === "0.00"}
                     className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Preview mandate
+                    Review spending rules
                     <ArrowRight className="h-4 w-4" aria-hidden />
                   </button>
                 </div>
@@ -314,7 +314,7 @@ export default function ConsumerPage() {
                       </span>
                       <div>
                         <p className="text-sm font-semibold text-emerald-50">
-                          {previewState === "paused" ? "Authority paused" : "Mandate preview prepared"}
+                          {previewState === "paused" ? "Spending paused" : "Your spending rules are ready"}
                         </p>
                         <p className="mt-1 text-xs text-white/40">No wallet was created and no transaction was signed.</p>
                       </div>
@@ -325,7 +325,7 @@ export default function ConsumerPage() {
                   </div>
 
                   <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <SummaryItem term="Total authority" value={`$${safeBudget}`} />
+                    <SummaryItem term="Total limit" value={`$${safeBudget}`} />
                     <SummaryItem term="Approved scope" value={service} />
                     <SummaryItem term="Expiry" value={expiry} />
                     <SummaryItem term="Approval rule" value={approval} />
@@ -338,7 +338,7 @@ export default function ConsumerPage() {
                       className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-emerald-50/70 transition hover:border-emerald-300/30 hover:text-white"
                     >
                       {previewState === "paused" ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
-                      {previewState === "paused" ? "Resume preview" : "Pause preview"}
+                      {previewState === "paused" ? "Resume simulation" : "Simulate pause"}
                     </button>
                     <button
                       type="button"
@@ -358,11 +358,10 @@ export default function ConsumerPage() {
 
       <section id="how-it-works" className="scroll-mt-24 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <motion.div {...fade()} className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/75">The consumer flow</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">Simple on the surface. Bounded underneath.</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/75">How it works</p>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">One approval. Clear limits. Proof of every decision.</h2>
           <p className="mt-4 text-sm leading-relaxed text-emerald-50/60 sm:text-base">
-            Consumers see a familiar task experience. REAPP translates their choices into payment constraints that the
-            agent cannot silently expand.
+            Inside the rules, your agent can keep moving. Outside them, the contract says no.
           </p>
         </motion.div>
 
@@ -370,7 +369,7 @@ export default function ConsumerPage() {
           {[
             ["01", Bot, "Ask", "Describe the result you want in ordinary language."],
             ["02", ShieldCheck, "Set limits", "Review budget, approved services, expiry, and exceptions."],
-            ["03", Sparkles, "Let the agent work", "Eligible payments can proceed without repeated wallet prompts."],
+            ["03", Sparkles, "Let the agent keep moving", "Eligible payments can proceed without repeated wallet prompts."],
             ["04", ReceiptText, "Keep the receipts", "See what was paid, delivered, rejected, or paused."],
           ].map(([number, Icon, title, body]) => {
             const StepIcon = Icon as typeof Bot;
@@ -390,10 +389,11 @@ export default function ConsumerPage() {
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-400/10 text-emerald-300">
               <LockKeyhole className="h-5 w-5" aria-hidden />
             </div>
-            <h2 className="mt-5 text-2xl font-bold text-white">The agent receives authority, not ownership.</h2>
+            <h2 className="mt-5 text-2xl font-bold text-white">Your agent can act. It cannot rewrite the rules.</h2>
             <p className="mt-4 text-sm leading-relaxed text-emerald-50/60">
-              In the full product, the consumer signs a mandate with a maximum amount, approved destination, asset,
-              expiry, and designated agent. MandateRegistry checks those terms before each supported payment.
+              The consumer signs a mandate defining the maximum amount, approved destination, asset, expiry, and
+              designated agent. In REAPP&apos;s Stellar testnet implementation, MandateRegistry checks those terms before
+              each supported payment.
             </p>
             <Link
               href="/ap2"
@@ -419,20 +419,20 @@ export default function ConsumerPage() {
       <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
         <motion.div {...fade()} className="rounded-[2rem] border border-emerald-300/15 bg-gradient-to-br from-emerald-400/[0.11] via-[#07110e] to-cyan-400/[0.05] p-6 sm:p-9 lg:flex lg:items-center lg:justify-between lg:gap-10">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/80">Build the supply side</p>
-            <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">Every consumer task needs services the agent can safely pay.</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/80">See it working</p>
+            <h2 className="mt-3 text-2xl font-bold text-white sm:text-3xl">Watch a budgeted agent buy three resources—and get blocked on the fourth.</h2>
             <p className="mt-3 text-sm leading-relaxed text-emerald-50/60">
-              The REAPP starter library helps developers turn paid APIs, tools, and fulfillment services into bounded
-              destinations for future consumer tasks.
+              The live research flow shows accepted payments, a contract-enforced budget limit, and explorer receipts
+              on Stellar testnet.
             </p>
           </div>
           <div className="mt-6 flex flex-wrap gap-3 lg:mt-0 lg:flex-none">
-            <Link href="/hackathon" className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] transition hover:bg-emerald-300">
-              Explore Solutions
+            <Link href="/express" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-2.5 text-sm font-bold text-[#06241a] transition hover:bg-emerald-300">
+              See the live research demo
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
-            <Link href="/" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-50/75 transition hover:border-emerald-300/30 hover:text-white">
-              Read the docs
+            <Link href="/hackathon" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-50/75 transition hover:border-emerald-300/30 hover:text-white">
+              Build with REAPP
             </Link>
           </div>
         </motion.div>
@@ -457,7 +457,7 @@ function FlowRow({ status, label, amount }: { status: "allowed" | "blocked"; lab
       <span className={`grid h-6 w-6 flex-none place-items-center rounded-full ${status === "allowed" ? "bg-emerald-400/10 text-emerald-300" : "bg-rose-400/10 text-rose-300"}`}>
         {status === "allowed" ? <Check className="h-3.5 w-3.5" aria-hidden /> : <X className="h-3.5 w-3.5" aria-hidden />}
       </span>
-      <span className="min-w-0 flex-1 truncate text-white/60">{label}</span>
+      <span className="min-w-0 flex-1 break-words text-white/60">{label}</span>
       <span className="font-mono text-white/45">{amount}</span>
     </div>
   );

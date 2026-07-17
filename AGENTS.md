@@ -28,8 +28,8 @@ video demo still works and the research page shows a notice.
 ## Routes
 
 - `/` — **Docs** (landing page). Source: `app/page.tsx`.
-- `/consumer` — consumer product preview for turning a task, budget, service
-  scope, expiry, and approval rule into bounded agent authority. Source:
+- `/consumer` — person-facing preview for giving an AI agent a task while retaining
+  explicit control over its budget, approved services, deadline, and exceptions. Source:
   `app/consumer/page.tsx`.
 - `/research` — research agent demo (LLM). Source: `app/research/page.tsx`.
 - `/video` — video paywall demo. Source: `app/video/page.tsx`.
