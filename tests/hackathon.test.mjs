@@ -163,7 +163,7 @@ test("new public copy follows repository terminology rules", async () => {
     await read("app/llms-full.txt/route.ts"),
     await read("starters/research-source-scout/README.md"),
   ].join("\n");
-  assert.doesNotMatch(combined, /\b(?:audit|tranche|milestone)\b/i);
+  assert.doesNotMatch(combined, /\b(?:au(?:dit)[a-z-]*|tranche|milestone)\b/i);
   assert.doesNotMatch(combined, /\bNO MOCKS\b/i);
   assert.doesNotMatch(combined, /@reapp\//, "only the @reapp-sdk namespace is valid");
   assert.doesNotMatch(combined, /Hackathon starter[\s\S]*?calls the hosted endpoint through agent\.fetch\(\)/);

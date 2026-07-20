@@ -74,7 +74,7 @@ test("catalog sources are public primary evidence and terminology remains valid"
   }
   const combined = `${catalogSource}\n${schemaSource}`;
   assert.doesNotMatch(combined, /@reapp\//, "only the @reapp-sdk namespace is valid");
-  assert.doesNotMatch(combined, /\b(?:audit|tranche|milestone)\b/i);
+  assert.doesNotMatch(combined, /\b(?:au(?:dit)[a-z-]*|tranche|milestone)\b/i);
   assert.doesNotMatch(combined, /paid POST|body-bound payment|generic x402-v2 compatibility/i);
 });
 
