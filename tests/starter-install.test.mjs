@@ -31,26 +31,27 @@ test("all twenty copied setup commands verify pinned installers that verify pinn
       assert.match(installer, /npm ci/);
     }
     assert.match(posix, new RegExp(`https://reapp\\.live${entry.installers.posix.path}`));
-    assert.match(posix, /sh reapp-setup\.sh/);
-    assert.match(posix, new RegExp(entry.installers.posix.sha256));
+    // Homebrew-style: download fully via command substitution, then execute. The
+    // installer self-verifies the ZIP payload hash, so neither hash appears here.
+    assert.match(posix, /^\/bin\/sh -c "\$\(curl -fsSL https:\/\/reapp\.live\/starters\/v1\//);
     assert.ok(posix.length <= 500, `${entry.slug}: POSIX setup command is too long`);
     assert.doesNotMatch(posix, new RegExp(entry.sha256));
-    assert.match(posix, /node -e/);
+    assert.doesNotMatch(posix, new RegExp(entry.installers.posix.sha256));
     assert.doesNotMatch(posix, /unzip -q|npm ci/);
+    // Must not be a pipe-to-shell: a truncated stream must never half-execute.
     assert.doesNotMatch(posix, /curl[^|]*\|\s*(?:sh|bash)/);
     const syntax = spawnSync("zsh", ["-n", "-c", posix], { encoding: "utf8" });
     assert.equal(syntax.status, 0, `${entry.slug}: ${syntax.stderr}`);
-    assert.match(powershell, /^\$ErrorActionPreference='Stop'; \$f='reapp-setup\.ps1'; try \{ Invoke-WebRequest/);
+    // Homebrew-style parallel: download the whole installer, then execute — never
+    // pipe into Invoke-Expression. The installer self-verifies the ZIP payload hash.
+    assert.match(powershell, /^& \(\[scriptblock\]::Create\(\(Invoke-RestMethod -Uri /);
     assert.match(powershell, new RegExp(`https://reapp\\.live${entry.installers.powershell.path}`));
-    assert.match(powershell, new RegExp(entry.installers.powershell.sha256));
-    assert.match(powershell, /Get-FileHash/);
-    assert.match(powershell, /powershell\.exe -NoProfile -ExecutionPolicy Bypass -File \$f/);
     assert.ok(powershell.length <= 650, `${entry.slug}: PowerShell setup command is too long`);
-    assert.match(powershell, /if \(\$LASTEXITCODE -ne 0\)/);
-    assert.match(powershell, /Remove-Item -LiteralPath/);
     assert.doesNotMatch(powershell, new RegExp(entry.sha256));
+    assert.doesNotMatch(powershell, new RegExp(entry.installers.powershell.sha256));
     assert.doesNotMatch(powershell, /Expand-Archive|npm ci/);
     assert.doesNotMatch(powershell, /\bunzip\b|\brm\b/);
+    assert.doesNotMatch(powershell, /Invoke-Expression|\biex\b/i);
     assert.match(posixInstaller, /^#!\/bin\/sh\nset -eu/);
     assert.match(posixInstaller, /unzip -q/);
     assert.match(powershellInstaller, /Expand-Archive -LiteralPath/);
