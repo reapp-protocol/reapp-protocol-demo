@@ -16,13 +16,13 @@ import {
 import "@xterm/xterm/css/xterm.css";
 
 const PACKAGE = "reapp-protocol-cli";
-const VERSION = "0.1.4";
+const VERSION = "0.1.5";
 const COMMAND = "reapp";
 const CONTRACT = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
-const INSTALL = `npx reapp-protocol-cli@0.1.4 demo research-agent
+const INSTALL = `npx reapp-protocol-cli@0.1.5 demo research-agent
 
-npm install -g reapp-protocol-cli@0.1.4
+npm install -g reapp-protocol-cli@0.1.5
 reapp --help`;
 
 const PROJECT_FLOW = `reapp init

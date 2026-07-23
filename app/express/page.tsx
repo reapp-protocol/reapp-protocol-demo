@@ -23,7 +23,7 @@ import {
 import { contractUrl, txUrl } from "@/lib/explorer";
 
 const SETUP = `npm run agents:testnet`;
-const INSTALL_CONSUMER = `npm install @reapp-sdk/core@0.3.0 @stellar/stellar-sdk`;
+const INSTALL_CONSUMER = `npm install @reapp-sdk/core@0.3.1 @stellar/stellar-sdk`;
 
 const consumerExample = (endpointBase = "https://your-endpoint.example/api/express/session/source", merchant = "G...MERCHANT") => `import { DeliveryPendingError, getSettlementReceipt, reapp } from "@reapp-sdk/core";
 import { Keypair } from "@stellar/stellar-sdk";

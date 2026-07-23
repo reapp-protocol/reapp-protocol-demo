@@ -83,7 +83,7 @@ When the setup command finishes, run:
 npm run demo
 ```
 
-The latest recorded clean-room run of the default starter completed setup and its full demo in **48.317 seconds**. Network and package-cache speed vary, so “about 60 seconds” is a measured target—not a guarantee.
+In a recorded clean-room run, the default starter completed setup and its full demo in about 48 seconds. Network and package-cache speed vary, so “about 60 seconds” is a measured target, not a guarantee.
 
 ### Prefer to inspect a clone first?
 

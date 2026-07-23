@@ -6,7 +6,7 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 const protectedHashes = {
-  "app/express/page.tsx": "77c30289d70d1df16df9928148b6b7a9f9d50248a541100cbda1580a56a98bbf",
+  "app/express/page.tsx": "ba0df89a81c1a10f12648fbd5bd951ba2a872847a8ea65dfd32ac3294350e33c",
   "app/express/layout.tsx": "440134d79d32d0b3fb4e00b1adea361dbf17f9bef9e5f80f57f7db0d7957be66",
   "app/api/express/route.ts": "645a2a92788b61f42537ee0d9f4980c7324a0f76fadd68239939da17b0854141",
   "app/api/express/[sessionId]/source/[resource]/route.ts": "022c94e6c368357692c1981f08f52aea41c28ef39eadde56ca501280a6e552a5",
@@ -116,10 +116,10 @@ test("the starter is deterministic, typed by package metadata, and testnet-only"
   ];
   const sources = Object.fromEntries(await Promise.all(paths.map(async (path) => [path, await read(path)])));
   const manifest = JSON.parse(sources["starters/research-source-scout/package.json"]);
-  assert.equal(manifest.dependencies["@reapp-sdk/core"], "0.3.0");
-  assert.equal(manifest.dependencies["@reapp-sdk/stellar"], "0.2.1");
-  assert.equal(manifest.dependencies["@reapp-sdk/ap2"], "0.2.1");
-  assert.equal(manifest.dependencies["@reapp-sdk/express-middleware"], "0.2.1");
+  assert.equal(manifest.dependencies["@reapp-sdk/core"], "0.3.1");
+  assert.equal(manifest.dependencies["@reapp-sdk/stellar"], "0.2.2");
+  assert.equal(manifest.dependencies["@reapp-sdk/ap2"], "0.3.0");
+  assert.equal(manifest.dependencies["@reapp-sdk/express-middleware"], "0.2.2");
   assert.ok(manifest.scripts.demo);
   assert.ok(manifest.scripts.fulfillment);
   assert.equal(manifest.scripts.hosted, "node src/hosted.mjs");
@@ -169,10 +169,10 @@ test("new public copy follows repository terminology rules", async () => {
   assert.doesNotMatch(combined, /Hackathon starter[\s\S]*?calls the hosted endpoint through agent\.fetch\(\)/);
   assert.match(combined, /inspects the exact 402 challenge, submits the request-bound contract payment/);
   for (const version of [
-    "@reapp-sdk/core 0.3.0",
-    "@reapp-sdk/stellar 0.2.1",
-    "@reapp-sdk/ap2 0.2.1",
-    "@reapp-sdk/express-middleware 0.2.1",
-    "reapp-protocol-cli 0.1.4",
+    "@reapp-sdk/core 0.3.1",
+    "@reapp-sdk/stellar 0.2.2",
+    "@reapp-sdk/ap2 0.3.0",
+    "@reapp-sdk/express-middleware 0.2.2",
+    "reapp-protocol-cli 0.1.5",
   ]) assert.match(combined, new RegExp(version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), version);
 });

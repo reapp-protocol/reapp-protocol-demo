@@ -36,20 +36,20 @@ video demo still works and the research page shows a notice.
 - `/solutions` — beginner onboarding: scaffold a clean project, connect it to
   hosted Express fulfillment, and watch local `agent.fetch()` evidence arrive.
   Source: `app/solutions/page.tsx`.
-- `/t2` — **Tranche 2** hub. New T2 work is isolated here so it doesn't confuse the
-  Tranche 1 review. Source: `app/t2/page.tsx`.
+- `/t2` — developer toolkit preview hub. New preview work is isolated here so it
+  doesn't confuse the earlier review. Source: `app/t2/page.tsx`.
 - `/t2/demo` — live **xterm.js terminal** that runs the real `reapp` CLI on the
   server and streams its output. Source: `app/t2/demo/page.tsx`.
 - `/composites` — composite mandates (clearing pools) demo: three buyer agents pool one
   group buy; the contract clears everyone at one uniform price in a single atomic
-  transaction. Runs against the T2 composite build of MandateRegistry (a separate
+  transaction. Runs against the composite build of MandateRegistry (a separate
   testnet deployment; id pinned in `lib/composites-client.ts`). Source: `app/composites/page.tsx`.
 
-Nav order is defined in `components/Nav.tsx` (`links` array): Docs · Consumer · CLI ·
-Express · AP2 · Research · Solutions. The `/video` route remains available by direct link.
-T1 pages stay grouped first. Tranche 2 surfaces are UNLISTED (not in the nav, per team
-decision — no tranche-era items in the site chrome): `/t2` and `/composites` are reachable
-by direct link only; the `/t2` hub links to `/composites`.
+Nav order is defined in `components/Nav.tsx` (`links` array): Docs · CLI ·
+Express · AP2 · Research · Solutions. The `/consumer` and `/video` routes remain
+available by direct link. The preview surfaces are UNLISTED (not in the nav, per team
+decision — no gate-check-era labels in the site chrome): `/t2` and `/composites` are
+reachable by direct link only; the `/t2` hub links to `/composites`.
 
 ## Key files
 
@@ -59,7 +59,7 @@ by direct link only; the `/t2` hub links to `/composites`.
 - `app/api/research/route.ts` — streams the research run as newline-delimited JSON.
 - `vendor/reapp-cli.mjs` — self-contained bundle of the reapp CLI (fixed core inlined). See `vendor/README.md` to regenerate.
 - `app/api/cli/route.ts` — spawns `vendor/reapp-cli.mjs <args>` per session (cwd + REAPP_HOME) and streams raw stdout/stderr; allow-lists the CLI subcommands.
-- `lib/composites-client.ts` — vendored typed client for the T2 composite contract build (regenerate with `stellar contract bindings typescript` in reapp-protocol).
+- `lib/composites-client.ts` — vendored typed client for the composite contract build (regenerate with `stellar contract bindings typescript` in reapp-protocol).
 - `lib/composites-server.ts` — the group-buy generator: pool, three buyers, deadline auction, atomic capture; streamed by `app/api/composites/route.ts`.
 
 ## Conventions

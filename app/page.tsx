@@ -6,10 +6,10 @@ import { Package, Play, Terminal } from "lucide-react";
 
 const CONTRACT_ID = "CC6JMPDHRPBR2HBLJKRCIKV54HXDV2RFXDKW6MALQKWM6JEAJQHICRWE";
 
-const INSTALL = `npm install @reapp-sdk/core@0.3.0 @reapp-sdk/stellar@0.2.1 \\
-  @reapp-sdk/ap2@0.2.1 @reapp-sdk/express-middleware@0.2.0 \\
+const INSTALL = `npm install @reapp-sdk/core@0.3.1 @reapp-sdk/stellar@0.2.2 \\
+  @reapp-sdk/ap2@0.3.0 @reapp-sdk/express-middleware@0.2.2 \\
   @stellar/stellar-sdk express
-npm install --global reapp-protocol-cli@0.1.4`;
+npm install --global reapp-protocol-cli@0.1.5`;
 
 const CLEAN_CLONE = `git clone https://github.com/reapp-protocol/reapp-protocol.git
 cd reapp-protocol
@@ -59,11 +59,11 @@ const paidSource = createBoundReappPaidJsonRoute({
 app.get("/source/:id", paidSource);`;
 
 const PACKAGES: [string, string][] = [
-  ["@reapp-sdk/core 0.3.0", "Mandates, contract-enforced payments, and bound-v2 agent.fetch()"],
-  ["@reapp-sdk/stellar 0.2.1", "Typed contract client, testnet config, signers, and token helpers"],
-  ["@reapp-sdk/ap2 0.2.1", "Signed, version-pinned AP2 IntentMandate validation"],
-  ["@reapp-sdk/express-middleware 0.2.0", "Exact-request proof verification and safe same-resource recovery"],
-  ["reapp-protocol-cli 0.1.4", "Terminal setup, mandate, payment, reconciliation, and demo commands"],
+  ["@reapp-sdk/core 0.3.1", "Mandates, contract-enforced payments, and bound-v2 agent.fetch()"],
+  ["@reapp-sdk/stellar 0.2.2", "Typed contract client, testnet config, signers, and token helpers"],
+  ["@reapp-sdk/ap2 0.3.0", "Signed, version-pinned AP2 IntentMandate validation"],
+  ["@reapp-sdk/express-middleware 0.2.2", "Exact-request proof verification and safe same-resource recovery"],
+  ["reapp-protocol-cli 0.1.5", "Terminal setup, mandate, payment, reconciliation, and demo commands"],
 ];
 
 const RESULT: [string, string][] = [
@@ -86,7 +86,7 @@ export default function Docs() {
       <motion.div {...fade()}>
         <div className="inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.18em] text-emerald-300/90">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
-          @reapp-sdk/core 0.3.0 · DOCS
+          @reapp-sdk/core 0.3.1 · DOCS
         </div>
         <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">
           Agent payments,{" "}
@@ -103,7 +103,7 @@ export default function Docs() {
           </Link>
           <a href="https://www.npmjs.com/package/@reapp-sdk/core" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-emerald-100/80 transition hover:border-emerald-400/40 hover:text-emerald-100">
             <Package className="h-4 w-4" aria-hidden />
-            @reapp-sdk/core 0.3.0
+            @reapp-sdk/core 0.3.1
           </a>
         </div>
       </motion.div>
